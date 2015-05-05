@@ -2,17 +2,19 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
+
 	<artifactId>qwazr-cluster</artifactId>
 	<name>QWAZR Cluster</name>
+	<description>Clustering module for QWAZR.</description>
 	<packaging>jar</packaging>
-	
+
 	<parent>
 		<groupId>com.opensearchserver</groupId>
 		<artifactId>qwazr-parent</artifactId>
 		<version>1.0.0-SNAPSHOT</version>
 	</parent>
-	
-	
+
+
 	<dependencies>
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
@@ -136,6 +138,7 @@
 			<version>0.9.9-RC1</version>
 		</dependency>
 	</dependencies>
+
 	<build>
 		<plugins>
 			<plugin>
@@ -153,5 +156,5 @@
 			</plugin>
 		</plugins>
 	</build>
-	<description>Clustering module for QWAZR.</description>
+
 </project>
