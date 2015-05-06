@@ -52,13 +52,12 @@ public class ClusterManager {
 
 	public static volatile ClusterManager INSTANCE = null;
 
-	public static void load(String myAddress, File directory,
-			File configurationFile) throws IOException {
+	public static void load(String myAddress, File directory)
+			throws IOException {
 		if (INSTANCE != null)
 			throw new IOException("Already loaded");
 		try {
-			INSTANCE = new ClusterManager(myAddress, directory,
-					configurationFile);
+			INSTANCE = new ClusterManager(myAddress, directory);
 			if (INSTANCE.isMaster()) {
 				// First, we get the node list from another master (if any)
 				ClusterManager.INSTANCE.loadNodesFromOtherMaster();
@@ -74,9 +73,6 @@ public class ClusterManager {
 
 	public static final String CLUSTER_CONFIGURATION_NAME = "cluster.yaml";
 
-	private static final String CLUSTER_CONF_PATH = System
-			.getProperty("com.qwazr.cluster.conf");
-
 	private final ClusterNodeMap clusterNodeMap;
 
 	private final Set<String> clusterMasterSet;
@@ -91,21 +87,16 @@ public class ClusterManager {
 
 	private final boolean isMaster;
 
-	private ClusterManager(String myAddress, File rootDirectory,
-			File configurationFile) throws IOException, URISyntaxException {
+	private ClusterManager(String myAddress, File rootDirectory)
+			throws IOException, URISyntaxException {
 		this.myAddress = ClusterNode.toAddress(myAddress);
 		logger.info("Server: " + myAddress);
 
-		// Look for the configuration file
-		File clusterConfigurationFile = configurationFile;
-		if (clusterConfigurationFile == null && CLUSTER_CONF_PATH != null)
-			clusterConfigurationFile = new File(CLUSTER_CONF_PATH);
-		if (clusterConfigurationFile == null && rootDirectory != null)
-			clusterConfigurationFile = new File(rootDirectory,
-					CLUSTER_CONFIGURATION_NAME);
-		if (clusterConfigurationFile == null)
-			clusterConfigurationFile = new File(CLUSTER_CONFIGURATION_NAME);
 		// Load the configuration
+		File clusterConfigurationFile = new File(rootDirectory,
+				CLUSTER_CONFIGURATION_NAME);
+		logger.info("Load configuration file: "
+				+ clusterConfigurationFile.getAbsolutePath());
 		ClusterConfiguration clusterConfiguration = ClusterConfiguration
 				.newInstance(clusterConfigurationFile);
 

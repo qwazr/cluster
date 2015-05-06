@@ -24,13 +24,12 @@ import com.qwazr.cluster.ClusterServer;
 
 public class ExecutionListener extends RunListener {
 
-	private final String DATADIR_PATH = "src/test/resources/com/opensearchserver/cluster/test/datadir";
+	private final String DATADIR_PATH = "src/test/resources/com/qwazr/cluster";
 
 	@Override
 	public void testRunStarted(Description description) throws Exception {
 		final File dataDir = new File(DATADIR_PATH);
-		final String parameter = "-d" + dataDir.getAbsolutePath();
-		final String[] parameters = { parameter };
+		final String[] parameters = { "-d", dataDir.getAbsolutePath() };
 		ClusterServer.main(parameters);
 	}
 }

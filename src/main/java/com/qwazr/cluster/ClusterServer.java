@@ -23,8 +23,6 @@ import javax.servlet.ServletException;
 import javax.ws.rs.ApplicationPath;
 
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
 import com.qwazr.cluster.manager.ClusterManager;
@@ -40,14 +38,6 @@ public class ClusterServer extends AbstractServer {
 		serverDefinition.defaultWebServiceTcpPort = 9099;
 		serverDefinition.mainJarPath = "qwazr-cluster.jar";
 	}
-
-	/**
-	 * Set the listening host or IP address
-	 */
-	public final static Option CONF_OPTION = new Option("c", "conf", true,
-			"The path to the configuration file");
-
-	private File configurationFile = null;
 
 	private ClusterServer() {
 		super(serverDefinition);
@@ -65,28 +55,15 @@ public class ClusterServer extends AbstractServer {
 	}
 
 	public static void load(String myAddress, File data_directory,
-			File configurationFile, Set<Class<?>> classes) throws IOException {
-		ClusterManager.load(myAddress, data_directory, configurationFile);
+			Set<Class<?>> classes) throws IOException {
+		ClusterManager.load(myAddress, data_directory);
 		if (classes != null)
 			classes.add(ClusterApplication.class);
 	}
 
 	@Override
-	public void defineOptions(Options options) {
-		super.defineOptions(options);
-		options.addOption(CONF_OPTION);
-	}
-
-	@Override
-	public void commandLine(CommandLine cmd) throws IOException {
-		configurationFile = cmd.hasOption(CONF_OPTION.getOpt()) ? new File(
-				cmd.getOptionValue(CONF_OPTION.getOpt())) : null;
-	}
-
-	@Override
 	public void load() throws IOException {
-		load(getWebServicePublicAddress(), getCurrentDataDir(),
-				configurationFile, null);
+		load(getWebServicePublicAddress(), getCurrentDataDir(), null);
 	}
 
 	@Override
@@ -102,6 +79,10 @@ public class ClusterServer extends AbstractServer {
 	public static void main(String[] args) throws IOException, ParseException,
 			ServletException {
 		new ClusterServer().start(args);
+	}
+
+	@Override
+	public void commandLine(CommandLine cmd) throws IOException, ParseException {
 	}
 
 }
