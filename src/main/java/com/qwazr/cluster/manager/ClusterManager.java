@@ -42,7 +42,6 @@ import com.qwazr.cluster.service.ClusterNodeRegisterJson;
 import com.qwazr.cluster.service.ClusterNodeStatusJson;
 import com.qwazr.cluster.service.ClusterServiceStatusJson;
 import com.qwazr.cluster.service.ClusterServiceStatusJson.StatusEnum;
-import com.qwazr.utils.server.AbstractServer;
 import com.qwazr.utils.server.ServerException;
 import com.qwazr.utils.threads.PeriodicThread;
 
@@ -53,12 +52,13 @@ public class ClusterManager {
 
 	public static volatile ClusterManager INSTANCE = null;
 
-	public static void load(AbstractServer server, File directory,
+	public static void load(String myAddress, File directory,
 			File configurationFile) throws IOException {
 		if (INSTANCE != null)
 			throw new IOException("Already loaded");
 		try {
-			INSTANCE = new ClusterManager(server, directory, configurationFile);
+			INSTANCE = new ClusterManager(myAddress, directory,
+					configurationFile);
 			if (INSTANCE.isMaster()) {
 				// First, we get the node list from another master (if any)
 				ClusterManager.INSTANCE.loadNodesFromOtherMaster();
@@ -91,9 +91,9 @@ public class ClusterManager {
 
 	private final boolean isMaster;
 
-	private ClusterManager(AbstractServer server, File rootDirectory,
+	private ClusterManager(String myAddress, File rootDirectory,
 			File configurationFile) throws IOException, URISyntaxException {
-		myAddress = ClusterNode.toAddress(server.getWebServicePublicAddress());
+		this.myAddress = ClusterNode.toAddress(myAddress);
 		logger.info("Server: " + myAddress);
 
 		// Look for the configuration file
