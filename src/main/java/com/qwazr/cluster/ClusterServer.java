@@ -33,10 +33,15 @@ import com.qwazr.utils.server.ServletApplication;
 
 public class ClusterServer extends AbstractServer {
 
+	public final static String SERVICE_NAME_CLUSTER = "cluster";
+
 	public final static ServerDefinition serverDefinition = new ServerDefinition();
 	static {
 		serverDefinition.defaultWebServiceTcpPort = 9099;
 		serverDefinition.mainJarPath = "qwazr-cluster.jar";
+		serverDefinition.defaultDataDirName = "qwazr";
+		serverDefinition.subDirectoryNames = new String[] { SERVICE_NAME_CLUSTER };
+
 	}
 
 	private ClusterServer() {
@@ -56,7 +61,8 @@ public class ClusterServer extends AbstractServer {
 
 	public static void load(String myAddress, File data_directory,
 			Set<Class<?>> classes) throws IOException {
-		ClusterManager.load(myAddress, data_directory);
+		ClusterManager.load(myAddress, new File(data_directory,
+				SERVICE_NAME_CLUSTER));
 		if (classes != null)
 			classes.add(ClusterApplication.class);
 	}

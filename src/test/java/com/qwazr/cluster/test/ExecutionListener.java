@@ -24,7 +24,7 @@ import com.qwazr.cluster.ClusterServer;
 
 public class ExecutionListener extends RunListener {
 
-	private final String DATADIR_PATH = "src/test/resources/com/qwazr/cluster";
+	private final String DATADIR_PATH = "src/test/resources/com/qwazr";
 
 	@Override
 	public void testRunStarted(Description description) throws Exception {

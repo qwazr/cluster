@@ -87,9 +87,9 @@ public class ClusterManager {
 
 	private final boolean isMaster;
 
-	private ClusterManager(String myAddress, File rootDirectory)
+	private ClusterManager(String publicAddress, File rootDirectory)
 			throws IOException, URISyntaxException {
-		this.myAddress = ClusterNode.toAddress(myAddress);
+		myAddress = ClusterNode.toAddress(publicAddress);
 		logger.info("Server: " + myAddress);
 
 		// Load the configuration
