@@ -15,7 +15,6 @@
  */
 package com.qwazr.cluster.service;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -72,7 +71,7 @@ public interface ClusterServiceInterface {
 	@GET
 	@Path("/services/{service_name}/active")
 	@Produces(MediaType.APPLICATION_JSON)
-	public List<String> getActiveNodes(
+	public String[] getActiveNodes(
 			@PathParam("service_name") String service_name);
 
 	@GET

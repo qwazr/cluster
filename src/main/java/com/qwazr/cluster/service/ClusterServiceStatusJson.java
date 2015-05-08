@@ -15,10 +15,10 @@
  */
 package com.qwazr.cluster.service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.Collections;
 import java.util.Map;
+
+import org.apache.commons.lang3.ArrayUtils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -30,25 +30,21 @@ public class ClusterServiceStatusJson {
 		ok, degraded, failure;
 	}
 
-	public final static List<String> EMPTY_LIST = new ArrayList<String>(0);
-	public final static Map<String, ClusterNodeStatusJson> EMPTY_MAP = new HashMap<String, ClusterNodeStatusJson>();
-
 	public final StatusEnum status;
 	public final int active_count;
-	public final List<String> active;
+	public final String[] active;
 	public final int inactive_count;
 	public final Map<String, ClusterNodeStatusJson> inactive;
 
 	public ClusterServiceStatusJson() {
-		this(EMPTY_LIST, EMPTY_MAP);
+		this(ArrayUtils.EMPTY_STRING_ARRAY, Collections.emptyMap());
 	}
 
-	public ClusterServiceStatusJson(List<String> active,
+	public ClusterServiceStatusJson(String[] active,
 			Map<String, ClusterNodeStatusJson> inactive) {
 		this.active = active;
 		this.inactive = inactive;
-		this.active_count = active == null || active.isEmpty() ? 0 : active
-				.size();
+		this.active_count = active == null ? 0 : active.length;
 		this.inactive_count = inactive == null || inactive.isEmpty() ? 0
 				: inactive.size();
 		status = findStatus(active_count, inactive_count);

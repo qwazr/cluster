@@ -17,7 +17,6 @@ package com.qwazr.cluster.client;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -125,17 +124,14 @@ public class ClusterSingleClient extends JsonClientAbstract implements
 		}
 	}
 
-	public final static TypeReference<List<String>> ListStringTypeRef = new TypeReference<List<String>>() {
-	};
-
 	@Override
-	public List<String> getActiveNodes(String service_name) {
+	public String[] getActiveNodes(String service_name) {
 		try {
 			URIBuilder uriBuilder = getBaseUrl("/cluster/services/",
 					service_name, "/active");
 			Request request = Request.Get(uriBuilder.build());
-			return (List<String>) execute(request, null, msTimeOut,
-					ListStringTypeRef, 200);
+			return (String[]) execute(request, null, msTimeOut, String[].class,
+					200);
 		} catch (URISyntaxException | IOException e) {
 			throw new WebApplicationException(e.getMessage(), e,
 					Status.INTERNAL_SERVER_ERROR);

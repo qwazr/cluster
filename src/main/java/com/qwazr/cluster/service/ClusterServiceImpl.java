@@ -100,7 +100,7 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 	}
 
 	@Override
-	public List<String> getActiveNodes(String service_name) {
+	public String[] getActiveNodes(String service_name) {
 		if (service_name == null)
 			throw new ServerException(Status.NOT_ACCEPTABLE).getJsonException();
 		ClusterManager manager = ClusterManager.INSTANCE;

@@ -16,8 +16,6 @@
 package com.qwazr.cluster.client;
 
 import java.net.URISyntaxException;
-import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -42,10 +40,10 @@ public class ClusterMultiClient extends
 	private static final Logger logger = LoggerFactory
 			.getLogger(ClusterMultiClient.class);
 
-	public ClusterMultiClient(Collection<String> urls, int msTimeOut)
+	public ClusterMultiClient(String[] urls, int msTimeOut)
 			throws URISyntaxException {
 		// TODO Pass executor
-		super(null, new ClusterSingleClient[urls.size()], urls, msTimeOut);
+		super(null, new ClusterSingleClient[urls.length], urls, msTimeOut);
 	}
 
 	@Override
@@ -127,7 +125,7 @@ public class ClusterMultiClient extends
 	}
 
 	@Override
-	public List<String> getActiveNodes(String service_name) {
+	public String[] getActiveNodes(String service_name) {
 		WebAppExceptionHolder exceptionHolder = new WebAppExceptionHolder(
 				logger);
 		for (ClusterSingleClient client : this) {
