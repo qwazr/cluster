@@ -40,7 +40,6 @@ public class ClusterServer extends AbstractServer {
 		serverDefinition.defaultWebServiceTcpPort = 9099;
 		serverDefinition.mainJarPath = "qwazr-cluster.jar";
 		serverDefinition.defaultDataDirName = "qwazr";
-		serverDefinition.subDirectoryNames = new String[] { SERVICE_NAME_CLUSTER };
 
 	}
 
@@ -61,8 +60,10 @@ public class ClusterServer extends AbstractServer {
 
 	public static void load(String myAddress, File data_directory,
 			Set<Class<?>> classes) throws IOException {
-		ClusterManager.load(myAddress, new File(data_directory,
-				SERVICE_NAME_CLUSTER));
+		File clusterDirectory = new File(data_directory, SERVICE_NAME_CLUSTER);
+		if (!clusterDirectory.exists())
+			clusterDirectory.mkdir();
+		ClusterManager.load(myAddress, clusterDirectory);
 		if (classes != null)
 			classes.add(ClusterApplication.class);
 	}

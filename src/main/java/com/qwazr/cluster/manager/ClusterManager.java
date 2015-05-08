@@ -32,6 +32,7 @@ import java.util.TreeMap;
 import javax.ws.rs.core.Response.Status;
 
 import org.apache.commons.lang3.RandomUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,12 +53,12 @@ public class ClusterManager {
 
 	public static volatile ClusterManager INSTANCE = null;
 
-	public static void load(String myAddress, File directory)
+	public static void load(String myAddress, File clusterDirectory)
 			throws IOException {
 		if (INSTANCE != null)
 			throw new IOException("Already loaded");
 		try {
-			INSTANCE = new ClusterManager(myAddress, directory);
+			INSTANCE = new ClusterManager(myAddress, clusterDirectory);
 			if (INSTANCE.isMaster()) {
 				// First, we get the node list from another master (if any)
 				ClusterManager.INSTANCE.loadNodesFromOtherMaster();
@@ -87,15 +88,15 @@ public class ClusterManager {
 
 	private final boolean isMaster;
 
-	private ClusterManager(String publicAddress, File rootDirectory)
+	private ClusterManager(String publicAddress, File clusterDirectory)
 			throws IOException, URISyntaxException {
 		myAddress = ClusterNode.toAddress(publicAddress);
 		logger.info("Server: " + myAddress);
 
 		// Load the configuration
-		File clusterConfigurationFile = new File(rootDirectory,
+		File clusterConfigurationFile = new File(clusterDirectory,
 				CLUSTER_CONFIGURATION_NAME);
-		logger.info("Load configuration file: "
+		logger.info("Load cluster configuration file: "
 				+ clusterConfigurationFile.getAbsolutePath());
 		ClusterConfiguration clusterConfiguration = ClusterConfiguration
 				.newInstance(clusterConfigurationFile);
@@ -287,7 +288,8 @@ public class ClusterManager {
 		if (clusterClient == null || clusterMasterSet == null
 				|| services == null || services.length == 0)
 			return;
-		logger.info("Registering to the master");
+		logger.info("Registering to the master: "
+				+ StringUtils.join(services, ' '));
 		clusterClient
 				.register(new ClusterNodeRegisterJson(myAddress, services));
 		if (clusterNodeShutdownThread == null) {

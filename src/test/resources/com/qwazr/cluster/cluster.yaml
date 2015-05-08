@@ -1,1 +1,1 @@
-masters: ["0.0.0.0:9099"]
+masters: ["localhost:9099"]
