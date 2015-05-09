@@ -34,7 +34,7 @@ public class ClusterStatusJson {
 	public final Set<String> active_nodes;
 	public final Map<String, ClusterNodeStatusJson> inactive_nodes;
 	public final Map<String, StatusEnum> services;
-	public final Set<String> masters;
+	public final String[] masters;
 	public final Map<String, Date> last_executions;
 
 	public ClusterStatusJson() {
@@ -51,7 +51,7 @@ public class ClusterStatusJson {
 		this.active_nodes = new TreeSet<String>();
 		this.inactive_nodes = new TreeMap<String, ClusterNodeStatusJson>();
 		this.services = clusterManager.getServicesStatus();
-		this.masters = clusterManager.getMasterSet();
+		this.masters = clusterManager.getMasterArray();
 		this.last_executions = clusterManager.getLastExecutions();
 	}
 

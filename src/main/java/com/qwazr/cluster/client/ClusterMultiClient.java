@@ -34,7 +34,7 @@ import com.qwazr.cluster.service.ClusterStatusJson;
 import com.qwazr.utils.json.client.JsonMultiClientAbstract;
 
 public class ClusterMultiClient extends
-		JsonMultiClientAbstract<ClusterSingleClient> implements
+		JsonMultiClientAbstract<String, ClusterSingleClient> implements
 		ClusterServiceInterface {
 
 	private static final Logger logger = LoggerFactory

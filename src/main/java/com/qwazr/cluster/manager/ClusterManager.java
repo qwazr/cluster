@@ -23,7 +23,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,13 +71,11 @@ public class ClusterManager {
 		}
 	}
 
-	public static final String MASTER_SERVICE_NAME = "master".intern();
-
 	public static final String CLUSTER_CONFIGURATION_NAME = "cluster.yaml";
 
 	private final ClusterNodeMap clusterNodeMap;
 
-	private final Set<String> clusterMasterSet;
+	private final String[] clusterMasterArray;
 
 	private final ClusterMultiClient clusterClient;
 
@@ -107,7 +104,7 @@ public class ClusterManager {
 		if (clusterConfiguration == null
 				|| clusterConfiguration.masters == null
 				|| clusterConfiguration.masters.isEmpty()) {
-			clusterMasterSet = null;
+			clusterMasterArray = null;
 			clusterNodeMap = null;
 			clusterClient = null;
 			isMaster = false;
@@ -117,19 +114,18 @@ public class ClusterManager {
 
 		// Build the master list and check if I am a master
 		boolean isMaster = false;
-		clusterMasterSet = new HashSet<String>();
+		clusterMasterArray = new String[clusterConfiguration.masters.size()];
+		int i = 0;
 		for (String master : clusterConfiguration.masters) {
 			String masterAddress = ClusterNode.toAddress(master);
 			logger.info("Add a master: " + masterAddress);
-			clusterMasterSet.add(masterAddress);
+			clusterMasterArray[i++] = masterAddress;
 			if (masterAddress == myAddress) {
 				isMaster = true;
 				logger.info("I am a master!");
 			}
 		}
-		clusterClient = new ClusterMultiClient(
-				clusterMasterSet.toArray(new String[clusterMasterSet.size()]),
-				60000);
+		clusterClient = new ClusterMultiClient(clusterMasterArray, 60000);
 		this.isMaster = isMaster;
 		if (!isMaster) {
 			clusterNodeMap = null;
@@ -145,7 +141,7 @@ public class ClusterManager {
 	 * Load the node list from another master
 	 */
 	void loadNodesFromOtherMaster() {
-		for (String master : clusterMasterSet) {
+		for (String master : clusterMasterArray) {
 			if (master == myAddress)
 				continue;
 			try {
@@ -202,8 +198,8 @@ public class ClusterManager {
 		return checkMaster().getNodeList();
 	}
 
-	public Set<String> getMasterSet() {
-		return clusterMasterSet;
+	public String[] getMasterArray() {
+		return clusterMasterArray;
 	}
 
 	public boolean isMaster() {
@@ -305,7 +301,7 @@ public class ClusterManager {
 	}
 
 	public void registerMe(String... services) {
-		if (clusterClient == null || clusterMasterSet == null
+		if (clusterClient == null || clusterMasterArray == null
 				|| services == null || services.length == 0)
 			return;
 		logger.info("Registering to the master: "

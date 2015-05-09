@@ -23,6 +23,7 @@ import java.util.Set;
 
 import javax.ws.rs.core.Response;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -61,7 +62,7 @@ public class AllTest {
 		Assert.assertNotNull(result);
 		Assert.assertTrue(result.is_master);
 		Assert.assertNotNull(result.masters);
-		Assert.assertTrue(result.masters.contains(CLIENT_ADDRESS));
+		Assert.assertTrue(ArrayUtils.contains(result.masters, CLIENT_ADDRESS));
 	}
 
 	@Test
