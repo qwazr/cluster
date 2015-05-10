@@ -37,6 +37,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.qwazr.cluster.ClusterServer;
 import com.qwazr.cluster.client.ClusterMultiClient;
 import com.qwazr.cluster.client.ClusterSingleClient;
 import com.qwazr.cluster.manager.ClusterNodeSet.Cache;
@@ -54,11 +55,15 @@ public class ClusterManager {
 
 	public static volatile ClusterManager INSTANCE = null;
 
-	public static void load(String myAddress, File clusterDirectory)
+	public static void load(String myAddress, File dataDirectory)
 			throws IOException {
 		if (INSTANCE != null)
 			throw new IOException("Already loaded");
 		try {
+			File clusterDirectory = new File(dataDirectory,
+					ClusterServer.SERVICE_NAME_CLUSTER);
+			if (!clusterDirectory.exists())
+				clusterDirectory.mkdir();
 			INSTANCE = new ClusterManager(myAddress, clusterDirectory);
 			if (INSTANCE.isMaster()) {
 				// First, we get the node list from another master (if any)
@@ -167,7 +172,7 @@ public class ClusterManager {
 			return;
 		if (periodicThreads != null)
 			return;
-		logger.info("Starting the periodc threads");
+		logger.info("Starting the periodic threads");
 		periodicThreads = new ArrayList<PeriodicThread>(2);
 		periodicThreads.add(new ClusterMasterThread(600));
 		periodicThreads.add(new ClusterMonitoringThread(60));

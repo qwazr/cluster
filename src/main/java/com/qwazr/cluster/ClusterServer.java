@@ -58,19 +58,14 @@ public class ClusterServer extends AbstractServer {
 		}
 	}
 
-	public static void load(String myAddress, File data_directory,
-			Set<Class<?>> classes) throws IOException {
-		File clusterDirectory = new File(data_directory, SERVICE_NAME_CLUSTER);
-		if (!clusterDirectory.exists())
-			clusterDirectory.mkdir();
-		ClusterManager.load(myAddress, clusterDirectory);
-		if (classes != null)
-			classes.add(ClusterApplication.class);
+	public static void load(String myAddress, File data_directory)
+			throws IOException {
+		ClusterManager.load(myAddress, data_directory);
 	}
 
 	@Override
 	public void load() throws IOException {
-		load(getWebServicePublicAddress(), getCurrentDataDir(), null);
+		load(getWebServicePublicAddress(), getCurrentDataDir());
 	}
 
 	@Override
