@@ -70,7 +70,7 @@ public class ClusterManager {
 				// First, we get the node list from another master (if any)
 				ClusterManager.INSTANCE.loadNodesFromOtherMaster();
 				// All is set, let's start the monitoring
-				INSTANCE.startMonitoringThread();
+				INSTANCE.startPeriodicThreads();
 			}
 		} catch (URISyntaxException e) {
 			throw new IOException(e);
@@ -166,9 +166,9 @@ public class ClusterManager {
 	}
 
 	/**
-	 * Start the monitoring thread
+	 * Start the periodic threads
 	 */
-	private synchronized void startMonitoringThread() {
+	private synchronized void startPeriodicThreads() {
 		if (!isMaster)
 			return;
 		if (periodicThreads != null)
