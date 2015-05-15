@@ -82,15 +82,19 @@ public class ClusterMultiClient extends
 
 	@Override
 	public ClusterNodeStatusJson register(ClusterNodeRegisterJson register) {
+		WebAppExceptionHolder exceptionHolder = new WebAppExceptionHolder(
+				logger);
 		ClusterNodeStatusJson result = null;
 		for (ClusterSingleClient client : this) {
 			try {
 				result = client.register(register);
 			} catch (WebApplicationException e) {
-				logger.warn(e.getMessage(), e);
+				exceptionHolder.switchAndWarn(e);
 			}
 		}
-		return result;
+		if (result != null)
+			return result;
+		throw exceptionHolder.getException();
 	}
 
 	@Override

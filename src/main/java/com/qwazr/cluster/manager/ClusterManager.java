@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response.Status;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -174,7 +175,7 @@ public class ClusterManager {
 			return;
 		logger.info("Starting the periodic threads");
 		periodicThreads = new ArrayList<PeriodicThread>(2);
-		periodicThreads.add(new ClusterMasterThread(600));
+		periodicThreads.add(new ClusterMasterThread(120));
 		periodicThreads.add(new ClusterMonitoringThread(60));
 	}
 
@@ -309,10 +310,21 @@ public class ClusterManager {
 		if (clusterClient == null || clusterMasterArray == null
 				|| services == null || services.length == 0)
 			return;
-		logger.info("Registering to the master: "
+		logger.info("Registering to the masters: "
 				+ StringUtils.join(services, ' '));
-		clusterClient
-				.register(new ClusterNodeRegisterJson(myAddress, services));
+		for (int i = 0; i < 10; i++) {
+			try {
+				if (clusterClient.register(new ClusterNodeRegisterJson(
+						myAddress, services)) != null)
+					break;
+			} catch (WebApplicationException e) {
+				try {
+					Thread.sleep(15000);
+				} catch (InterruptedException e1) {
+					throw new RuntimeException(e1);
+				}
+			}
+		}
 		if (clusterNodeShutdownThread == null) {
 			clusterNodeShutdownThread = new Thread() {
 				@Override
