@@ -40,14 +40,14 @@ public class ClusterMultiClient extends
 	private static final Logger logger = LoggerFactory
 			.getLogger(ClusterMultiClient.class);
 
-	public ClusterMultiClient(String[] urls, int msTimeOut)
+	public ClusterMultiClient(String[] urls, Integer msTimeOut)
 			throws URISyntaxException {
 		// TODO Pass executor
 		super(null, new ClusterSingleClient[urls.length], urls, msTimeOut);
 	}
 
 	@Override
-	protected ClusterSingleClient newClient(String url, int msTimeOut)
+	protected ClusterSingleClient newClient(String url, Integer msTimeOut)
 			throws URISyntaxException {
 		return new ClusterSingleClient(url, msTimeOut);
 	}
