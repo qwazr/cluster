@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,39 +15,25 @@
  */
 package com.qwazr.cluster.manager;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response.Status;
-
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.RandomUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.qwazr.cluster.ClusterServer;
 import com.qwazr.cluster.client.ClusterMultiClient;
 import com.qwazr.cluster.client.ClusterSingleClient;
 import com.qwazr.cluster.manager.ClusterNodeSet.Cache;
-import com.qwazr.cluster.service.ClusterNodeRegisterJson;
 import com.qwazr.cluster.service.ClusterNodeStatusJson;
 import com.qwazr.cluster.service.ClusterServiceStatusJson;
 import com.qwazr.cluster.service.ClusterServiceStatusJson.StatusEnum;
 import com.qwazr.utils.server.ServerException;
 import com.qwazr.utils.threads.PeriodicThread;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.RandomUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.ws.rs.core.Response.Status;
+import java.io.File;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.*;
 
 public class ClusterManager {
 
@@ -70,7 +56,10 @@ public class ClusterManager {
 				// First, we get the node list from another master (if any)
 				ClusterManager.INSTANCE.loadNodesFromOtherMaster();
 				// All is set, let's start the monitoring
-				INSTANCE.startPeriodicThreads();
+				INSTANCE.clusterMasterThread =
+						(ClusterMasterThread) INSTANCE.addPeriodicThread(new ClusterMasterThread(120));
+				INSTANCE.clusterMonitoringThread =
+						(ClusterMonitoringThread) INSTANCE.addPeriodicThread(new ClusterMonitoringThread(60));
 			}
 		} catch (URISyntaxException e) {
 			throw new IOException(e);
@@ -88,6 +77,12 @@ public class ClusterManager {
 	public final String myAddress;
 
 	private List<PeriodicThread> periodicThreads = null;
+
+	private ClusterMasterThread clusterMasterThread = null;
+
+	private ClusterMonitoringThread clusterMonitoringThread = null;
+
+	private volatile ClusterRegisteringThread clusterRegisteringThead = null;
 
 	private Thread clusterNodeShutdownThread = null;
 
@@ -168,15 +163,13 @@ public class ClusterManager {
 	/**
 	 * Start the periodic threads
 	 */
-	private synchronized void startPeriodicThreads() {
-		if (!isMaster)
-			return;
-		if (periodicThreads != null)
-			return;
-		logger.info("Starting the periodic threads");
+	private synchronized PeriodicThread addPeriodicThread(PeriodicThread periodicThread) {
+		logger.info("Starting the periodic thread " + periodicThread.getName());
+		if (periodicThreads == null)
+			periodicThreads = new ArrayList<PeriodicThread>(3);
 		periodicThreads = new ArrayList<PeriodicThread>(2);
-		periodicThreads.add(new ClusterMasterThread(120));
-		periodicThreads.add(new ClusterMonitoringThread(60));
+		periodicThreads.add(periodicThread);
+		return periodicThread;
 	}
 
 	private ClusterNodeMap checkMaster() throws ServerException {
@@ -259,11 +252,9 @@ public class ClusterManager {
 	}
 
 	/**
-	 * @param service
-	 *            the name of the service
+	 * @param service the name of the service
 	 * @return a randomly choosen node
-	 * @throws ServerException
-	 *             if any error occurs
+	 * @throws ServerException if any error occurs
 	 */
 	public String getActiveNodeRandom(String service) throws ServerException {
 		Cache cache = getNodeSetCache(service);
@@ -278,12 +269,10 @@ public class ClusterManager {
 	/**
 	 * Build a status of the given service. The list of active nodes and the
 	 * list of inactive nodes with their latest status.
-	 * 
-	 * @param service
-	 *            the name of the service
+	 *
+	 * @param service the name of the service
 	 * @return the status of the service
-	 * @throws ServerException
-	 *             if any error occurs
+	 * @throws ServerException if any error occurs
 	 */
 	public ClusterServiceStatusJson getServiceStatus(String service)
 			throws ServerException {
@@ -306,25 +295,16 @@ public class ClusterManager {
 		registerMe(services.toArray(new String[services.size()]));
 	}
 
-	public void registerMe(String... services) {
+	public synchronized void registerMe(String... services) {
 		if (clusterClient == null || clusterMasterArray == null
 				|| services == null || services.length == 0)
 			return;
-		logger.info("Registering to the masters: "
-				+ StringUtils.join(services, ' '));
-		for (int i = 0; i < 10; i++) {
-			try {
-				if (clusterClient.register(new ClusterNodeRegisterJson(
-						myAddress, services)) != null)
-					break;
-			} catch (WebApplicationException e) {
-				try {
-					Thread.sleep(15000);
-				} catch (InterruptedException e1) {
-					throw new RuntimeException(e1);
-				}
-			}
+		if (clusterRegisteringThead != null) {
+			logger.error("Services already registered");
+			return;
 		}
+		clusterRegisteringThead = (ClusterRegisteringThread) addPeriodicThread(
+				new ClusterRegisteringThread(300, clusterClient, services));
 		if (clusterNodeShutdownThread == null) {
 			clusterNodeShutdownThread = new Thread() {
 				@Override
