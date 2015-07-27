@@ -167,7 +167,6 @@ public class ClusterManager {
 		logger.info("Starting the periodic thread " + periodicThread.getName());
 		if (periodicThreads == null)
 			periodicThreads = new ArrayList<PeriodicThread>(3);
-		periodicThreads = new ArrayList<PeriodicThread>(2);
 		periodicThreads.add(periodicThread);
 		return periodicThread;
 	}
