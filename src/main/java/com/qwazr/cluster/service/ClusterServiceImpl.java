@@ -15,17 +15,16 @@
  */
 package com.qwazr.cluster.service;
 
+import com.qwazr.cluster.manager.ClusterManager;
+import com.qwazr.cluster.manager.ClusterNode;
+import com.qwazr.utils.server.ServerException;
+
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-
-import com.qwazr.cluster.manager.ClusterManager;
-import com.qwazr.cluster.manager.ClusterNode;
-import com.qwazr.utils.server.ServerException;
 
 public class ClusterServiceImpl implements ClusterServiceInterface {
 
@@ -65,7 +64,8 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 	}
 
 	@Override
-	public Response check(String checkValue) {
+	public Response check(String checkValue, String checkAddr) {
+		ClusterManager.INSTANCE.check(checkAddr);
 		return Response.ok()
 				.header(ClusterServiceInterface.HEADER_CHECK_NAME, checkValue)
 				.build();

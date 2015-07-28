@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,28 +15,22 @@
  */
 package com.qwazr.cluster.client;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.Map;
-import java.util.Set;
-
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.qwazr.cluster.service.*;
+import com.qwazr.utils.http.HttpUtils;
+import com.qwazr.utils.json.client.JsonClientAbstract;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.fluent.Request;
 import org.apache.http.entity.ContentType;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.qwazr.cluster.service.ClusterNodeRegisterJson;
-import com.qwazr.cluster.service.ClusterNodeStatusJson;
-import com.qwazr.cluster.service.ClusterServiceInterface;
-import com.qwazr.cluster.service.ClusterServiceStatusJson;
-import com.qwazr.cluster.service.ClusterStatusJson;
-import com.qwazr.utils.http.HttpUtils;
-import com.qwazr.utils.json.client.JsonClientAbstract;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.Map;
+import java.util.Set;
 
 public class ClusterSingleClient extends JsonClientAbstract implements
 		ClusterServiceInterface {
@@ -54,8 +48,9 @@ public class ClusterSingleClient extends JsonClientAbstract implements
 				ClusterStatusJson.class, 200);
 	}
 
-	public final static TypeReference<Map<String, Set<String>>> MapStringSetStringTypeRef = new TypeReference<Map<String, Set<String>>>() {
-	};
+	public final static TypeReference<Map<String, Set<String>>> MapStringSetStringTypeRef =
+			new TypeReference<Map<String, Set<String>>>() {
+			};
 
 	@Override
 	public Map<String, Set<String>> getNodes() {
@@ -90,7 +85,7 @@ public class ClusterSingleClient extends JsonClientAbstract implements
 	}
 
 	@Override
-	public Response check(String checkValue) {
+	public Response check(String checkValue, String checkAddr) {
 		return Response.status(Status.NOT_IMPLEMENTED).build();
 	}
 

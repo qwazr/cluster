@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,8 @@
 package com.qwazr.cluster.manager;
 
 import com.qwazr.utils.threads.PeriodicThread;
+import com.qwazr.utils.threads.ThreadUtils;
+import org.apache.commons.lang3.RandomUtils;
 
 public class ClusterMasterThread extends PeriodicThread {
 
@@ -28,5 +30,11 @@ public class ClusterMasterThread extends PeriodicThread {
 	@Override
 	protected void runner() {
 		ClusterManager.INSTANCE.loadNodesFromOtherMaster();
+	}
+
+	@Override
+	public void run() {
+		ThreadUtils.sleepMs(RandomUtils.nextInt(0, 5000));
+		super.run();
 	}
 }

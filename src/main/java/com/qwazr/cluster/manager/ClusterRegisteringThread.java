@@ -19,11 +19,13 @@ import com.qwazr.cluster.client.ClusterMultiClient;
 import com.qwazr.cluster.service.ClusterNodeRegisterJson;
 import com.qwazr.utils.threads.PeriodicThread;
 import com.qwazr.utils.threads.ThreadUtils;
+import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.WebApplicationException;
+import java.util.Date;
 
 public class ClusterRegisteringThread extends PeriodicThread {
 
@@ -44,29 +46,25 @@ public class ClusterRegisteringThread extends PeriodicThread {
 
 	@Override
 	public void runner() {
-		String joinServices = StringUtils.join(services, ' ');
-		for (int i = 1; i <= 10; i++) {
+		long removeTime = System.currentTimeMillis() - 150000;
+		Long lastCheck = ClusterManager.INSTANCE.getLastCheck();
+		if (lastCheck == null || lastCheck < removeTime) {
 			try {
 				if (logger.isInfoEnabled())
-					logger.info("Registering to the masters #" + i + " :"
-							+ joinServices);
-				if (clusterClient.register(new ClusterNodeRegisterJson(
-						ClusterManager.INSTANCE.myAddress, services)) != null)
-					return;
+					logger.info("Registering to the masters: "
+							+ StringUtils.join(services, ' ') + " last check: " +
+							(lastCheck == null ? 0 : new Date(lastCheck)));
+				clusterClient.register(new ClusterNodeRegisterJson(ClusterManager.INSTANCE.myAddress, services));
 			} catch (WebApplicationException e) {
-				try {
-					logger.error("Registration failed #" + i + " :" + joinServices);
-					Thread.sleep(15000);
-				} catch (InterruptedException e1) {
-					throw new RuntimeException(e1);
-				}
+				logger.error("Registration failed", e);
 			}
 		}
+		ClusterManager.INSTANCE.removeOldCheck(removeTime);
 	}
 
 	@Override
 	public void run() {
-		ThreadUtils.sleepMs(10000);
+		ThreadUtils.sleepMs(RandomUtils.nextInt(5000, 10000));
 		super.run();
 	}
 }

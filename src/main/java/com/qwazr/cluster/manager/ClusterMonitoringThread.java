@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,15 +15,15 @@
  */
 package com.qwazr.cluster.manager;
 
+import com.qwazr.utils.server.ServerException;
+import com.qwazr.utils.threads.PeriodicThread;
+import com.qwazr.utils.threads.ThreadUtils;
+import org.apache.commons.lang3.RandomUtils;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 import org.apache.http.impl.nio.client.HttpAsyncClients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.qwazr.utils.server.ServerException;
-import com.qwazr.utils.threads.PeriodicThread;
-import com.qwazr.utils.threads.ThreadUtils;
 
 public class ClusterMonitoringThread extends PeriodicThread {
 
@@ -58,7 +58,7 @@ public class ClusterMonitoringThread extends PeriodicThread {
 
 	@Override
 	public void run() {
-		ThreadUtils.sleepMs(10000);
+		ThreadUtils.sleepMs(RandomUtils.nextInt(10000, 15000));
 		super.run();
 	}
 }

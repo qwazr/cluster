@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,23 +15,17 @@
  */
 package com.qwazr.cluster.client;
 
-import java.net.URISyntaxException;
-import java.util.Map;
-import java.util.Set;
+import com.qwazr.cluster.service.*;
+import com.qwazr.utils.json.client.JsonMultiClientAbstract;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.qwazr.cluster.service.ClusterNodeRegisterJson;
-import com.qwazr.cluster.service.ClusterNodeStatusJson;
-import com.qwazr.cluster.service.ClusterServiceInterface;
-import com.qwazr.cluster.service.ClusterServiceStatusJson;
-import com.qwazr.cluster.service.ClusterStatusJson;
-import com.qwazr.utils.json.client.JsonMultiClientAbstract;
+import java.net.URISyntaxException;
+import java.util.Map;
+import java.util.Set;
 
 public class ClusterMultiClient extends
 		JsonMultiClientAbstract<String, ClusterSingleClient> implements
@@ -110,7 +104,7 @@ public class ClusterMultiClient extends
 	}
 
 	@Override
-	public Response check(String checkValue) {
+	public Response check(String checkValue, String checkAddr) {
 		return Response.status(Status.NOT_IMPLEMENTED).build();
 	}
 

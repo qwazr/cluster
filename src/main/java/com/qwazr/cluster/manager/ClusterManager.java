@@ -34,6 +34,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class ClusterManager {
 
@@ -86,6 +88,10 @@ public class ClusterManager {
 
 	private Thread clusterNodeShutdownThread = null;
 
+	private final ConcurrentHashMap<String, Long> checkTimeMap;
+
+	private final AtomicLong lastTimeCheck;
+
 	private final boolean isMaster;
 
 	private ClusterManager(String publicAddress, File clusterDirectory)
@@ -108,10 +114,16 @@ public class ClusterManager {
 			clusterMasterArray = null;
 			clusterNodeMap = null;
 			clusterClient = null;
+			checkTimeMap = null;
+			lastTimeCheck = null;
 			isMaster = false;
 			logger.info("No cluster configuration. This node is not part of a cluster.");
 			return;
 		}
+
+		// Store the last time a master checked the node
+		checkTimeMap = new ConcurrentHashMap<>();
+		lastTimeCheck = new AtomicLong();
 
 		// Build the master list and check if I am a master
 		boolean isMaster = false;
@@ -303,7 +315,7 @@ public class ClusterManager {
 			return;
 		}
 		clusterRegisteringThead = (ClusterRegisteringThread) addPeriodicThread(
-				new ClusterRegisteringThread(300, clusterClient, services));
+				new ClusterRegisteringThread(90, clusterClient, services));
 		if (clusterNodeShutdownThread == null) {
 			clusterNodeShutdownThread = new Thread() {
 				@Override
@@ -348,6 +360,42 @@ public class ClusterManager {
 		for (PeriodicThread thread : periodicThreads)
 			threadsMap.put(thread.getName(), thread.getLastExecutionDate());
 		return threadsMap;
+	}
+
+	/**
+	 * Called by a master when a master check the node
+	 *
+	 * @param masterAddress the public address of the master
+	 */
+	public void check(String masterAddress) {
+		long time = System.currentTimeMillis();
+		if (lastTimeCheck != null) {
+			if (lastTimeCheck.getAndSet(time) == 0)
+				if (logger.isInfoEnabled())
+					logger.info("Initial check by master: " + masterAddress);
+		}
+		if (checkTimeMap != null && masterAddress != null)
+			checkTimeMap.put(masterAddress, time);
+	}
+
+	/**
+	 * @return the last time the node was checked
+	 */
+	public Long getLastCheck() {
+		if (lastTimeCheck == null)
+			return null;
+		long res = lastTimeCheck.get();
+		return res == 0 ? null : res;
+	}
+
+	public void removeOldCheck(long removeTime) {
+		if (checkTimeMap == null)
+			return;
+		Iterator<Map.Entry<String, Long>> iterator = checkTimeMap.entrySet().iterator();
+		while (iterator.hasNext()) {
+			if (iterator.next().getValue() < removeTime)
+				iterator.remove();
+		}
 	}
 
 	public ClusterMultiClient getClusterClient() {

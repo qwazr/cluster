@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -57,11 +57,9 @@ public class ClusterNode implements FutureCallback<HttpResponse> {
 	/**
 	 * Should never fail. The class will take care of the status of the cluster
 	 * node.
-	 * 
-	 * @param hostname
-	 *            The hostname of the node
-	 * @param services
-	 *            The set of services provided by this node
+	 *
+	 * @param hostname The hostname of the node
+	 * @param services The set of services provided by this node
 	 * @throws URISyntaxException
 	 * @throws ServerException
 	 */
@@ -101,8 +99,8 @@ public class ClusterNode implements FutureCallback<HttpResponse> {
 	void startCheck(CloseableHttpAsyncClient httpclient) {
 		checkToken = UUID.randomUUID().toString();
 		HttpHead httpHead = new HttpHead(checkURI);
-		httpHead.setHeader(ClusterServiceInterface.HEADER_CHECK_NAME,
-				checkToken);
+		httpHead.setHeader(ClusterServiceInterface.HEADER_CHECK_NAME, checkToken);
+		httpHead.setHeader(ClusterServiceInterface.HEADER_CHECK_ADDR, ClusterManager.INSTANCE.myAddress);
 		latencyStart = System.currentTimeMillis();
 		httpclient.execute(httpHead, this);
 	}
@@ -159,7 +157,7 @@ public class ClusterNode implements FutureCallback<HttpResponse> {
 
 	/**
 	 * Check the latest known status of the node.
-	 * 
+	 *
 	 * @return true if the node is online
 	 */
 	public boolean isActive() {
@@ -169,9 +167,8 @@ public class ClusterNode implements FutureCallback<HttpResponse> {
 
 	/**
 	 * Update the service list
-	 * 
-	 * @param services
-	 *            A list of service name
+	 *
+	 * @param services A list of service name
 	 */
 	public void setServices(Set<String> services) {
 		this.services = services;
@@ -189,12 +186,10 @@ public class ClusterNode implements FutureCallback<HttpResponse> {
 
 	/**
 	 * Format an address which can be used in hashset or hashmap
-	 * 
-	 * @param hostname
-	 *            the address and port
+	 *
+	 * @param hostname the address and port
 	 * @return the address usable as a key
-	 * @throws URISyntaxException
-	 *             thrown if the hostname format is not valid
+	 * @throws URISyntaxException thrown if the hostname format is not valid
 	 */
 	public static String toAddress(String hostname) throws URISyntaxException {
 		return toUri(hostname).toString().intern();
