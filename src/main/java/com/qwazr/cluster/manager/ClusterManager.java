@@ -15,13 +15,13 @@
  */
 package com.qwazr.cluster.manager;
 
-import com.qwazr.cluster.ClusterServer;
 import com.qwazr.cluster.client.ClusterMultiClient;
 import com.qwazr.cluster.client.ClusterSingleClient;
 import com.qwazr.cluster.manager.ClusterNodeSet.Cache;
 import com.qwazr.cluster.service.ClusterNodeStatusJson;
 import com.qwazr.cluster.service.ClusterServiceStatusJson;
 import com.qwazr.cluster.service.ClusterServiceStatusJson.StatusEnum;
+import com.qwazr.utils.StringUtils;
 import com.qwazr.utils.server.ServerException;
 import com.qwazr.utils.threads.PeriodicThread;
 import org.apache.commons.lang3.ArrayUtils;
@@ -49,11 +49,7 @@ public class ClusterManager {
 		if (INSTANCE != null)
 			throw new IOException("Already loaded");
 		try {
-			File clusterDirectory = new File(dataDirectory,
-					ClusterServer.SERVICE_NAME_CLUSTER);
-			if (!clusterDirectory.exists())
-				clusterDirectory.mkdir();
-			INSTANCE = new ClusterManager(myAddress, clusterDirectory);
+			INSTANCE = new ClusterManager(myAddress);
 			if (INSTANCE.isMaster()) {
 				// First, we get the node list from another master (if any)
 				ClusterManager.INSTANCE.loadNodesFromOtherMaster();
@@ -67,8 +63,6 @@ public class ClusterManager {
 			throw new IOException(e);
 		}
 	}
-
-	public static final String CLUSTER_CONFIGURATION_NAME = "cluster.yaml";
 
 	private final ClusterNodeMap clusterNodeMap;
 
@@ -94,30 +88,23 @@ public class ClusterManager {
 
 	private final boolean isMaster;
 
-	private ClusterManager(String publicAddress, File clusterDirectory)
+	private ClusterManager(String publicAddress)
 			throws IOException, URISyntaxException {
 		myAddress = ClusterNode.toAddress(publicAddress);
 		logger.info("Server: " + myAddress);
 
 		// Load the configuration
-		File clusterConfigurationFile = new File(clusterDirectory,
-				CLUSTER_CONFIGURATION_NAME);
-		logger.info("Load cluster configuration file: "
-				+ clusterConfigurationFile.getAbsolutePath());
-		ClusterConfiguration clusterConfiguration = ClusterConfiguration
-				.newInstance(clusterConfigurationFile);
+		String masters_env = System.getenv("QWAZR_MASTERS");
 
 		// No configuration file ? Okay, we are a simple node
-		if (clusterConfiguration == null
-				|| clusterConfiguration.masters == null
-				|| clusterConfiguration.masters.isEmpty()) {
+		if (StringUtils.isEmpty(masters_env)) {
 			clusterMasterArray = null;
 			clusterNodeMap = null;
 			clusterClient = null;
 			checkTimeMap = null;
 			lastTimeCheck = null;
 			isMaster = false;
-			logger.info("No cluster configuration. This node is not part of a cluster.");
+			logger.info("No QWAZR_MASTERS environment variable. This node is not part of a cluster.");
 			return;
 		}
 
@@ -127,17 +114,19 @@ public class ClusterManager {
 
 		// Build the master list and check if I am a master
 		boolean isMaster = false;
-		clusterMasterArray = new String[clusterConfiguration.masters.size()];
+		HashSet<String> masterSet = new HashSet<>();
 		int i = 0;
-		for (String master : clusterConfiguration.masters) {
-			String masterAddress = ClusterNode.toAddress(master);
+		String[] masters = StringUtils.split(masters_env, ',');
+		for (String master : masters) {
+			String masterAddress = ClusterNode.toAddress(master.trim());
 			logger.info("Add a master: " + masterAddress);
-			clusterMasterArray[i++] = masterAddress;
+			masterSet.add(masterAddress);
 			if (masterAddress == myAddress) {
 				isMaster = true;
 				logger.info("I am a master!");
 			}
 		}
+		clusterMasterArray = masterSet.toArray(new String[masterSet.size()]);
 		clusterClient = new ClusterMultiClient(clusterMasterArray, 60000);
 		this.isMaster = isMaster;
 		if (!isMaster) {
