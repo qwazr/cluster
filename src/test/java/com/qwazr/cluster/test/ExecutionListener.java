@@ -15,20 +15,19 @@
  */
 package com.qwazr.cluster.test;
 
-import java.io.File;
-
+import com.google.common.io.Files;
+import com.qwazr.cluster.ClusterServer;
 import org.junit.runner.Description;
 import org.junit.runner.notification.RunListener;
 
-import com.qwazr.cluster.ClusterServer;
+import java.io.File;
 
 public class ExecutionListener extends RunListener {
 
-	private final String DATADIR_PATH = "src/test/resources/com/qwazr";
-
 	@Override
 	public void testRunStarted(Description description) throws Exception {
-		final File dataDir = new File(DATADIR_PATH);
+
+		final File dataDir = Files.createTempDir();
 		final String[] parameters = { "-d", dataDir.getAbsolutePath() };
 		ClusterServer.main(parameters);
 	}
