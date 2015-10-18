@@ -1,12 +1,12 @@
 /**
  * Copyright 2014-2015 Emmanuel Keller / QWAZR
- *
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,14 +15,13 @@
  */
 package com.qwazr.cluster.test;
 
-import java.net.URISyntaxException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-import javax.ws.rs.core.Response;
-
+import com.qwazr.cluster.ClusterServer;
+import com.qwazr.cluster.client.ClusterSingleClient;
+import com.qwazr.cluster.service.ClusterNodeRegisterJson;
+import com.qwazr.cluster.service.ClusterNodeStatusJson;
+import com.qwazr.cluster.service.ClusterServiceStatusJson;
+import com.qwazr.cluster.service.ClusterServiceStatusJson.StatusEnum;
+import com.qwazr.cluster.service.ClusterStatusJson;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.Assert;
 import org.junit.FixMethodOrder;
@@ -31,20 +30,18 @@ import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.qwazr.cluster.ClusterServer;
-import com.qwazr.cluster.client.ClusterSingleClient;
-import com.qwazr.cluster.service.ClusterNodeRegisterJson;
-import com.qwazr.cluster.service.ClusterNodeStatusJson;
-import com.qwazr.cluster.service.ClusterServiceStatusJson;
-import com.qwazr.cluster.service.ClusterServiceStatusJson.StatusEnum;
-import com.qwazr.cluster.service.ClusterStatusJson;
+import javax.ws.rs.core.Response;
+import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AllTest {
 
-	private final String CLIENT_ADDRESS = "http://"
-			+ ClusterServer.serverDefinition.defaultHostname + ':'
-			+ ClusterServer.serverDefinition.defaultWebServiceTcpPort;
+	private final String CLIENT_ADDRESS = "http://" + ClusterServer.serverDefinition.defaultHostname + ':'
+					+ ClusterServer.serverDefinition.defaultWebServiceTcpPort;
 
 	private final int CLIENT_TIMEOUT = 60000;
 
@@ -67,20 +64,18 @@ public class AllTest {
 
 	@Test
 	public void test10_register_two_services() throws URISyntaxException {
-		HashSet<String> serviceSet = new HashSet<String>(
-				Arrays.asList(SERVICES));
-		ClusterNodeStatusJson result = getClusterClient().register(
-				new ClusterNodeRegisterJson(CLIENT_ADDRESS, serviceSet));
+		HashSet<String> serviceSet = new HashSet<String>(Arrays.asList(SERVICES));
+		ClusterNodeStatusJson result = getClusterClient()
+						.register(new ClusterNodeRegisterJson(CLIENT_ADDRESS, serviceSet));
 		Assert.assertNotNull(result);
 		Assert.assertNull(result.error, result.error);
 	}
 
 	@Test
 	public void test11_check_register() throws URISyntaxException {
-		HashSet<String> serviceSet = new HashSet<String>(
-				Arrays.asList(SERVICES));
-		ClusterNodeStatusJson result = getClusterClient().register(
-				new ClusterNodeRegisterJson(CLIENT_ADDRESS, serviceSet));
+		HashSet<String> serviceSet = new HashSet<String>(Arrays.asList(SERVICES));
+		ClusterNodeStatusJson result = getClusterClient()
+						.register(new ClusterNodeRegisterJson(CLIENT_ADDRESS, serviceSet));
 		Assert.assertNotNull(result);
 		Assert.assertNull(result.error, result.error);
 	}
@@ -93,30 +88,26 @@ public class AllTest {
 		Assert.assertEquals(SERVICES.length, result.services.size());
 		Assert.assertNotNull(result.active_nodes);
 		Assert.assertNotNull(result.inactive_nodes);
-		Assert.assertTrue(result.active_nodes.size() == 1
-				|| result.inactive_nodes.size() == 1);
+		Assert.assertTrue(result.active_nodes.size() == 1 || result.inactive_nodes.size() == 1);
 	}
 
 	/**
 	 * We wait 30 seconds until the service is visible as active.
-	 * 
+	 *
 	 * @throws URISyntaxException
 	 * @throws InterruptedException
 	 */
 	@Test
-	public void test15_check_service_activation() throws URISyntaxException,
-			InterruptedException {
+	public void test15_check_service_activation() throws URISyntaxException, InterruptedException {
 		int count = 0;
 		int activated_count = 0;
 		while (count++ < 20) {
 			activated_count = 0;
 			for (String service : SERVICES) {
 				logger.info("Check service activation: " + count);
-				ClusterServiceStatusJson result = getClusterClient()
-						.getServiceStatus(service);
+				ClusterServiceStatusJson result = getClusterClient().getServiceStatus(service);
 				Assert.assertNotNull(result);
-				Assert.assertTrue(result.inactive_count == 1
-						|| result.active_count == 1);
+				Assert.assertTrue(result.inactive_count == 1 || result.active_count == 1);
 				Assert.assertNotNull(result.status);
 				if (result.active_count == 1) {
 					Assert.assertNotNull(result.active);

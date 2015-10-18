@@ -1,12 +1,12 @@
 /**
  * Copyright 2015 Emmanuel Keller / QWAZR
- *
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,6 +19,8 @@ import com.qwazr.cluster.manager.ClusterManager;
 import com.qwazr.cluster.manager.ClusterNode;
 import com.qwazr.utils.server.ServerException;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.util.HashMap;
@@ -28,9 +30,15 @@ import java.util.Set;
 
 public class ClusterServiceImpl implements ClusterServiceInterface {
 
+	@Context
+	HttpServletRequest request;
+
 	@Override
 	public ClusterStatusJson list() {
 		try {
+			//System.out.println("PRINCIPAL: " + request.getUserPrincipal().getName());
+			//if (!request.isUserInRole(ClusterServer.SERVICE_NAME_CLUSTER))
+			//	throw new ServerException(Status.UNAUTHORIZED);
 			ClusterManager manager = ClusterManager.INSTANCE;
 			List<ClusterNode> clusterNodeList = manager.getNodeList();
 			if (clusterNodeList == null)
@@ -54,8 +62,7 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 			if (clusterNodeList == null)
 				return nodeMap;
 			for (ClusterNode clusterNode : clusterNodeList)
-				if (clusterNode.services != null
-						&& !clusterNode.services.isEmpty())
+				if (clusterNode.services != null && !clusterNode.services.isEmpty())
 					nodeMap.put(clusterNode.address, clusterNode.services);
 			return nodeMap;
 		} catch (ServerException e) {
@@ -66,9 +73,7 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 	@Override
 	public Response check(String checkValue, String checkAddr) {
 		ClusterManager.INSTANCE.check(checkAddr);
-		return Response.ok()
-				.header(ClusterServiceInterface.HEADER_CHECK_NAME, checkValue)
-				.build();
+		return Response.ok().header(ClusterServiceInterface.HEADER_CHECK_NAME, checkValue).build();
 	}
 
 	@Override
@@ -77,8 +82,7 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 			throw new ServerException(Status.NOT_ACCEPTABLE).getJsonException();
 		ClusterManager manager = ClusterManager.INSTANCE;
 		try {
-			ClusterNode clusterNode = manager.upsertNode(register.address,
-					register.services);
+			ClusterNode clusterNode = manager.upsertNode(register.address, register.services);
 			return clusterNode.getStatus();
 		} catch (Exception e) {
 			throw ServerException.getJsonException(e);
@@ -92,8 +96,7 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 		ClusterManager manager = ClusterManager.INSTANCE;
 		try {
 			ClusterNode clusterNode = manager.removeNode(address);
-			return clusterNode == null ? Response.status(Status.NOT_FOUND)
-					.build() : Response.ok().build();
+			return clusterNode == null ? Response.status(Status.NOT_FOUND).build() : Response.ok().build();
 		} catch (Exception e) {
 			throw ServerException.getTextException(e);
 		}

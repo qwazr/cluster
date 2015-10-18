@@ -1,12 +1,12 @@
 /**
  * Copyright 2015 Emmanuel Keller / QWAZR
- *
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -27,29 +27,24 @@ import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.Set;
 
-public class ClusterMultiClient extends
-		JsonMultiClientAbstract<String, ClusterSingleClient> implements
-		ClusterServiceInterface {
+public class ClusterMultiClient extends JsonMultiClientAbstract<String, ClusterSingleClient>
+				implements ClusterServiceInterface {
 
-	private static final Logger logger = LoggerFactory
-			.getLogger(ClusterMultiClient.class);
+	private static final Logger logger = LoggerFactory.getLogger(ClusterMultiClient.class);
 
-	public ClusterMultiClient(String[] urls, Integer msTimeOut)
-			throws URISyntaxException {
+	public ClusterMultiClient(String[] urls, Integer msTimeOut) throws URISyntaxException {
 		// TODO Pass executor
 		super(null, new ClusterSingleClient[urls.length], urls, msTimeOut);
 	}
 
 	@Override
-	protected ClusterSingleClient newClient(String url, Integer msTimeOut)
-			throws URISyntaxException {
+	protected ClusterSingleClient newClient(String url, Integer msTimeOut) throws URISyntaxException {
 		return new ClusterSingleClient(url, msTimeOut);
 	}
 
 	@Override
 	public ClusterStatusJson list() {
-		WebAppExceptionHolder exceptionHolder = new WebAppExceptionHolder(
-				logger);
+		WebAppExceptionHolder exceptionHolder = new WebAppExceptionHolder(logger);
 		for (ClusterSingleClient client : this) {
 			try {
 				return client.list();
@@ -62,8 +57,7 @@ public class ClusterMultiClient extends
 
 	@Override
 	public Map<String, Set<String>> getNodes() {
-		WebAppExceptionHolder exceptionHolder = new WebAppExceptionHolder(
-				logger);
+		WebAppExceptionHolder exceptionHolder = new WebAppExceptionHolder(logger);
 		for (ClusterSingleClient client : this) {
 			try {
 				return client.getNodes();
@@ -76,8 +70,7 @@ public class ClusterMultiClient extends
 
 	@Override
 	public ClusterNodeStatusJson register(ClusterNodeRegisterJson register) {
-		WebAppExceptionHolder exceptionHolder = new WebAppExceptionHolder(
-				logger);
+		WebAppExceptionHolder exceptionHolder = new WebAppExceptionHolder(logger);
 		ClusterNodeStatusJson result = null;
 		for (ClusterSingleClient client : this) {
 			try {
@@ -110,8 +103,7 @@ public class ClusterMultiClient extends
 
 	@Override
 	public ClusterServiceStatusJson getServiceStatus(String service_name) {
-		WebAppExceptionHolder exceptionHolder = new WebAppExceptionHolder(
-				logger);
+		WebAppExceptionHolder exceptionHolder = new WebAppExceptionHolder(logger);
 		for (ClusterSingleClient client : this) {
 			try {
 				return client.getServiceStatus(service_name);
@@ -124,8 +116,7 @@ public class ClusterMultiClient extends
 
 	@Override
 	public String[] getActiveNodes(String service_name) {
-		WebAppExceptionHolder exceptionHolder = new WebAppExceptionHolder(
-				logger);
+		WebAppExceptionHolder exceptionHolder = new WebAppExceptionHolder(logger);
 		for (ClusterSingleClient client : this) {
 			try {
 				return client.getActiveNodes(service_name);
@@ -138,8 +129,7 @@ public class ClusterMultiClient extends
 
 	@Override
 	public String getActiveNodeRandom(String service_name) {
-		WebAppExceptionHolder exceptionHolder = new WebAppExceptionHolder(
-				logger);
+		WebAppExceptionHolder exceptionHolder = new WebAppExceptionHolder(logger);
 		for (ClusterSingleClient client : this) {
 			try {
 				return client.getActiveNodeRandom(service_name);
