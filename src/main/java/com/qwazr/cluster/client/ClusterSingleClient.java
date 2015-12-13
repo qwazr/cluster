@@ -52,7 +52,7 @@ public class ClusterSingleClient extends JsonClientAbstract implements ClusterSe
 	public Map<String, Set<String>> getNodes() {
 		UBuilder uriBuilder = new UBuilder("/cluster/nodes");
 		Request request = Request.Get(uriBuilder.build());
-		return (Map<String, Set<String>>) commonServiceRequest(request, null, msTimeOut, MapStringSetStringTypeRef,
+		return commonServiceRequest(request, null, msTimeOut, MapStringSetStringTypeRef,
 						200);
 	}
 
@@ -93,7 +93,7 @@ public class ClusterSingleClient extends JsonClientAbstract implements ClusterSe
 	public String[] getActiveNodes(String service_name) {
 		UBuilder uriBuilder = new UBuilder("/cluster/services/", service_name, "/active");
 		Request request = Request.Get(uriBuilder.build());
-		return (String[]) commonServiceRequest(request, null, msTimeOut, String[].class, 200);
+		return commonServiceRequest(request, null, msTimeOut, String[].class, 200);
 	}
 
 	@Override

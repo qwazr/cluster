@@ -23,7 +23,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 @JsonInclude(Include.NON_NULL)
 public class ClusterNodeStatusJson {
 
-	public static enum State {
+	public enum State {
 
 		/**
 		 * The node is online
@@ -43,7 +43,7 @@ public class ClusterNodeStatusJson {
 		/**
 		 * The status of the node is not yet determined
 		 */
-		undetermined;
+		undetermined
 	}
 
 	final public boolean online;

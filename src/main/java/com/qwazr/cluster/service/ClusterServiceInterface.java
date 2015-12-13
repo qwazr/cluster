@@ -28,47 +28,46 @@ import java.util.Set;
 @Path("/cluster")
 public interface ClusterServiceInterface {
 
-	public final String HEADER_CHECK_NAME = "X-OSS-CLUSTER-CHECK-TOKEN";
-	public final String HEADER_CHECK_ADDR = "X-OSS-CLUSTER-CHECK-ADDR";
+	String HEADER_CHECK_NAME = "X-OSS-CLUSTER-CHECK-TOKEN";
+	String HEADER_CHECK_ADDR = "X-OSS-CLUSTER-CHECK-ADDR";
 
 	@GET
 	@Path("/")
 	@Produces(MediaType.APPLICATION_JSON)
-	public ClusterStatusJson list();
+	ClusterStatusJson list();
 
 	@GET
 	@Path("/nodes")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Map<String, Set<String>> getNodes();
+	Map<String, Set<String>> getNodes();
 
 	@POST
 	@Path("/")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public ClusterNodeStatusJson register(ClusterNodeRegisterJson register);
+	ClusterNodeStatusJson register(ClusterNodeRegisterJson register);
 
 	@DELETE
 	@Path("/")
-	public Response unregister(@QueryParam("address") String address);
+	Response unregister(@QueryParam("address") String address);
 
 	@HEAD
 	@Path("/")
-	public Response check(@HeaderParam(HEADER_CHECK_NAME) String checkValue,
-					@HeaderParam(HEADER_CHECK_ADDR) String checkAddr);
+	Response check(@HeaderParam(HEADER_CHECK_NAME) String checkValue, @HeaderParam(HEADER_CHECK_ADDR) String checkAddr);
 
 	@GET
 	@Path("/services/{service_name}")
 	@Produces(MediaType.APPLICATION_JSON)
-	public ClusterServiceStatusJson getServiceStatus(@PathParam("service_name") String service_name);
+	ClusterServiceStatusJson getServiceStatus(@PathParam("service_name") String service_name);
 
 	@GET
 	@Path("/services/{service_name}/active")
 	@Produces(MediaType.APPLICATION_JSON)
-	public String[] getActiveNodes(@PathParam("service_name") String service_name);
+	String[] getActiveNodes(@PathParam("service_name") String service_name);
 
 	@GET
 	@Path("/services/{service_name}/active/random")
 	@Produces(MediaType.TEXT_PLAIN)
-	public String getActiveNodeRandom(@PathParam("service_name") String service_name);
+	String getActiveNodeRandom(@PathParam("service_name") String service_name);
 
 }

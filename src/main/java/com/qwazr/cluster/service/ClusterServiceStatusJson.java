@@ -27,7 +27,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 public class ClusterServiceStatusJson {
 
 	public enum StatusEnum {
-		ok, degraded, failure;
+		ok, degraded, failure
 	}
 
 	public final StatusEnum status;
