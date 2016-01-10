@@ -1,12 +1,12 @@
 /**
  * Copyright 2014-2016 Emmanuel Keller / QWAZR
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -27,8 +27,7 @@ import org.slf4j.LoggerFactory;
 
 public class ClusterMonitoringThread extends PeriodicThread {
 
-	private static final Logger logger = LoggerFactory
-			.getLogger(ClusterMonitoringThread.class);
+	private static final Logger logger = LoggerFactory.getLogger(ClusterMonitoringThread.class);
 
 	private final RequestConfig requestConfig;
 	private final CloseableHttpAsyncClient httpclient;
@@ -36,11 +35,9 @@ public class ClusterMonitoringThread extends PeriodicThread {
 	ClusterMonitoringThread(int monitoring_period_seconds) {
 		super("Nodes monitoring", monitoring_period_seconds);
 		setDaemon(true);
-		requestConfig = RequestConfig.custom()
-				.setSocketTimeout(monitoring_period)
-				.setConnectTimeout(monitoring_period).build();
-		httpclient = HttpAsyncClients.custom()
-				.setDefaultRequestConfig(requestConfig).build();
+		requestConfig = RequestConfig.custom().setSocketTimeout(monitoring_period).setConnectTimeout(monitoring_period)
+				.build();
+		httpclient = HttpAsyncClients.custom().setDefaultRequestConfig(requestConfig).build();
 		httpclient.start();
 		start();
 	}
@@ -48,8 +45,7 @@ public class ClusterMonitoringThread extends PeriodicThread {
 	@Override
 	public void runner() {
 		try {
-			for (ClusterNode clusterNode : ClusterManager.INSTANCE
-					.getNodeList())
+			for (ClusterNode clusterNode : ClusterManager.INSTANCE.getNodeList())
 				clusterNode.startCheck(httpclient);
 		} catch (ServerException e) {
 			logger.error(e.getMessage(), e);

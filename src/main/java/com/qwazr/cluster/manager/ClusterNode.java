@@ -59,8 +59,7 @@ public class ClusterNode implements FutureCallback<HttpResponse> {
 	 * Should never fail. The class will take care of the status of the cluster
 	 * node.
 	 *
-	 * @param address  The hostname of the node
-	 * @param services The set of services provided by this node
+	 * @param clusterNodeJson The set of services and groups provided by this node
 	 * @throws URISyntaxException
 	 * @throws ServerException
 	 */
@@ -99,6 +98,7 @@ public class ClusterNode implements FutureCallback<HttpResponse> {
 		HttpHead httpHead = new HttpHead(checkURI);
 		httpHead.setHeader(ClusterServiceInterface.HEADER_CHECK_NAME, checkToken);
 		httpHead.setHeader(ClusterServiceInterface.HEADER_CHECK_ADDR, ClusterManager.INSTANCE.myAddress);
+		httpHead.setHeader("Connection", "close");
 		latencyStart = System.currentTimeMillis();
 		httpclient.execute(httpHead, this);
 	}
