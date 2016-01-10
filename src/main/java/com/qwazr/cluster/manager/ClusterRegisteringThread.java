@@ -1,12 +1,12 @@
 /**
  * Copyright 2014-2016 Emmanuel Keller / QWAZR
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,11 +16,10 @@
 package com.qwazr.cluster.manager;
 
 import com.qwazr.cluster.client.ClusterMultiClient;
-import com.qwazr.cluster.service.ClusterNodeRegisterJson;
+import com.qwazr.cluster.service.ClusterNodeJson;
 import com.qwazr.utils.threads.PeriodicThread;
 import com.qwazr.utils.threads.ThreadUtils;
 import org.apache.commons.lang3.RandomUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,18 +28,18 @@ import java.util.Date;
 
 public class ClusterRegisteringThread extends PeriodicThread {
 
-	private static final Logger logger = LoggerFactory
-			.getLogger(ClusterRegisteringThread.class);
+	private static final Logger logger = LoggerFactory.getLogger(ClusterRegisteringThread.class);
 
 	private final ClusterMultiClient clusterClient;
 
-	private final String[] services;
+	private final ClusterNodeJson clusterNodeDef;
 
-	ClusterRegisteringThread(int monitoring_period_seconds, ClusterMultiClient clusterClient, String... services) {
+	ClusterRegisteringThread(int monitoring_period_seconds, ClusterMultiClient clusterClient,
+			ClusterNodeJson clusterNodeDef) {
 		super("Nodes registration", monitoring_period_seconds);
 		setDaemon(true);
 		this.clusterClient = clusterClient;
-		this.services = services;
+		this.clusterNodeDef = clusterNodeDef;
 		start();
 	}
 
@@ -51,10 +50,10 @@ public class ClusterRegisteringThread extends PeriodicThread {
 		if (lastCheck == null || lastCheck < removeTime) {
 			try {
 				if (logger.isInfoEnabled())
-					logger.info("Registering to the masters: "
-							+ StringUtils.join(services, ' ') + " last check: " +
-							(lastCheck == null ? 0 : new Date(lastCheck)));
-				clusterClient.register(new ClusterNodeRegisterJson(ClusterManager.INSTANCE.myAddress, services));
+					logger.info("Registering to the masters - last check: " + (lastCheck == null ?
+							0 :
+							new Date(lastCheck)));
+				clusterClient.register(clusterNodeDef);
 			} catch (WebApplicationException e) {
 				logger.error("Registration failed", e);
 			}

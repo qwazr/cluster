@@ -1,12 +1,12 @@
 /**
  * Copyright 2014-2016 Emmanuel Keller / QWAZR
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,14 +15,14 @@
  */
 package com.qwazr.cluster.manager;
 
+import com.qwazr.cluster.service.ClusterNodeJson;
+import com.qwazr.utils.LockUtils.ReadWriteLock;
+import com.qwazr.utils.server.ServerException;
+
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
-
-import com.qwazr.utils.LockUtils.ReadWriteLock;
-import com.qwazr.utils.server.ServerException;
 
 public class ClusterNodeMap {
 
@@ -30,20 +30,27 @@ public class ClusterNodeMap {
 
 	private final HashMap<String, ClusterNode> nodesMap;
 	private final HashMap<String, ClusterNodeSet> nodesByServiceMap;
+	private final HashMap<String, ClusterNodeSet> nodesByGroupMap;
 
 	private volatile HashMap<String, ClusterNodeSet> cacheNodesByServiceMap;
+	private volatile HashMap<String, ClusterNodeSet> cacheNodesByGroupMap;
 	private volatile List<ClusterNode> cacheNodesList;
 
 	ClusterNodeMap() {
 		nodesMap = new HashMap<String, ClusterNode>();
 		nodesByServiceMap = new HashMap<String, ClusterNodeSet>();
+		nodesByGroupMap = new HashMap<String, ClusterNodeSet>();
 		buildCacheNodesByServiceMap();
+		buildCacheNodesByGroupMap();
 		buildCacheNodesList();
 	}
 
-	private void buildCacheNodesByServiceMap() {
-		cacheNodesByServiceMap = new HashMap<String, ClusterNodeSet>(
-				nodesByServiceMap);
+	private synchronized void buildCacheNodesByServiceMap() {
+		cacheNodesByServiceMap = new HashMap<String, ClusterNodeSet>(nodesByServiceMap);
+	}
+
+	private synchronized void buildCacheNodesByGroupMap() {
+		cacheNodesByGroupMap = new HashMap<String, ClusterNodeSet>(nodesByGroupMap);
 	}
 
 	private void buildCacheNodesList() {
@@ -54,8 +61,16 @@ public class ClusterNodeMap {
 	 * @param service
 	 * @return a list of nodes for the given service
 	 */
-	ClusterNodeSet getNodeSet(String service) {
-		return cacheNodesByServiceMap.get(service.intern());
+	ClusterNodeSet getNodeSetByService(String service) {
+		return cacheNodesByServiceMap.get(service);
+	}
+
+	/**
+	 * @param group
+	 * @return a set of nodes for the given group
+	 */
+	ClusterNodeSet getNodeSetByGroup(String group) {
+		return cacheNodesByGroupMap.get(group);
 	}
 
 	/**
@@ -66,116 +81,126 @@ public class ClusterNodeMap {
 	}
 
 	/**
-	 * Register the node for the given service
-	 * 
-	 * @param node
-	 *            the node to register
-	 * @param service
-	 *            any service
+	 * Register the node for the given key
+	 *
+	 * @param node     the node to register
+	 * @param nodesMap the node map
 	 */
-	private void registerService(ClusterNode node, String service) {
-		service = service.intern();
-		ClusterNodeSet nodeSet = nodesByServiceMap.get(service);
+	private static void register(ClusterNode node, HashMap<String, ClusterNodeSet> nodesMap, String key) {
+		ClusterNodeSet nodeSet = nodesMap.get(key);
 		if (nodeSet == null) {
 			nodeSet = new ClusterNodeSet();
-			nodesByServiceMap.put(service, nodeSet);
+			nodesMap.put(key, nodeSet);
 		}
 		nodeSet.insert(node);
 	}
 
 	/**
-	 * Unregister the node from a given service
-	 * 
-	 * @param node
-	 *            the node to unregister
-	 * @param service
-	 *            any service
+	 * Unregister the node from a given key
+	 *
+	 * @param node     the node to unregister
+	 * @param nodesMap the node map
 	 */
-	private void unregisterService(ClusterNode node, String service) {
-		service = service.intern();
-		ClusterNodeSet nodeSet = nodesByServiceMap.get(service);
+	private static void unregister(ClusterNode node, HashMap<String, ClusterNodeSet> nodesMap, String key) {
+		ClusterNodeSet nodeSet = nodesMap.get(key);
 		if (nodeSet == null)
 			return;
 		nodeSet.remove(node);
 		if (nodeSet.isEmpty())
-			nodesByServiceMap.remove(service);
+			nodesMap.remove(key);
 	}
 
 	/**
 	 * Update the services of an existing node
-	 * 
-	 * @param clusterNode
-	 *            the node to update
-	 * @param newServices
-	 *            The new services
+	 *
+	 * @param node    the node to update
+	 * @param newNode The new node parameters
 	 */
-	private void updateServices(ClusterNode node, Set<String> newServices) {
+	private void update(ClusterNode node, ClusterNodeJson newNode) {
 		synchronized (nodesByServiceMap) {
 			if (node.services != null)
 				for (String service : node.services)
-					unregisterService(node, service);
-			node.setServices(newServices);
+					unregister(node, nodesByServiceMap, service);
+			node.setServices(newNode.services);
 			if (node.services != null)
 				for (String service : node.services)
-					registerService(node, service);
+					register(node, nodesByServiceMap, service);
 			buildCacheNodesByServiceMap();
+		}
+		synchronized (nodesByGroupMap) {
+			if (node.groups != null)
+				for (String group : node.groups)
+					unregister(node, nodesByGroupMap, group);
+			node.setGroups(newNode.groups);
+			if (node.groups != null)
+				for (String group : node.groups)
+					register(node, nodesByGroupMap, group);
+			buildCacheNodesByGroupMap();
 		}
 	}
 
 	/**
 	 * Register the services for a given node
-	 * 
-	 * @param clusterNode
-	 *            the node to register
+	 *
+	 * @param node the node to register
 	 */
-	private void registerServices(ClusterNode node) {
-		if (node.services == null)
-			return;
-		synchronized (nodesByServiceMap) {
-			for (String service : node.services)
-				registerService(node, service);
-			buildCacheNodesByServiceMap();
+	private void register(ClusterNode node) {
+		if (node.services != null) {
+			synchronized (nodesByServiceMap) {
+				for (String service : node.services)
+					register(node, nodesByServiceMap, service);
+				buildCacheNodesByServiceMap();
+			}
+		}
+		if (node.groups != null) {
+			synchronized (nodesByGroupMap) {
+				for (String group : node.groups)
+					register(node, nodesByGroupMap, group);
+				buildCacheNodesByGroupMap();
+			}
 		}
 	}
 
 	/**
 	 * Unregister the services for the given node.
-	 * 
-	 * @param node
-	 *            the node to unregister
+	 *
+	 * @param node the node to unregister
 	 */
-	private void unregisterServices(ClusterNode node) {
-		if (node.services == null)
-			return;
-		synchronized (nodesByServiceMap) {
-			for (String service : node.services)
-				unregisterService(node, service);
-			buildCacheNodesByServiceMap();
+	private void unregister(ClusterNode node) {
+		if (node.services != null) {
+			synchronized (nodesByServiceMap) {
+				for (String service : node.services)
+					unregister(node, nodesByServiceMap, service);
+				buildCacheNodesByServiceMap();
+			}
+		}
+		if (node.groups != null) {
+			synchronized (nodesByGroupMap) {
+				for (String group : node.groups)
+					unregister(node, nodesByGroupMap, group);
+				buildCacheNodesByGroupMap();
+			}
 		}
 	}
 
 	/**
 	 * Insert or update a node
-	 * 
-	 * @param address
-	 *            the address of the node
-	 * @param services
-	 *            the services provided by the node
+	 *
+	 * @param clusterNodeJson the node to register
 	 * @return the node record
 	 * @throws URISyntaxException
 	 * @throws ServerException
 	 */
-	ClusterNode upsert(String address, Set<String> services)
-			throws URISyntaxException, ServerException {
+	ClusterNode upsert(ClusterNodeJson clusterNodeJson) throws URISyntaxException, ServerException {
 
-		ClusterNode newNode = new ClusterNode(address, services);
+		ClusterNode newNode = new ClusterNode(clusterNodeJson);
 
 		// Let's check if we already have the node
 		readWriteLock.r.lock();
 		try {
 			ClusterNode oldNode = nodesMap.get(newNode.address);
 			if (oldNode != null) {
-				updateServices(oldNode, services);
+				update(oldNode, clusterNodeJson);
 				return oldNode;
 			}
 		} finally {
@@ -186,7 +211,7 @@ public class ClusterNodeMap {
 		readWriteLock.w.lock();
 		try {
 			nodesMap.put(newNode.address, newNode);
-			registerServices(newNode);
+			register(newNode);
 			buildCacheNodesList();
 			return newNode;
 		} finally {
@@ -196,9 +221,8 @@ public class ClusterNodeMap {
 
 	/**
 	 * Remove the node
-	 * 
-	 * @param address
-	 *            the address of the node, in the form host:port
+	 *
+	 * @param address the address of the node, in the form host:port
 	 * @return the removed node
 	 * @throws URISyntaxException
 	 */
@@ -222,7 +246,7 @@ public class ClusterNodeMap {
 			if (node == null)
 				return null;
 			// Removed from the service map
-			unregisterServices(node);
+			unregister(node);
 			buildCacheNodesList();
 			return node;
 		} finally {
@@ -233,11 +257,9 @@ public class ClusterNodeMap {
 	void status(ClusterNode node) {
 		if (node == null)
 			return;
-		if (node.services == null || node.services.isEmpty())
-			return;
 		readWriteLock.r.lock();
 		try {
-			registerServices(node);
+			register(node);
 		} finally {
 			readWriteLock.r.unlock();
 		}
@@ -245,6 +267,10 @@ public class ClusterNodeMap {
 
 	HashMap<String, ClusterNodeSet> getServicesMap() {
 		return cacheNodesByServiceMap;
+	}
+
+	HashMap<String, ClusterNodeSet> getGroupsMap() {
+		return cacheNodesByGroupMap;
 	}
 
 }

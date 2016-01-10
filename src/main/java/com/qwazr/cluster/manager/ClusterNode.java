@@ -1,12 +1,12 @@
 /**
  * Copyright 2015-2016 Emmanuel Keller / QWAZR
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,12 +15,11 @@
  */
 package com.qwazr.cluster.manager;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Date;
-import java.util.Set;
-import java.util.UUID;
-
+import com.qwazr.cluster.service.ClusterNodeJson;
+import com.qwazr.cluster.service.ClusterNodeStatusJson;
+import com.qwazr.cluster.service.ClusterNodeStatusJson.State;
+import com.qwazr.cluster.service.ClusterServiceInterface;
+import com.qwazr.utils.server.ServerException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
@@ -30,19 +29,21 @@ import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.qwazr.cluster.service.ClusterNodeStatusJson;
-import com.qwazr.cluster.service.ClusterNodeStatusJson.State;
-import com.qwazr.cluster.service.ClusterServiceInterface;
-import com.qwazr.utils.server.ServerException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Date;
+import java.util.Set;
+import java.util.UUID;
 
 public class ClusterNode implements FutureCallback<HttpResponse> {
 
-	private static final Logger logger = LoggerFactory
-			.getLogger(ClusterNode.class);
+	private static final Logger logger = LoggerFactory.getLogger(ClusterNode.class);
 
 	public final String address;
 
 	public Set<String> services;
+
+	public Set<String> groups;
 
 	final URI baseURI;
 
@@ -58,18 +59,17 @@ public class ClusterNode implements FutureCallback<HttpResponse> {
 	 * Should never fail. The class will take care of the status of the cluster
 	 * node.
 	 *
-	 * @param hostname The hostname of the node
+	 * @param address  The hostname of the node
 	 * @param services The set of services provided by this node
 	 * @throws URISyntaxException
 	 * @throws ServerException
 	 */
-	ClusterNode(String address, Set<String> services)
-			throws URISyntaxException, ServerException {
-		this.baseURI = toUri(address);
+	ClusterNode(ClusterNodeJson clusterNodeJson) throws URISyntaxException, ServerException {
+		this.baseURI = toUri(clusterNodeJson.address);
 		this.address = baseURI.toString();
-		this.services = services;
-		checkURI = new URI(baseURI.getScheme(), null, baseURI.getHost(),
-				baseURI.getPort(), "/cluster", null, null);
+		this.services = clusterNodeJson.services;
+		this.groups = clusterNodeJson.groups;
+		checkURI = new URI(baseURI.getScheme(), null, baseURI.getHost(), baseURI.getPort(), "/cluster", null, null);
 		latencyStart = 0;
 		checkToken = null;
 		setStatus(0, State.undetermined, null, null);
@@ -83,10 +83,8 @@ public class ClusterNode implements FutureCallback<HttpResponse> {
 	}
 
 	private void setStatus(long time, State state, Long latency, String error) {
-		this.clusterNodeStatus = new ClusterNodeStatusJson(time == 0 ? null
-				: new Date(time), state, latency, error,
-				clusterNodeStatus == null ? null
-						: clusterNodeStatus.error_since);
+		this.clusterNodeStatus = new ClusterNodeStatusJson(time == 0 ? null : new Date(time), state, latency, error,
+				clusterNodeStatus == null ? null : clusterNodeStatus.error_since);
 		if (error != null)
 			logger.warn(error);
 		try {
@@ -111,32 +109,19 @@ public class ClusterNode implements FutureCallback<HttpResponse> {
 		long latency = time - latencyStart;
 		int responseCode = response.getStatusLine().getStatusCode();
 		if (responseCode != 200) {
-			setStatus(
-					time,
-					State.unexpected_response,
-					latency,
-					"Unexpected response: " + responseCode + " - "
-							+ checkURI.toString());
+			setStatus(time, State.unexpected_response, latency,
+					"Unexpected response: " + responseCode + " - " + checkURI.toString());
 			return;
 		}
-		Header header = response
-				.getFirstHeader(ClusterServiceInterface.HEADER_CHECK_NAME);
+		Header header = response.getFirstHeader(ClusterServiceInterface.HEADER_CHECK_NAME);
 		if (header == null) {
-			setStatus(
-					time,
-					State.unexpected_response,
-					latency,
-					"Unexpected response: " + responseCode + " - "
-							+ checkURI.toString());
+			setStatus(time, State.unexpected_response, latency,
+					"Unexpected response: " + responseCode + " - " + checkURI.toString());
 			return;
 		}
 		if (!checkToken.equals(header.getValue())) {
-			setStatus(
-					time,
-					State.unexpected_response,
-					latency,
-					"Unexpected response: " + responseCode + " - "
-							+ checkURI.toString());
+			setStatus(time, State.unexpected_response, latency,
+					"Unexpected response: " + responseCode + " - " + checkURI.toString());
 			return;
 		}
 		setStatus(time, State.online, latency, null);
@@ -146,8 +131,7 @@ public class ClusterNode implements FutureCallback<HttpResponse> {
 	public void failed(Exception ex) {
 		long time = System.currentTimeMillis();
 		long latency = time - latencyStart;
-		setStatus(time, State.unreachable, latency, "Cluster node failure  - "
-				+ checkURI.toString());
+		setStatus(time, State.unreachable, latency, "Cluster node failure  - " + checkURI.toString());
 	}
 
 	@Override
@@ -170,18 +154,27 @@ public class ClusterNode implements FutureCallback<HttpResponse> {
 	 *
 	 * @param services A list of service name
 	 */
-	public void setServices(Set<String> services) {
+	void setServices(Set<String> services) {
 		this.services = services;
 		logger.info("Update services for " + address);
+	}
+
+	/**
+	 * Update the service list
+	 *
+	 * @param groups A list of service name
+	 */
+	void setGroups(Set<String> groups) {
+		this.groups = groups;
+		logger.info("Update groups for " + address);
 	}
 
 	private static URI toUri(String address) throws URISyntaxException {
 		if (!address.contains("//"))
 			address = "//" + address;
 		URI u = new URI(address);
-		return new URI(StringUtils.isEmpty(u.getScheme()) ? "http"
-				: u.getScheme(), null, u.getHost(), u.getPort(), null, null,
-				null);
+		return new URI(StringUtils.isEmpty(u.getScheme()) ? "http" : u.getScheme(), null, u.getHost(), u.getPort(),
+				null, null, null);
 	}
 
 	/**

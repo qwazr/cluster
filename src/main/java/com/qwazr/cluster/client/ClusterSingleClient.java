@@ -30,7 +30,6 @@ import javax.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Map;
-import java.util.Set;
 
 public class ClusterSingleClient extends JsonClientAbstract implements ClusterServiceInterface {
 
@@ -45,19 +44,18 @@ public class ClusterSingleClient extends JsonClientAbstract implements ClusterSe
 		return commonServiceRequest(request, null, msTimeOut, ClusterStatusJson.class, 200);
 	}
 
-	public final static TypeReference<Map<String, Set<String>>> MapStringSetStringTypeRef = new TypeReference<Map<String, Set<String>>>() {
+	public final static TypeReference<Map<String, ClusterNodeJson>> MapStringClusterNodeJsonTypeRef = new TypeReference<Map<String, ClusterNodeJson>>() {
 	};
 
 	@Override
-	public Map<String, Set<String>> getNodes() {
+	public Map<String, ClusterNodeJson> getNodes() {
 		UBuilder uriBuilder = new UBuilder("/cluster/nodes");
 		Request request = Request.Get(uriBuilder.build());
-		return commonServiceRequest(request, null, msTimeOut, MapStringSetStringTypeRef,
-						200);
+		return commonServiceRequest(request, null, msTimeOut, MapStringClusterNodeJsonTypeRef, 200);
 	}
 
 	@Override
-	public ClusterNodeStatusJson register(ClusterNodeRegisterJson register) {
+	public ClusterNodeStatusJson register(ClusterNodeJson register) {
 		UBuilder uriBuilder = new UBuilder("/cluster");
 		Request request = Request.Post(uriBuilder.build());
 		return commonServiceRequest(request, register, msTimeOut, ClusterNodeStatusJson.class, 200);
@@ -83,23 +81,36 @@ public class ClusterSingleClient extends JsonClientAbstract implements ClusterSe
 	}
 
 	@Override
-	public ClusterServiceStatusJson getServiceStatus(String service_name) {
+	public ClusterKeyStatusJson getServiceStatus(String service_name) {
 		UBuilder uriBuilder = new UBuilder("/cluster/services/", service_name);
 		Request request = Request.Get(uriBuilder.build());
-		return commonServiceRequest(request, null, msTimeOut, ClusterServiceStatusJson.class, 200);
+		return commonServiceRequest(request, null, msTimeOut, ClusterKeyStatusJson.class, 200);
 	}
 
 	@Override
-	public String[] getActiveNodes(String service_name) {
+	public ClusterKeyStatusJson getGroupStatus(String group_name) {
+		UBuilder uriBuilder = new UBuilder("/cluster/groups/", group_name);
+		Request request = Request.Get(uriBuilder.build());
+		return commonServiceRequest(request, null, msTimeOut, ClusterKeyStatusJson.class, 200);
+	}
+
+	@Override
+	public String[] getActiveNodesByService(String service_name) {
 		UBuilder uriBuilder = new UBuilder("/cluster/services/", service_name, "/active");
 		Request request = Request.Get(uriBuilder.build());
 		return commonServiceRequest(request, null, msTimeOut, String[].class, 200);
 	}
 
 	@Override
-	public String getActiveNodeRandom(String service_name) {
+	public String[] getActiveNodesByGroup(String group_name) {
+		UBuilder uriBuilder = new UBuilder("/cluster/groups/", group_name, "/active");
+		Request request = Request.Get(uriBuilder.build());
+		return commonServiceRequest(request, null, msTimeOut, String[].class, 200);
+	}
+
+	private String getActiveNodeRandom(String path, String key) {
 		try {
-			UBuilder uriBuilder = new UBuilder("/cluster/services/", service_name, "/active/random");
+			UBuilder uriBuilder = new UBuilder(path, key, "/active/random");
 			Request request = Request.Get(uriBuilder.build());
 			HttpResponse response = execute(request, null, msTimeOut);
 			HttpUtils.checkStatusCodes(response, 200);
@@ -107,6 +118,17 @@ public class ClusterSingleClient extends JsonClientAbstract implements ClusterSe
 		} catch (IOException e) {
 			throw new WebApplicationException(e.getMessage(), e, Status.INTERNAL_SERVER_ERROR);
 		}
+
+	}
+
+	@Override
+	public String getActiveNodeRandomByService(String service_name) {
+		return getActiveNodeRandom("/cluster/services/", service_name);
+	}
+
+	@Override
+	public String getActiveNodeRandomByGroup(String group_name) {
+		return getActiveNodeRandom("/cluster/groups/", group_name);
 	}
 
 }

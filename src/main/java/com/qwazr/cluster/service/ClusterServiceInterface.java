@@ -22,7 +22,6 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Map;
-import java.util.Set;
 
 @RolesAllowed(ClusterServer.SERVICE_NAME_CLUSTER)
 @Path("/cluster")
@@ -39,13 +38,13 @@ public interface ClusterServiceInterface {
 	@GET
 	@Path("/nodes")
 	@Produces(MediaType.APPLICATION_JSON)
-	Map<String, Set<String>> getNodes();
+	Map<String, ClusterNodeJson> getNodes();
 
 	@POST
 	@Path("/")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	ClusterNodeStatusJson register(ClusterNodeRegisterJson register);
+	ClusterNodeStatusJson register(ClusterNodeJson register);
 
 	@DELETE
 	@Path("/")
@@ -58,16 +57,31 @@ public interface ClusterServiceInterface {
 	@GET
 	@Path("/services/{service_name}")
 	@Produces(MediaType.APPLICATION_JSON)
-	ClusterServiceStatusJson getServiceStatus(@PathParam("service_name") String service_name);
+	ClusterKeyStatusJson getServiceStatus(@PathParam("service_name") String service_name);
 
 	@GET
 	@Path("/services/{service_name}/active")
 	@Produces(MediaType.APPLICATION_JSON)
-	String[] getActiveNodes(@PathParam("service_name") String service_name);
+	String[] getActiveNodesByService(@PathParam("service_name") String service_name);
 
 	@GET
 	@Path("/services/{service_name}/active/random")
 	@Produces(MediaType.TEXT_PLAIN)
-	String getActiveNodeRandom(@PathParam("service_name") String service_name);
+	String getActiveNodeRandomByService(@PathParam("service_name") String service_name);
+
+	@GET
+	@Path("/groups/{group_name}")
+	@Produces(MediaType.APPLICATION_JSON)
+	ClusterKeyStatusJson getGroupStatus(@PathParam("group_name") String group_name);
+
+	@GET
+	@Path("/groups/{group_name}/active")
+	@Produces(MediaType.APPLICATION_JSON)
+	String[] getActiveNodesByGroup(@PathParam("group_name") String group_name);
+
+	@GET
+	@Path("/groups/{group_name}/active/random")
+	@Produces(MediaType.TEXT_PLAIN)
+	String getActiveNodeRandomByGroup(@PathParam("group_name") String group_name);
 
 }

@@ -1,12 +1,12 @@
 /**
  * Copyright 2015-2016 Emmanuel Keller / QWAZR
- * <p/>
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * <p/>
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- * <p/>
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -26,7 +26,6 @@ import javax.ws.rs.core.Response.Status;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class ClusterServiceImpl implements ClusterServiceInterface {
 
@@ -53,17 +52,17 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 	}
 
 	@Override
-	public Map<String, Set<String>> getNodes() {
+	public Map<String, ClusterNodeJson> getNodes() {
 		try {
 			ClusterManager manager = ClusterManager.INSTANCE;
-			Map<String, Set<String>> nodeMap = new HashMap<String, Set<String>>();
+			Map<String, ClusterNodeJson> nodeMap = new HashMap<String, ClusterNodeJson>();
 			List<ClusterNode> clusterNodeList;
 			clusterNodeList = manager.getNodeList();
 			if (clusterNodeList == null)
 				return nodeMap;
 			for (ClusterNode clusterNode : clusterNodeList)
 				if (clusterNode.services != null && !clusterNode.services.isEmpty())
-					nodeMap.put(clusterNode.address, clusterNode.services);
+					nodeMap.put(clusterNode.address, new ClusterNodeJson(clusterNode));
 			return nodeMap;
 		} catch (ServerException e) {
 			throw e.getJsonException();
@@ -77,12 +76,12 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 	}
 
 	@Override
-	public ClusterNodeStatusJson register(ClusterNodeRegisterJson register) {
+	public ClusterNodeStatusJson register(ClusterNodeJson register) {
 		if (register == null)
 			throw new ServerException(Status.NOT_ACCEPTABLE).getJsonException();
 		ClusterManager manager = ClusterManager.INSTANCE;
 		try {
-			ClusterNode clusterNode = manager.upsertNode(register.address, register.services);
+			ClusterNode clusterNode = manager.upsertNode(register);
 			return clusterNode.getStatus();
 		} catch (Exception e) {
 			throw ServerException.getJsonException(e);
@@ -103,34 +102,68 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 	}
 
 	@Override
-	public String[] getActiveNodes(String service_name) {
+	public String[] getActiveNodesByService(String service_name) {
 		if (service_name == null)
 			throw new ServerException(Status.NOT_ACCEPTABLE).getJsonException();
 		ClusterManager manager = ClusterManager.INSTANCE;
 		try {
-			return manager.getActiveNodes(service_name);
+			return ClusterManager.getActiveNodes(manager.getNodeSetCacheService(service_name));
 		} catch (ServerException e) {
 			throw e.getJsonException();
 		}
 	}
 
 	@Override
-	public String getActiveNodeRandom(String service_name) {
-		if (service_name == null)
+	public String[] getActiveNodesByGroup(String group_name) {
+		if (group_name == null)
 			throw new ServerException(Status.NOT_ACCEPTABLE).getJsonException();
 		ClusterManager manager = ClusterManager.INSTANCE;
 		try {
-			return manager.getActiveNodeRandom(service_name);
+			return ClusterManager.getActiveNodes(manager.getNodeSetCacheGroup(group_name));
 		} catch (ServerException e) {
 			throw e.getJsonException();
 		}
 	}
 
 	@Override
-	public ClusterServiceStatusJson getServiceStatus(String service_name) {
+	public String getActiveNodeRandomByService(String service_name) {
+		if (service_name == null)
+			throw new ServerException(Status.NOT_ACCEPTABLE).getJsonException();
 		ClusterManager manager = ClusterManager.INSTANCE;
 		try {
-			return manager.getServiceStatus(service_name);
+			return ClusterManager.getActiveNodeRandom(manager.getNodeSetCacheService(service_name));
+		} catch (ServerException e) {
+			throw e.getJsonException();
+		}
+	}
+
+	@Override
+	public String getActiveNodeRandomByGroup(String group_name) {
+		if (group_name == null)
+			throw new ServerException(Status.NOT_ACCEPTABLE).getJsonException();
+		ClusterManager manager = ClusterManager.INSTANCE;
+		try {
+			return ClusterManager.getActiveNodeRandom(manager.getNodeSetCacheGroup(group_name));
+		} catch (ServerException e) {
+			throw e.getJsonException();
+		}
+	}
+
+	@Override
+	public ClusterKeyStatusJson getServiceStatus(String service_name) {
+		ClusterManager manager = ClusterManager.INSTANCE;
+		try {
+			return ClusterManager.getStatus(manager.getNodeSetCacheService(service_name));
+		} catch (ServerException e) {
+			throw e.getJsonException();
+		}
+	}
+
+	@Override
+	public ClusterKeyStatusJson getGroupStatus(String group_name) {
+		ClusterManager manager = ClusterManager.INSTANCE;
+		try {
+			return ClusterManager.getStatus(manager.getNodeSetCacheGroup(group_name));
 		} catch (ServerException e) {
 			throw e.getJsonException();
 		}
