@@ -188,7 +188,9 @@ public class ClusterManager {
 	}
 
 	public ClusterNode upsertNode(ClusterNodeJson clusterNodeJson) throws URISyntaxException, ServerException {
-		return checkMaster().upsert(clusterNodeJson);
+		ClusterNode clusterNode = checkMaster().upsert(clusterNodeJson);
+		clusterMonitoringThread.checkNode(clusterNode);
+		return clusterNode;
 	}
 
 	void updateNodeStatus(ClusterNode node) throws ServerException {

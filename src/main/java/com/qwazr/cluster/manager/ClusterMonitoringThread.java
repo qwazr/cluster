@@ -37,7 +37,8 @@ public class ClusterMonitoringThread extends PeriodicThread {
 		setDaemon(true);
 		requestConfig = RequestConfig.custom().setSocketTimeout(monitoring_period).setConnectTimeout(monitoring_period)
 				.build();
-		httpclient = HttpAsyncClients.custom().setDefaultRequestConfig(requestConfig).build();
+		httpclient = HttpAsyncClients.custom().setMaxConnPerRoute(2).setMaxConnTotal(100)
+				.setDefaultRequestConfig(requestConfig).build();
 		httpclient.start();
 		start();
 	}
@@ -46,10 +47,14 @@ public class ClusterMonitoringThread extends PeriodicThread {
 	public void runner() {
 		try {
 			for (ClusterNode clusterNode : ClusterManager.INSTANCE.getNodeList())
-				clusterNode.startCheck(httpclient);
+				checkNode(clusterNode);
 		} catch (ServerException e) {
 			logger.error(e.getMessage(), e);
 		}
+	}
+
+	public void checkNode(ClusterNode clusterNode) {
+		clusterNode.startCheck(httpclient);
 	}
 
 	@Override

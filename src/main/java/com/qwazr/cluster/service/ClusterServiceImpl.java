@@ -81,8 +81,7 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 			throw new ServerException(Status.NOT_ACCEPTABLE).getJsonException();
 		ClusterManager manager = ClusterManager.getInstance();
 		try {
-			ClusterNode clusterNode = manager.upsertNode(register);
-			return clusterNode.getStatus();
+			return manager.upsertNode(register).getStatus();
 		} catch (Exception e) {
 			throw ServerException.getJsonException(e);
 		}
