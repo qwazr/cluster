@@ -18,10 +18,8 @@ package com.qwazr.cluster.manager;
 import com.qwazr.cluster.client.ClusterMultiClient;
 import com.qwazr.cluster.client.ClusterSingleClient;
 import com.qwazr.cluster.manager.ClusterNodeSet.Cache;
-import com.qwazr.cluster.service.ClusterKeyStatusJson;
+import com.qwazr.cluster.service.*;
 import com.qwazr.cluster.service.ClusterKeyStatusJson.StatusEnum;
-import com.qwazr.cluster.service.ClusterNodeJson;
-import com.qwazr.cluster.service.ClusterNodeStatusJson;
 import com.qwazr.utils.StringUtils;
 import com.qwazr.utils.server.ServerException;
 import com.qwazr.utils.threads.PeriodicThread;
@@ -40,11 +38,14 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class ClusterManager {
 
+	public final static String SERVICE_NAME_CLUSTER = "cluster";
+
 	private static final Logger logger = LoggerFactory.getLogger(ClusterManager.class);
 
-	public static volatile ClusterManager INSTANCE = null;
+	static ClusterManager INSTANCE = null;
 
-	public static void load(String myAddress, File dataDirectory) throws IOException {
+	public synchronized static Class<? extends ClusterServiceInterface> load(String myAddress, File dataDirectory)
+			throws IOException {
 		if (INSTANCE != null)
 			throw new IOException("Already loaded");
 		try {
@@ -58,9 +59,16 @@ public class ClusterManager {
 				INSTANCE.clusterMonitoringThread = (ClusterMonitoringThread) INSTANCE
 						.addPeriodicThread(new ClusterMonitoringThread(60));
 			}
+			return ClusterServiceImpl.class;
 		} catch (URISyntaxException e) {
 			throw new IOException(e);
 		}
+	}
+
+	final public static ClusterManager getInstance() {
+		if (INSTANCE == null)
+			throw new RuntimeException("The cluster service is not enabled");
+		return INSTANCE;
 	}
 
 	private final ClusterNodeMap clusterNodeMap;

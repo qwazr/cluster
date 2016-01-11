@@ -15,7 +15,7 @@
  */
 package com.qwazr.cluster.service;
 
-import com.qwazr.cluster.ClusterServer;
+import com.qwazr.cluster.manager.ClusterManager;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.*;
@@ -23,7 +23,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Map;
 
-@RolesAllowed(ClusterServer.SERVICE_NAME_CLUSTER)
+@RolesAllowed(ClusterManager.SERVICE_NAME_CLUSTER)
 @Path("/cluster")
 public interface ClusterServiceInterface {
 

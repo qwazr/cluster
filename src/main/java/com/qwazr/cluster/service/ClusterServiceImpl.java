@@ -38,7 +38,7 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 			//System.out.println("PRINCIPAL: " + request.getUserPrincipal().getName());
 			//if (!request.isUserInRole(ClusterServer.SERVICE_NAME_CLUSTER))
 			//	throw new ServerException(Status.UNAUTHORIZED);
-			ClusterManager manager = ClusterManager.INSTANCE;
+			ClusterManager manager = ClusterManager.getInstance();
 			List<ClusterNode> clusterNodeList = manager.getNodeList();
 			if (clusterNodeList == null)
 				return null;
@@ -54,7 +54,7 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 	@Override
 	public Map<String, ClusterNodeJson> getNodes() {
 		try {
-			ClusterManager manager = ClusterManager.INSTANCE;
+			ClusterManager manager = ClusterManager.getInstance();
 			Map<String, ClusterNodeJson> nodeMap = new HashMap<String, ClusterNodeJson>();
 			List<ClusterNode> clusterNodeList;
 			clusterNodeList = manager.getNodeList();
@@ -71,7 +71,7 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 
 	@Override
 	public Response check(String checkValue, String checkAddr) {
-		ClusterManager.INSTANCE.check(checkAddr);
+		ClusterManager.getInstance().check(checkAddr);
 		return Response.ok().header(ClusterServiceInterface.HEADER_CHECK_NAME, checkValue).build();
 	}
 
@@ -79,7 +79,7 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 	public ClusterNodeStatusJson register(ClusterNodeJson register) {
 		if (register == null)
 			throw new ServerException(Status.NOT_ACCEPTABLE).getJsonException();
-		ClusterManager manager = ClusterManager.INSTANCE;
+		ClusterManager manager = ClusterManager.getInstance();
 		try {
 			ClusterNode clusterNode = manager.upsertNode(register);
 			return clusterNode.getStatus();
@@ -92,7 +92,7 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 	public Response unregister(String address) {
 		if (address == null)
 			throw new ServerException(Status.NOT_ACCEPTABLE).getJsonException();
-		ClusterManager manager = ClusterManager.INSTANCE;
+		ClusterManager manager = ClusterManager.getInstance();
 		try {
 			ClusterNode clusterNode = manager.removeNode(address);
 			return clusterNode == null ? Response.status(Status.NOT_FOUND).build() : Response.ok().build();
@@ -105,7 +105,7 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 	public String[] getActiveNodesByService(String service_name) {
 		if (service_name == null)
 			throw new ServerException(Status.NOT_ACCEPTABLE).getJsonException();
-		ClusterManager manager = ClusterManager.INSTANCE;
+		ClusterManager manager = ClusterManager.getInstance();
 		try {
 			return ClusterManager.getActiveNodes(manager.getNodeSetCacheService(service_name));
 		} catch (ServerException e) {
@@ -117,7 +117,7 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 	public String[] getActiveNodesByGroup(String group_name) {
 		if (group_name == null)
 			throw new ServerException(Status.NOT_ACCEPTABLE).getJsonException();
-		ClusterManager manager = ClusterManager.INSTANCE;
+		ClusterManager manager = ClusterManager.getInstance();
 		try {
 			return ClusterManager.getActiveNodes(manager.getNodeSetCacheGroup(group_name));
 		} catch (ServerException e) {
@@ -129,7 +129,7 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 	public String getActiveNodeRandomByService(String service_name) {
 		if (service_name == null)
 			throw new ServerException(Status.NOT_ACCEPTABLE).getJsonException();
-		ClusterManager manager = ClusterManager.INSTANCE;
+		ClusterManager manager = ClusterManager.getInstance();
 		try {
 			return ClusterManager.getActiveNodeRandom(manager.getNodeSetCacheService(service_name));
 		} catch (ServerException e) {
@@ -141,7 +141,7 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 	public String getActiveNodeRandomByGroup(String group_name) {
 		if (group_name == null)
 			throw new ServerException(Status.NOT_ACCEPTABLE).getJsonException();
-		ClusterManager manager = ClusterManager.INSTANCE;
+		ClusterManager manager = ClusterManager.getInstance();
 		try {
 			return ClusterManager.getActiveNodeRandom(manager.getNodeSetCacheGroup(group_name));
 		} catch (ServerException e) {
@@ -151,7 +151,7 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 
 	@Override
 	public ClusterKeyStatusJson getServiceStatus(String service_name) {
-		ClusterManager manager = ClusterManager.INSTANCE;
+		ClusterManager manager = ClusterManager.getInstance();
 		try {
 			return ClusterManager.getStatus(manager.getNodeSetCacheService(service_name));
 		} catch (ServerException e) {
@@ -161,7 +161,7 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 
 	@Override
 	public ClusterKeyStatusJson getGroupStatus(String group_name) {
-		ClusterManager manager = ClusterManager.INSTANCE;
+		ClusterManager manager = ClusterManager.getInstance();
 		try {
 			return ClusterManager.getStatus(manager.getNodeSetCacheGroup(group_name));
 		} catch (ServerException e) {

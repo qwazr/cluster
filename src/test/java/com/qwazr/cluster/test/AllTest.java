@@ -15,7 +15,6 @@
  */
 package com.qwazr.cluster.test;
 
-import com.qwazr.cluster.ClusterServer;
 import com.qwazr.cluster.client.ClusterSingleClient;
 import com.qwazr.cluster.service.ClusterKeyStatusJson;
 import com.qwazr.cluster.service.ClusterKeyStatusJson.StatusEnum;
@@ -39,8 +38,7 @@ import java.util.Map;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AllTest {
 
-	private final String CLIENT_ADDRESS = "http://" + ClusterServer.serverDefinition.defaultHostname + ':'
-			+ ClusterServer.serverDefinition.defaultWebServiceTcpPort;
+	private final String CLIENT_ADDRESS = "http://localhost:9091";
 
 	private final int CLIENT_TIMEOUT = 60000;
 
