@@ -17,60 +17,57 @@ package com.qwazr.cluster.manager;
 
 import com.qwazr.cluster.service.ClusterNodeJson;
 import com.qwazr.utils.LockUtils.ReadWriteLock;
+import com.qwazr.utils.StringUtils;
 import com.qwazr.utils.server.ServerException;
 
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.function.BiConsumer;
 
 public class ClusterNodeMap {
 
 	private final ReadWriteLock readWriteLock = new ReadWriteLock();
 
 	private final HashMap<String, ClusterNode> nodesMap;
-	private final HashMap<String, ClusterNodeSet> nodesByServiceMap;
-	private final HashMap<String, ClusterNodeSet> nodesByGroupMap;
-
-	private volatile HashMap<String, ClusterNodeSet> cacheNodesByServiceMap;
-	private volatile HashMap<String, ClusterNodeSet> cacheNodesByGroupMap;
+	private final HashMap<String, HashMap<String, ClusterNodeSet>> nodesByGroupServiceMap;
+	private volatile HashMap<String, HashMap<String, ClusterNodeSet>> cacheNodesByGroupServiceMap;
 	private volatile List<ClusterNode> cacheNodesList;
 
 	ClusterNodeMap() {
 		nodesMap = new HashMap<String, ClusterNode>();
-		nodesByServiceMap = new HashMap<String, ClusterNodeSet>();
-		nodesByGroupMap = new HashMap<String, ClusterNodeSet>();
+		nodesByGroupServiceMap = new HashMap<String, HashMap<String, ClusterNodeSet>>();
 		buildCacheNodesByServiceMap();
-		buildCacheNodesByGroupMap();
 		buildCacheNodesList();
 	}
 
 	private synchronized void buildCacheNodesByServiceMap() {
-		cacheNodesByServiceMap = new HashMap<String, ClusterNodeSet>(nodesByServiceMap);
+		final HashMap<String, HashMap<String, ClusterNodeSet>> newMap = new HashMap<String, HashMap<String, ClusterNodeSet>>();
+		nodesByGroupServiceMap.forEach(new BiConsumer<String, HashMap<String, ClusterNodeSet>>() {
+			@Override
+			public void accept(String group, HashMap<String, ClusterNodeSet> map) {
+				newMap.put(group, new HashMap<String, ClusterNodeSet>(map));
+			}
+		});
+		cacheNodesByGroupServiceMap = newMap;
 	}
 
-	private synchronized void buildCacheNodesByGroupMap() {
-		cacheNodesByGroupMap = new HashMap<String, ClusterNodeSet>(nodesByGroupMap);
-	}
-
-	private void buildCacheNodesList() {
+	private synchronized void buildCacheNodesList() {
 		cacheNodesList = new ArrayList<ClusterNode>(nodesMap.values());
 	}
 
 	/**
-	 * @param service
+	 * @param service the name of the service
+	 * @param group   the name of the group
 	 * @return a list of nodes for the given service
 	 */
-	ClusterNodeSet getNodeSetByService(String service) {
-		return cacheNodesByServiceMap.get(service);
-	}
-
-	/**
-	 * @param group
-	 * @return a set of nodes for the given group
-	 */
-	ClusterNodeSet getNodeSetByGroup(String group) {
-		return cacheNodesByGroupMap.get(group);
+	ClusterNodeSet getNodeSetByService(String service, String group) {
+		HashMap<String, ClusterNodeSet> groupMap = cacheNodesByGroupServiceMap
+						.get(group == null ? StringUtils.EMPTY : group);
+		if (groupMap == null)
+			return null;
+		return groupMap.get(service);
 	}
 
 	/**
@@ -81,33 +78,67 @@ public class ClusterNodeMap {
 	}
 
 	/**
-	 * Register the node for the given key
+	 * Register the node for the given service
 	 *
 	 * @param node     the node to register
 	 * @param nodesMap the node map
 	 */
-	private static void register(ClusterNode node, HashMap<String, ClusterNodeSet> nodesMap, String key) {
-		ClusterNodeSet nodeSet = nodesMap.get(key);
+	private static void register(ClusterNode node, HashMap<String, ClusterNodeSet> nodesMap, String service) {
+		ClusterNodeSet nodeSet = nodesMap.get(service);
 		if (nodeSet == null) {
 			nodeSet = new ClusterNodeSet();
-			nodesMap.put(key, nodeSet);
+			nodesMap.put(service, nodeSet);
 		}
 		nodeSet.insert(node);
 	}
 
+	private void register(ClusterNode node, String group, String service) {
+		HashMap<String, ClusterNodeSet> nodesMap = nodesByGroupServiceMap.get(group);
+		if (nodesMap == null) {
+			nodesMap = new HashMap<String, ClusterNodeSet>();
+			nodesByGroupServiceMap.put(group, nodesMap);
+		}
+		register(node, nodesMap, service);
+	}
+
+	private void register(ClusterNode node, String service) {
+		register(node, StringUtils.EMPTY, service);
+		if (node.groups == null)
+			return;
+		for (String group : node.groups)
+			register(node, group, service);
+	}
+
 	/**
-	 * Unregister the node from a given key
+	 * Unregister the node from a given service
 	 *
 	 * @param node     the node to unregister
 	 * @param nodesMap the node map
 	 */
-	private static void unregister(ClusterNode node, HashMap<String, ClusterNodeSet> nodesMap, String key) {
-		ClusterNodeSet nodeSet = nodesMap.get(key);
+	private static void unregister(ClusterNode node, HashMap<String, ClusterNodeSet> nodesMap, String service) {
+		ClusterNodeSet nodeSet = nodesMap.get(service);
 		if (nodeSet == null)
 			return;
 		nodeSet.remove(node);
 		if (nodeSet.isEmpty())
-			nodesMap.remove(key);
+			nodesMap.remove(service);
+	}
+
+	private void unregister(ClusterNode node, String group, String service) {
+		HashMap<String, ClusterNodeSet> nodesMap = nodesByGroupServiceMap.get(group);
+		if (nodesMap == null)
+			return;
+		unregister(node, nodesMap, service);
+		if (nodesMap.isEmpty())
+			nodesByGroupServiceMap.remove(group);
+	}
+
+	private void unregister(ClusterNode node, String service) {
+		unregister(node, StringUtils.EMPTY, service);
+		if (node.groups == null)
+			return;
+		for (String group : node.groups)
+			unregister(node, group, service);
 	}
 
 	/**
@@ -117,25 +148,16 @@ public class ClusterNodeMap {
 	 * @param newNode The new node parameters
 	 */
 	private void update(ClusterNode node, ClusterNodeJson newNode) {
-		synchronized (nodesByServiceMap) {
+		synchronized (nodesByGroupServiceMap) {
 			if (node.services != null)
 				for (String service : node.services)
-					unregister(node, nodesByServiceMap, service);
+					unregister(node, service);
 			node.setServices(newNode.services);
+			node.setGroups(newNode.groups);
 			if (node.services != null)
 				for (String service : node.services)
-					register(node, nodesByServiceMap, service);
+					register(node, service);
 			buildCacheNodesByServiceMap();
-		}
-		synchronized (nodesByGroupMap) {
-			if (node.groups != null)
-				for (String group : node.groups)
-					unregister(node, nodesByGroupMap, group);
-			node.setGroups(newNode.groups);
-			if (node.groups != null)
-				for (String group : node.groups)
-					register(node, nodesByGroupMap, group);
-			buildCacheNodesByGroupMap();
 		}
 	}
 
@@ -145,19 +167,12 @@ public class ClusterNodeMap {
 	 * @param node the node to register
 	 */
 	private void register(ClusterNode node) {
-		if (node.services != null) {
-			synchronized (nodesByServiceMap) {
-				for (String service : node.services)
-					register(node, nodesByServiceMap, service);
-				buildCacheNodesByServiceMap();
-			}
-		}
-		if (node.groups != null) {
-			synchronized (nodesByGroupMap) {
-				for (String group : node.groups)
-					register(node, nodesByGroupMap, group);
-				buildCacheNodesByGroupMap();
-			}
+		if (node.services == null)
+			return;
+		synchronized (nodesByGroupServiceMap) {
+			for (String service : node.services)
+				register(node, service);
+			buildCacheNodesByServiceMap();
 		}
 	}
 
@@ -167,19 +182,12 @@ public class ClusterNodeMap {
 	 * @param node the node to unregister
 	 */
 	private void unregister(ClusterNode node) {
-		if (node.services != null) {
-			synchronized (nodesByServiceMap) {
-				for (String service : node.services)
-					unregister(node, nodesByServiceMap, service);
-				buildCacheNodesByServiceMap();
-			}
-		}
-		if (node.groups != null) {
-			synchronized (nodesByGroupMap) {
-				for (String group : node.groups)
-					unregister(node, nodesByGroupMap, group);
-				buildCacheNodesByGroupMap();
-			}
+		if (node.services == null)
+			return;
+		synchronized (nodesByGroupServiceMap) {
+			for (String service : node.services)
+				unregister(node, service);
+			buildCacheNodesByServiceMap();
 		}
 	}
 
@@ -265,12 +273,8 @@ public class ClusterNodeMap {
 		}
 	}
 
-	HashMap<String, ClusterNodeSet> getServicesMap() {
-		return cacheNodesByServiceMap;
-	}
-
-	HashMap<String, ClusterNodeSet> getGroupsMap() {
-		return cacheNodesByGroupMap;
+	HashMap<String, ClusterNodeSet> getServicesMap(String group) {
+		return cacheNodesByGroupServiceMap.get(group == null ? StringUtils.EMPTY : group);
 	}
 
 }

@@ -16,12 +16,16 @@
 package com.qwazr.cluster.manager;
 
 import com.qwazr.utils.LockUtils;
+import com.qwazr.utils.StringUtils;
+import org.apache.commons.lang3.RandomUtils;
 
 import java.util.HashMap;
 
 public class ClusterNodeSet {
 
 	private final LockUtils.ReadWriteLock readWriteLock = new LockUtils.ReadWriteLock();
+
+	private volatile String electedMaster;
 
 	private final HashMap<String, ClusterNode> activeMap;
 	private final HashMap<String, ClusterNode> inactiveMap;
@@ -30,10 +34,12 @@ public class ClusterNodeSet {
 
 		final ClusterNode[] activeArray;
 		final ClusterNode[] inactiveArray;
+		final String electedMaster;
 
-		private Cache() {
+		private Cache(boolean electNewMaster) {
 			this.activeArray = activeMap.values().toArray(new ClusterNode[activeMap.size()]);
 			this.inactiveArray = inactiveMap.values().toArray(new ClusterNode[inactiveMap.size()]);
+			this.electedMaster = checkElectedMaster(electNewMaster, activeArray);
 		}
 	}
 
@@ -43,13 +49,13 @@ public class ClusterNodeSet {
 		cache = null;
 		activeMap = new HashMap<String, ClusterNode>();
 		inactiveMap = new HashMap<String, ClusterNode>();
+		electedMaster = null;
 	}
 
 	/**
 	 * Move the node to the active set
 	 *
-	 * @param node
-	 *            The cluster not to insert
+	 * @param node The cluster not to insert
 	 */
 	private void active(ClusterNode node) {
 		// We check first if it is not already present in the right list
@@ -64,7 +70,7 @@ public class ClusterNodeSet {
 		try {
 			inactiveMap.remove(node.address);
 			activeMap.put(node.address, node);
-			cache = new Cache();
+			cache = new Cache(false);
 		} finally {
 			readWriteLock.w.unlock();
 		}
@@ -73,8 +79,7 @@ public class ClusterNodeSet {
 	/**
 	 * Move the node to the inactive set
 	 *
-	 * @param node
-	 *            The cluster not to insert
+	 * @param node The cluster not to insert
 	 */
 	private void inactive(ClusterNode node) {
 		// We check first if it is not already present in the right list
@@ -89,15 +94,22 @@ public class ClusterNodeSet {
 		try {
 			activeMap.remove(node.address);
 			inactiveMap.put(node.address, node);
-			cache = new Cache();
+			cache = new Cache(electedMaster == node.address);
 		} finally {
 			readWriteLock.w.unlock();
 		}
 	}
 
+	private String checkElectedMaster(boolean force, ClusterNode[] activeArray) {
+		if (!force && electedMaster != null)
+			return electedMaster;
+		if (activeArray == null || activeArray.length == 0)
+			return StringUtils.EMPTY;
+		return activeArray[RandomUtils.nextInt(0, activeArray.length)].address;
+	}
+
 	/**
-	 * @param node
-	 *            The clusterNode to insert
+	 * @param node The clusterNode to insert
 	 */
 	void insert(ClusterNode node) {
 		if (node.isActive())
@@ -107,16 +119,14 @@ public class ClusterNodeSet {
 	}
 
 	/**
-	 *
-	 * @param node
-	 *            The ClusterNode to remove
+	 * @param node The ClusterNode to remove
 	 */
 	void remove(ClusterNode node) {
 		readWriteLock.w.lock();
 		try {
 			activeMap.remove(node.address);
 			inactiveMap.remove(node.address);
-			cache = new Cache();
+			cache = new Cache(electedMaster == node.address);
 		} finally {
 			readWriteLock.w.unlock();
 		}

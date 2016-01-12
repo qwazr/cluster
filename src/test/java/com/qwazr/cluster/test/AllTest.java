@@ -16,10 +16,10 @@
 package com.qwazr.cluster.test;
 
 import com.qwazr.cluster.client.ClusterSingleClient;
-import com.qwazr.cluster.service.ClusterKeyStatusJson;
-import com.qwazr.cluster.service.ClusterKeyStatusJson.StatusEnum;
 import com.qwazr.cluster.service.ClusterNodeJson;
 import com.qwazr.cluster.service.ClusterNodeStatusJson;
+import com.qwazr.cluster.service.ClusterServiceStatusJson;
+import com.qwazr.cluster.service.ClusterServiceStatusJson.StatusEnum;
 import com.qwazr.cluster.service.ClusterStatusJson;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.Assert;
@@ -86,15 +86,13 @@ public class AllTest {
 		ClusterStatusJson result = getClusterClient().list();
 		Assert.assertNotNull(result);
 		Assert.assertNotNull(result.services);
-		Assert.assertNotNull(result.groups);
 		Assert.assertEquals(SERVICES.length, result.services.size());
-		Assert.assertEquals(GROUPS.length, result.groups.size());
 		Assert.assertNotNull(result.active_nodes);
 		Assert.assertNotNull(result.inactive_nodes);
 		Assert.assertTrue(result.active_nodes.size() == 1 || result.inactive_nodes.size() == 1);
 	}
 
-	private static boolean checkClusterKeyStatus(ClusterKeyStatusJson result) {
+	private static boolean checkClusterKeyStatus(ClusterServiceStatusJson result) {
 		Assert.assertNotNull(result);
 		Assert.assertTrue(result.inactive_count == 1 || result.active_count == 1);
 		Assert.assertNotNull(result.status);
@@ -127,24 +125,25 @@ public class AllTest {
 			activated_groups_count = 0;
 			for (String service : SERVICES) {
 				logger.info("Check service activation: " + count);
-				ClusterKeyStatusJson result = getClusterClient().getServiceStatus(service);
+				ClusterServiceStatusJson result = getClusterClient().getServiceStatus(service, null);
 				if (checkClusterKeyStatus(result))
 					activated_services_count++;
+				for (String group : GROUPS) {
+					logger.info("Check group activation: " + count);
+					ClusterServiceStatusJson resultGroup = getClusterClient().getServiceStatus(service, group);
+					if (checkClusterKeyStatus(resultGroup))
+						activated_groups_count++;
+				}
 			}
-			for (String group : GROUPS) {
-				logger.info("Check group activation: " + count);
-				ClusterKeyStatusJson result = getClusterClient().getGroupStatus(group);
-				if (checkClusterKeyStatus(result))
-					activated_groups_count++;
-			}
-			if (activated_groups_count == GROUPS.length && activated_groups_count == GROUPS.length) {
+			if (activated_services_count == SERVICES.length
+							&& activated_groups_count == GROUPS.length * SERVICES.length) {
 				logger.info("Check activation succeed");
 				break;
 			}
 			Thread.sleep(5000);
 		}
 		Assert.assertEquals(SERVICES.length, activated_services_count);
-		Assert.assertEquals(GROUPS.length, activated_groups_count);
+		Assert.assertEquals(GROUPS.length * SERVICES.length, activated_groups_count);
 	}
 
 	@Test
@@ -157,38 +156,30 @@ public class AllTest {
 	@Test
 	public void test22_get_active_list_by_service() throws URISyntaxException {
 		for (String service : SERVICES) {
-			String[] result = getClusterClient().getActiveNodesByService(service);
+			String[] result = getClusterClient().getActiveNodesByService(service, null);
 			Assert.assertNotNull(result);
 			Assert.assertEquals(1, result.length);
 			Assert.assertEquals(CLIENT_ADDRESS, result[0]);
-		}
-	}
-
-	@Test
-	public void test23_get_active_list_by_group() throws URISyntaxException {
-		for (String group : GROUPS) {
-			String[] result = getClusterClient().getActiveNodesByGroup(group);
-			Assert.assertNotNull(result);
-			Assert.assertEquals(1, result.length);
-			Assert.assertEquals(CLIENT_ADDRESS, result[0]);
+			for (String group : GROUPS) {
+				String[] resultGroup = getClusterClient().getActiveNodesByService(service, group);
+				Assert.assertNotNull(resultGroup);
+				Assert.assertEquals(1, resultGroup.length);
+				Assert.assertEquals(CLIENT_ADDRESS, resultGroup[0]);
+			}
 		}
 	}
 
 	@Test
 	public void test25_active_random_service() throws URISyntaxException {
 		for (String service : SERVICES) {
-			String result = getClusterClient().getActiveNodeRandomByService(service);
+			String result = getClusterClient().getActiveNodeRandomByService(service, null);
 			Assert.assertNotNull(result);
 			Assert.assertEquals(CLIENT_ADDRESS, result);
-		}
-	}
-
-	@Test
-	public void test26_active_random_group() throws URISyntaxException {
-		for (String group : GROUPS) {
-			String result = getClusterClient().getActiveNodeRandomByGroup(group);
-			Assert.assertNotNull(result);
-			Assert.assertEquals(CLIENT_ADDRESS, result);
+			for (String group : GROUPS) {
+				String resultGroup = getClusterClient().getActiveNodeRandomByService(service, group);
+				Assert.assertNotNull(resultGroup);
+				Assert.assertEquals(CLIENT_ADDRESS, resultGroup);
+			}
 		}
 	}
 
@@ -204,7 +195,6 @@ public class AllTest {
 		ClusterStatusJson result = getClusterClient().list();
 		Assert.assertNotNull(result);
 		Assert.assertNotNull(result.services);
-		Assert.assertNotNull(result.groups);
 		Assert.assertNotNull(result.active_nodes);
 		Assert.assertNotNull(result.inactive_nodes);
 		Assert.assertEquals(result.services.size(), 0);

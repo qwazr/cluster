@@ -25,9 +25,10 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.net.URISyntaxException;
 import java.util.Map;
+import java.util.TreeMap;
 
 public class ClusterMultiClient extends JsonMultiClientAbstract<String, ClusterSingleClient>
-		implements ClusterServiceInterface {
+				implements ClusterServiceInterface {
 
 	private static final Logger logger = LoggerFactory.getLogger(ClusterMultiClient.class);
 
@@ -101,11 +102,11 @@ public class ClusterMultiClient extends JsonMultiClientAbstract<String, ClusterS
 	}
 
 	@Override
-	public ClusterKeyStatusJson getServiceStatus(String service_name) {
+	public TreeMap<String, ClusterServiceStatusJson.StatusEnum> getServiceMap(String group) {
 		WebAppExceptionHolder exceptionHolder = new WebAppExceptionHolder(logger);
 		for (ClusterSingleClient client : this) {
 			try {
-				return client.getServiceStatus(service_name);
+				return client.getServiceMap(group);
 			} catch (WebApplicationException e) {
 				exceptionHolder.switchAndWarn(e);
 			}
@@ -114,11 +115,11 @@ public class ClusterMultiClient extends JsonMultiClientAbstract<String, ClusterS
 	}
 
 	@Override
-	public ClusterKeyStatusJson getGroupStatus(String group_name) {
+	public ClusterServiceStatusJson getServiceStatus(String service_name, String group) {
 		WebAppExceptionHolder exceptionHolder = new WebAppExceptionHolder(logger);
 		for (ClusterSingleClient client : this) {
 			try {
-				return client.getGroupStatus(group_name);
+				return client.getServiceStatus(service_name, group);
 			} catch (WebApplicationException e) {
 				exceptionHolder.switchAndWarn(e);
 			}
@@ -127,11 +128,11 @@ public class ClusterMultiClient extends JsonMultiClientAbstract<String, ClusterS
 	}
 
 	@Override
-	public String[] getActiveNodesByService(String service_name) {
+	public String[] getActiveNodesByService(String service_name, String group_name) {
 		WebAppExceptionHolder exceptionHolder = new WebAppExceptionHolder(logger);
 		for (ClusterSingleClient client : this) {
 			try {
-				return client.getActiveNodesByService(service_name);
+				return client.getActiveNodesByService(service_name, group_name);
 			} catch (WebApplicationException e) {
 				exceptionHolder.switchAndWarn(e);
 			}
@@ -140,37 +141,11 @@ public class ClusterMultiClient extends JsonMultiClientAbstract<String, ClusterS
 	}
 
 	@Override
-	public String[] getActiveNodesByGroup(String group_name) {
+	public String getActiveNodeRandomByService(String service_name, String group_name) {
 		WebAppExceptionHolder exceptionHolder = new WebAppExceptionHolder(logger);
 		for (ClusterSingleClient client : this) {
 			try {
-				return client.getActiveNodesByGroup(group_name);
-			} catch (WebApplicationException e) {
-				exceptionHolder.switchAndWarn(e);
-			}
-		}
-		throw exceptionHolder.getException();
-	}
-
-	@Override
-	public String getActiveNodeRandomByService(String service_name) {
-		WebAppExceptionHolder exceptionHolder = new WebAppExceptionHolder(logger);
-		for (ClusterSingleClient client : this) {
-			try {
-				return client.getActiveNodeRandomByService(service_name);
-			} catch (WebApplicationException e) {
-				exceptionHolder.switchAndWarn(e);
-			}
-		}
-		throw exceptionHolder.getException();
-	}
-
-	@Override
-	public String getActiveNodeRandomByGroup(String group_name) {
-		WebAppExceptionHolder exceptionHolder = new WebAppExceptionHolder(logger);
-		for (ClusterSingleClient client : this) {
-			try {
-				return client.getActiveNodeRandomByGroup(group_name);
+				return client.getActiveNodeRandomByService(service_name, group_name);
 			} catch (WebApplicationException e) {
 				exceptionHolder.switchAndWarn(e);
 			}

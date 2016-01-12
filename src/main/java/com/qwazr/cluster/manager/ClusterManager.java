@@ -19,7 +19,7 @@ import com.qwazr.cluster.client.ClusterMultiClient;
 import com.qwazr.cluster.client.ClusterSingleClient;
 import com.qwazr.cluster.manager.ClusterNodeSet.Cache;
 import com.qwazr.cluster.service.*;
-import com.qwazr.cluster.service.ClusterKeyStatusJson.StatusEnum;
+import com.qwazr.cluster.service.ClusterServiceStatusJson.StatusEnum;
 import com.qwazr.utils.StringUtils;
 import com.qwazr.utils.server.ServerException;
 import com.qwazr.utils.threads.PeriodicThread;
@@ -45,7 +45,7 @@ public class ClusterManager {
 	static ClusterManager INSTANCE = null;
 
 	public synchronized static Class<? extends ClusterServiceInterface> load(String myAddress, File dataDirectory)
-			throws IOException {
+					throws IOException {
 		if (INSTANCE != null)
 			throw new IOException("Already loaded");
 		try {
@@ -55,9 +55,9 @@ public class ClusterManager {
 				ClusterManager.INSTANCE.loadNodesFromOtherMaster();
 				// All is set, let's start the monitoring
 				INSTANCE.clusterMasterThread = (ClusterMasterThread) INSTANCE
-						.addPeriodicThread(new ClusterMasterThread(120));
+								.addPeriodicThread(new ClusterMasterThread(120));
 				INSTANCE.clusterMonitoringThread = (ClusterMonitoringThread) INSTANCE
-						.addPeriodicThread(new ClusterMonitoringThread(60));
+								.addPeriodicThread(new ClusterMonitoringThread(60));
 			}
 			return ClusterServiceImpl.class;
 		} catch (URISyntaxException e) {
@@ -235,15 +235,8 @@ public class ClusterManager {
 		return array;
 	}
 
-	public Cache getNodeSetCacheService(String service) throws ServerException {
-		ClusterNodeSet nodeSet = checkMaster().getNodeSetByService(service);
-		if (nodeSet == null)
-			return null;
-		return nodeSet.getCache();
-	}
-
-	public Cache getNodeSetCacheGroup(String group) throws ServerException {
-		ClusterNodeSet nodeSet = checkMaster().getNodeSetByGroup(group);
+	public Cache getNodeSetCacheService(String service, String group) throws ServerException {
+		ClusterNodeSet nodeSet = checkMaster().getNodeSetByService(service, group);
 		if (nodeSet == null)
 			return null;
 		return nodeSet.getCache();
@@ -275,7 +268,7 @@ public class ClusterManager {
 	public static String getActiveNodeRandom(Cache cache) throws ServerException {
 		if (cache == null)
 			return null;
-		ClusterNode[] aa = cache.activeArray;
+		final ClusterNode[] aa = cache.activeArray;
 		if (aa == null || aa.length == 0)
 			return null;
 		return aa[RandomUtils.nextInt(0, aa.length)].address;
@@ -289,16 +282,16 @@ public class ClusterManager {
 	 * @return the status of the service
 	 * @throws ServerException if any error occurs
 	 */
-	public static ClusterKeyStatusJson getStatus(Cache cache) throws ServerException {
+	public static ClusterServiceStatusJson getStatus(Cache cache) throws ServerException {
 		if (cache == null)
-			return new ClusterKeyStatusJson();
+			return new ClusterServiceStatusJson();
 		String[] activeList = buildArray(cache.activeArray);
 		if (cache.inactiveArray == null)
-			return new ClusterKeyStatusJson(activeList, Collections.emptyMap());
+			return new ClusterServiceStatusJson(activeList, Collections.emptyMap());
 		Map<String, ClusterNodeStatusJson> inactiveMap = new LinkedHashMap<String, ClusterNodeStatusJson>();
 		for (ClusterNode node : cache.inactiveArray)
 			inactiveMap.put(node.address, node.getStatus());
-		return new ClusterKeyStatusJson(activeList, inactiveMap);
+		return new ClusterServiceStatusJson(activeList, inactiveMap);
 	}
 
 	public synchronized void registerMe(ClusterNodeJson clusterNodeDef) {
@@ -309,7 +302,7 @@ public class ClusterManager {
 			return;
 		}
 		clusterRegisteringThead = (ClusterRegisteringThread) addPeriodicThread(
-				new ClusterRegisteringThread(90, clusterClient, clusterNodeDef));
+						new ClusterRegisteringThread(90, clusterClient, clusterNodeDef));
 		if (clusterNodeShutdownThread == null) {
 			clusterNodeShutdownThread = new Thread() {
 				@Override
@@ -333,23 +326,20 @@ public class ClusterManager {
 	}
 
 	private static TreeMap<String, StatusEnum> getStatusMap(HashMap<String, ClusterNodeSet> nodeMap) {
-		if (nodeMap == null)
-			return null;
 		TreeMap<String, StatusEnum> statusMap = new TreeMap<String, StatusEnum>();
+		if (nodeMap == null)
+			return statusMap;
 		for (Map.Entry<String, ClusterNodeSet> entry : nodeMap.entrySet()) {
 			Cache cache = entry.getValue().getCache();
-			StatusEnum status = ClusterKeyStatusJson.findStatus(cache.activeArray.length, cache.inactiveArray.length);
+			StatusEnum status = ClusterServiceStatusJson
+							.findStatus(cache.activeArray.length, cache.inactiveArray.length);
 			statusMap.put(entry.getKey(), status);
 		}
 		return statusMap;
 	}
 
-	public TreeMap<String, StatusEnum> getServicesStatusMap() throws ServerException {
-		return getStatusMap(checkMaster().getServicesMap());
-	}
-
-	public TreeMap<String, StatusEnum> getGroupsStatusMap() throws ServerException {
-		return getStatusMap(checkMaster().getGroupsMap());
+	public TreeMap<String, StatusEnum> getServicesStatusMap(String group) throws ServerException {
+		return getStatusMap(checkMaster().getServicesMap(group == null ? StringUtils.EMPTY : group));
 	}
 
 	public Map<String, Date> getLastExecutions() {

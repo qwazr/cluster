@@ -22,6 +22,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Map;
+import java.util.TreeMap;
 
 @RolesAllowed(ClusterManager.SERVICE_NAME_CLUSTER)
 @Path("/cluster")
@@ -55,33 +56,31 @@ public interface ClusterServiceInterface {
 	Response check(@HeaderParam(HEADER_CHECK_NAME) String checkValue, @HeaderParam(HEADER_CHECK_ADDR) String checkAddr);
 
 	@GET
+	@Path("/services")
+	@Produces(MediaType.APPLICATION_JSON)
+	TreeMap<String, ClusterServiceStatusJson.StatusEnum> getServiceMap(@QueryParam("group") String group);
+
+	@GET
 	@Path("/services/{service_name}")
 	@Produces(MediaType.APPLICATION_JSON)
-	ClusterKeyStatusJson getServiceStatus(@PathParam("service_name") String service_name);
+	ClusterServiceStatusJson getServiceStatus(@PathParam("service_name") String service_name,
+					@QueryParam("group") String group);
 
 	@GET
 	@Path("/services/{service_name}/active")
 	@Produces(MediaType.APPLICATION_JSON)
-	String[] getActiveNodesByService(@PathParam("service_name") String service_name);
+	String[] getActiveNodesByService(@PathParam("service_name") String service_name, @QueryParam("group") String group);
 
 	@GET
 	@Path("/services/{service_name}/active/random")
 	@Produces(MediaType.TEXT_PLAIN)
-	String getActiveNodeRandomByService(@PathParam("service_name") String service_name);
+	String getActiveNodeRandomByService(@PathParam("service_name") String service_name,
+					@QueryParam("group") String group);
 
 	@GET
-	@Path("/groups/{group_name}")
-	@Produces(MediaType.APPLICATION_JSON)
-	ClusterKeyStatusJson getGroupStatus(@PathParam("group_name") String group_name);
-
-	@GET
-	@Path("/groups/{group_name}/active")
-	@Produces(MediaType.APPLICATION_JSON)
-	String[] getActiveNodesByGroup(@PathParam("group_name") String group_name);
-
-	@GET
-	@Path("/groups/{group_name}/active/random")
+	@Path("/services/{service_name}/active/master")
 	@Produces(MediaType.TEXT_PLAIN)
-	String getActiveNodeRandomByGroup(@PathParam("group_name") String group_name);
+	String getActiveNodeMasterByService(@PathParam("service_name") String service_name,
+					@QueryParam("group") String group);
 
 }

@@ -23,7 +23,7 @@ import java.util.Collections;
 import java.util.Map;
 
 @JsonInclude(Include.NON_NULL)
-public class ClusterKeyStatusJson {
+public class ClusterServiceStatusJson {
 
 	public enum StatusEnum {
 		ok, degraded, failure
@@ -35,11 +35,11 @@ public class ClusterKeyStatusJson {
 	public final int inactive_count;
 	public final Map<String, ClusterNodeStatusJson> inactive;
 
-	public ClusterKeyStatusJson() {
+	public ClusterServiceStatusJson() {
 		this(ArrayUtils.EMPTY_STRING_ARRAY, Collections.emptyMap());
 	}
 
-	public ClusterKeyStatusJson(String[] active, Map<String, ClusterNodeStatusJson> inactive) {
+	public ClusterServiceStatusJson(String[] active, Map<String, ClusterNodeStatusJson> inactive) {
 		this.active = active;
 		this.inactive = inactive;
 		this.active_count = active == null ? 0 : active.length;

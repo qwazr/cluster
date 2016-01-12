@@ -30,6 +30,7 @@ import javax.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Map;
+import java.util.TreeMap;
 
 public class ClusterSingleClient extends JsonClientAbstract implements ClusterServiceInterface {
 
@@ -80,37 +81,35 @@ public class ClusterSingleClient extends JsonClientAbstract implements ClusterSe
 		return Response.status(Status.NOT_IMPLEMENTED).build();
 	}
 
+	public final static TypeReference<TreeMap<String, ClusterServiceStatusJson.StatusEnum>> MapStringStatusEnumTypeRef = new TypeReference<TreeMap<String, ClusterServiceStatusJson.StatusEnum>>() {
+	};
+
 	@Override
-	public ClusterKeyStatusJson getServiceStatus(String service_name) {
-		UBuilder uriBuilder = new UBuilder("/cluster/services/", service_name);
+	public TreeMap<String, ClusterServiceStatusJson.StatusEnum> getServiceMap(String group) {
+		UBuilder uriBuilder = new UBuilder("/cluster/services").setParameter("group", group);
 		Request request = Request.Get(uriBuilder.build());
-		return commonServiceRequest(request, null, msTimeOut, ClusterKeyStatusJson.class, 200);
+		return commonServiceRequest(request, null, msTimeOut, MapStringStatusEnumTypeRef, 200);
 	}
 
 	@Override
-	public ClusterKeyStatusJson getGroupStatus(String group_name) {
-		UBuilder uriBuilder = new UBuilder("/cluster/groups/", group_name);
+	public ClusterServiceStatusJson getServiceStatus(String service_name, String group) {
+		UBuilder uriBuilder = new UBuilder("/cluster/services/", service_name).setParameter("group", group);
 		Request request = Request.Get(uriBuilder.build());
-		return commonServiceRequest(request, null, msTimeOut, ClusterKeyStatusJson.class, 200);
+		return commonServiceRequest(request, null, msTimeOut, ClusterServiceStatusJson.class, 200);
 	}
 
 	@Override
-	public String[] getActiveNodesByService(String service_name) {
-		UBuilder uriBuilder = new UBuilder("/cluster/services/", service_name, "/active");
-		Request request = Request.Get(uriBuilder.build());
-		return commonServiceRequest(request, null, msTimeOut, String[].class, 200);
-	}
-
-	@Override
-	public String[] getActiveNodesByGroup(String group_name) {
-		UBuilder uriBuilder = new UBuilder("/cluster/groups/", group_name, "/active");
+	public String[] getActiveNodesByService(String service_name, String group) {
+		UBuilder uriBuilder = new UBuilder("/cluster/services/", service_name, "/active").setParameter("group", group);
 		Request request = Request.Get(uriBuilder.build());
 		return commonServiceRequest(request, null, msTimeOut, String[].class, 200);
 	}
 
-	private String getActiveNodeRandom(String path, String key) {
+	@Override
+	public String getActiveNodeRandomByService(String service_name, String group) {
 		try {
-			UBuilder uriBuilder = new UBuilder(path, key, "/active/random");
+			UBuilder uriBuilder = new UBuilder("/cluster/services/" + service_name + "/active/random")
+							.setParameter("group", group);
 			Request request = Request.Get(uriBuilder.build());
 			HttpResponse response = execute(request, null, msTimeOut);
 			HttpUtils.checkStatusCodes(response, 200);
@@ -118,17 +117,6 @@ public class ClusterSingleClient extends JsonClientAbstract implements ClusterSe
 		} catch (IOException e) {
 			throw new WebApplicationException(e.getMessage(), e, Status.INTERNAL_SERVER_ERROR);
 		}
-
-	}
-
-	@Override
-	public String getActiveNodeRandomByService(String service_name) {
-		return getActiveNodeRandom("/cluster/services/", service_name);
-	}
-
-	@Override
-	public String getActiveNodeRandomByGroup(String group_name) {
-		return getActiveNodeRandom("/cluster/groups/", group_name);
 	}
 
 }

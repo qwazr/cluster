@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.qwazr.cluster.manager.ClusterManager;
 import com.qwazr.cluster.manager.ClusterNode;
-import com.qwazr.cluster.service.ClusterKeyStatusJson.StatusEnum;
+import com.qwazr.cluster.service.ClusterServiceStatusJson.StatusEnum;
 import com.qwazr.utils.server.ServerException;
 
 import java.util.*;
@@ -31,7 +31,6 @@ public class ClusterStatusJson {
 	public final Set<String> active_nodes;
 	public final Map<String, ClusterNodeStatusJson> inactive_nodes;
 	public final Map<String, StatusEnum> services;
-	public final Map<String, StatusEnum> groups;
 	public final String[] masters;
 	public final Map<String, Date> last_executions;
 
@@ -40,7 +39,6 @@ public class ClusterStatusJson {
 		active_nodes = null;
 		inactive_nodes = null;
 		services = null;
-		groups = null;
 		masters = null;
 		last_executions = null;
 	}
@@ -49,8 +47,7 @@ public class ClusterStatusJson {
 		this.is_master = clusterManager.isMaster();
 		this.active_nodes = new TreeSet<String>();
 		this.inactive_nodes = new TreeMap<String, ClusterNodeStatusJson>();
-		this.services = clusterManager.getServicesStatusMap();
-		this.groups = clusterManager.getGroupsStatusMap();
+		this.services = clusterManager.getServicesStatusMap(null);
 		this.masters = clusterManager.getMasterArray();
 		this.last_executions = clusterManager.getLastExecutions();
 	}
