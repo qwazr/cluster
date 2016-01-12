@@ -153,4 +153,17 @@ public class ClusterMultiClient extends JsonMultiClientAbstract<String, ClusterS
 		throw exceptionHolder.getException();
 	}
 
+	@Override
+	public String getActiveNodeMasterByService(String service_name, String group_name) {
+		WebAppExceptionHolder exceptionHolder = new WebAppExceptionHolder(logger);
+		for (ClusterSingleClient client : this) {
+			try {
+				return client.getActiveNodeMasterByService(service_name, group_name);
+			} catch (WebApplicationException e) {
+				exceptionHolder.switchAndWarn(e);
+			}
+		}
+		throw exceptionHolder.getException();
+	}
+
 }

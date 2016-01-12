@@ -126,6 +126,18 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 	}
 
 	@Override
+	public String getActiveNodeMasterByService(String service_name, String group) {
+		if (service_name == null)
+			throw new ServerException(Status.NOT_ACCEPTABLE).getJsonException();
+		ClusterManager manager = ClusterManager.getInstance();
+		try {
+			return manager.getNodeSetCacheService(service_name, group).master;
+		} catch (ServerException e) {
+			throw e.getJsonException();
+		}
+	}
+
+	@Override
 	public TreeMap<String, ClusterServiceStatusJson.StatusEnum> getServiceMap(String group) {
 		ClusterManager manager = ClusterManager.getInstance();
 		try {

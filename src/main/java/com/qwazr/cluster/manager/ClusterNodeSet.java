@@ -17,9 +17,9 @@ package com.qwazr.cluster.manager;
 
 import com.qwazr.utils.LockUtils;
 import com.qwazr.utils.StringUtils;
-import org.apache.commons.lang3.RandomUtils;
 
 import java.util.HashMap;
+import java.util.TreeSet;
 
 public class ClusterNodeSet {
 
@@ -34,12 +34,12 @@ public class ClusterNodeSet {
 
 		final ClusterNode[] activeArray;
 		final ClusterNode[] inactiveArray;
-		final String electedMaster;
+		public final String master;
 
 		private Cache(boolean electNewMaster) {
 			this.activeArray = activeMap.values().toArray(new ClusterNode[activeMap.size()]);
 			this.inactiveArray = inactiveMap.values().toArray(new ClusterNode[inactiveMap.size()]);
-			this.electedMaster = checkElectedMaster(electNewMaster, activeArray);
+			this.master = checkElectedMaster(electNewMaster, activeArray);
 		}
 	}
 
@@ -100,12 +100,21 @@ public class ClusterNodeSet {
 		}
 	}
 
-	private String checkElectedMaster(boolean force, ClusterNode[] activeArray) {
-		if (!force && electedMaster != null)
-			return electedMaster;
+	private static String checkElectedMaster(String currentMaster, boolean force, ClusterNode[] activeArray) {
+		if (!force && currentMaster != null)
+			return currentMaster;
 		if (activeArray == null || activeArray.length == 0)
 			return StringUtils.EMPTY;
-		return activeArray[RandomUtils.nextInt(0, activeArray.length)].address;
+		if (activeArray.length == 1)
+			return activeArray[0].address;
+		TreeSet<String> set = new TreeSet<String>();
+		for (ClusterNode node : activeArray)
+			set.add(node.address);
+		return set.first();
+	}
+
+	private String checkElectedMaster(boolean force, ClusterNode[] activeArray) {
+		return checkElectedMaster(electedMaster, force, activeArray);
 	}
 
 	/**

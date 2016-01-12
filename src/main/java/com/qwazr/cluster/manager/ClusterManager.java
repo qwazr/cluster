@@ -287,11 +287,11 @@ public class ClusterManager {
 			return new ClusterServiceStatusJson();
 		String[] activeList = buildArray(cache.activeArray);
 		if (cache.inactiveArray == null)
-			return new ClusterServiceStatusJson(activeList, Collections.emptyMap());
+			return new ClusterServiceStatusJson(cache.master, activeList, Collections.emptyMap());
 		Map<String, ClusterNodeStatusJson> inactiveMap = new LinkedHashMap<String, ClusterNodeStatusJson>();
 		for (ClusterNode node : cache.inactiveArray)
 			inactiveMap.put(node.address, node.getStatus());
-		return new ClusterServiceStatusJson(activeList, inactiveMap);
+		return new ClusterServiceStatusJson(cache.master, activeList, inactiveMap);
 	}
 
 	public synchronized void registerMe(ClusterNodeJson clusterNodeDef) {

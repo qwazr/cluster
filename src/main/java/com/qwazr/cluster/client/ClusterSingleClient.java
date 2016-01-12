@@ -119,4 +119,18 @@ public class ClusterSingleClient extends JsonClientAbstract implements ClusterSe
 		}
 	}
 
+	@Override
+	public String getActiveNodeMasterByService(String service_name, String group) {
+		try {
+			UBuilder uriBuilder = new UBuilder("/cluster/services/" + service_name + "/active/master")
+							.setParameter("group", group);
+			Request request = Request.Get(uriBuilder.build());
+			HttpResponse response = execute(request, null, msTimeOut);
+			HttpUtils.checkStatusCodes(response, 200);
+			return IOUtils.toString(HttpUtils.checkIsEntity(response, ContentType.TEXT_PLAIN).getContent());
+		} catch (IOException e) {
+			throw new WebApplicationException(e.getMessage(), e, Status.INTERNAL_SERVER_ERROR);
+		}
+	}
+
 }
