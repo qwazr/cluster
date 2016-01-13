@@ -25,7 +25,7 @@ public class ClusterNodeSet {
 
 	private final LockUtils.ReadWriteLock readWriteLock = new LockUtils.ReadWriteLock();
 
-	private volatile String electedMaster;
+	private volatile String electedLeader;
 
 	private final HashMap<String, ClusterNode> activeMap;
 	private final HashMap<String, ClusterNode> inactiveMap;
@@ -34,12 +34,12 @@ public class ClusterNodeSet {
 
 		final ClusterNode[] activeArray;
 		final ClusterNode[] inactiveArray;
-		public final String master;
+		public final String leader;
 
-		private Cache(boolean electNewMaster) {
+		private Cache(boolean electNewLeader) {
 			this.activeArray = activeMap.values().toArray(new ClusterNode[activeMap.size()]);
 			this.inactiveArray = inactiveMap.values().toArray(new ClusterNode[inactiveMap.size()]);
-			this.master = checkElectedMaster(electNewMaster, activeArray);
+			this.leader = checkElectedLeader(electNewLeader, activeArray);
 		}
 	}
 
@@ -49,7 +49,7 @@ public class ClusterNodeSet {
 		cache = null;
 		activeMap = new HashMap<String, ClusterNode>();
 		inactiveMap = new HashMap<String, ClusterNode>();
-		electedMaster = null;
+		electedLeader = null;
 	}
 
 	/**
@@ -94,13 +94,13 @@ public class ClusterNodeSet {
 		try {
 			activeMap.remove(node.address);
 			inactiveMap.put(node.address, node);
-			cache = new Cache(electedMaster == node.address);
+			cache = new Cache(electedLeader == node.address);
 		} finally {
 			readWriteLock.w.unlock();
 		}
 	}
 
-	private static String checkElectedMaster(String currentMaster, boolean force, ClusterNode[] activeArray) {
+	private static String checkElectedLeader(String currentMaster, boolean force, ClusterNode[] activeArray) {
 		if (!force && currentMaster != null)
 			return currentMaster;
 		if (activeArray == null || activeArray.length == 0)
@@ -113,8 +113,8 @@ public class ClusterNodeSet {
 		return set.first();
 	}
 
-	private String checkElectedMaster(boolean force, ClusterNode[] activeArray) {
-		return checkElectedMaster(electedMaster, force, activeArray);
+	private String checkElectedLeader(boolean force, ClusterNode[] activeArray) {
+		return checkElectedLeader(electedLeader, force, activeArray);
 	}
 
 	/**
@@ -135,7 +135,7 @@ public class ClusterNodeSet {
 		try {
 			activeMap.remove(node.address);
 			inactiveMap.remove(node.address);
-			cache = new Cache(electedMaster == node.address);
+			cache = new Cache(electedLeader == node.address);
 		} finally {
 			readWriteLock.w.unlock();
 		}

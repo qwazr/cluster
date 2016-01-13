@@ -131,7 +131,7 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 			throw new ServerException(Status.NOT_ACCEPTABLE).getJsonException();
 		ClusterManager manager = ClusterManager.getInstance();
 		try {
-			return manager.getNodeSetCacheService(service_name, group).master;
+			return manager.getNodeSetCacheService(service_name, group).leader;
 		} catch (ServerException e) {
 			throw e.getJsonException();
 		}

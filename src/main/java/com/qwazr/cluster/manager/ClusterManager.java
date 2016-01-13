@@ -209,6 +209,10 @@ public class ClusterManager {
 		return clusterMasterArray;
 	}
 
+	public boolean isLeader(String service, String group) throws ServerException {
+		return myAddress.equals(getNodeSetCacheService(service, group).leader);
+	}
+
 	public boolean isMaster() {
 		return isMaster;
 	}
@@ -287,11 +291,11 @@ public class ClusterManager {
 			return new ClusterServiceStatusJson();
 		String[] activeList = buildArray(cache.activeArray);
 		if (cache.inactiveArray == null)
-			return new ClusterServiceStatusJson(cache.master, activeList, Collections.emptyMap());
+			return new ClusterServiceStatusJson(cache.leader, activeList, Collections.emptyMap());
 		Map<String, ClusterNodeStatusJson> inactiveMap = new LinkedHashMap<String, ClusterNodeStatusJson>();
 		for (ClusterNode node : cache.inactiveArray)
 			inactiveMap.put(node.address, node.getStatus());
-		return new ClusterServiceStatusJson(cache.master, activeList, inactiveMap);
+		return new ClusterServiceStatusJson(cache.leader, activeList, inactiveMap);
 	}
 
 	public synchronized void registerMe(ClusterNodeJson clusterNodeDef) {
