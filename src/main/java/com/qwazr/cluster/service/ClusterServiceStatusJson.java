@@ -30,7 +30,7 @@ public class ClusterServiceStatusJson {
 		ok, degraded, failure
 	}
 
-	public final String master;
+	public final String leader;
 	public final StatusEnum status;
 	public final int active_count;
 	public final String[] active;
@@ -41,10 +41,10 @@ public class ClusterServiceStatusJson {
 		this(StringUtils.EMPTY, ArrayUtils.EMPTY_STRING_ARRAY, Collections.emptyMap());
 	}
 
-	public ClusterServiceStatusJson(String master, String[] active, Map<String, ClusterNodeStatusJson> inactive) {
+	public ClusterServiceStatusJson(String leader, String[] active, Map<String, ClusterNodeStatusJson> inactive) {
 		this.active = active;
 		this.inactive = inactive;
-		this.master = master;
+		this.leader = leader;
 		this.active_count = active == null ? 0 : active.length;
 		this.inactive_count = inactive == null || inactive.isEmpty() ? 0 : inactive.size();
 		status = findStatus(active_count, inactive_count);

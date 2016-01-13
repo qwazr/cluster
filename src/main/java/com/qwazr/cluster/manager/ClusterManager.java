@@ -42,7 +42,7 @@ public class ClusterManager {
 
 	private static final Logger logger = LoggerFactory.getLogger(ClusterManager.class);
 
-	static ClusterManager INSTANCE = null;
+	public static ClusterManager INSTANCE = null;
 
 	public synchronized static Class<? extends ClusterServiceInterface> load(ExecutorService executor, String myAddress,
 			Set<String> myGroups) throws IOException {
@@ -63,12 +63,6 @@ public class ClusterManager {
 		} catch (URISyntaxException e) {
 			throw new IOException(e);
 		}
-	}
-
-	final public static ClusterManager getInstance() {
-		if (INSTANCE == null)
-			throw new RuntimeException("The cluster service is not enabled");
-		return INSTANCE;
 	}
 
 	private final ClusterNodeMap clusterNodeMap;
@@ -99,7 +93,7 @@ public class ClusterManager {
 
 	private final boolean isCluster;
 
-	private final ExecutorService executor;
+	public final ExecutorService executor;
 
 	private ClusterManager(ExecutorService executor, String publicAddress, Set<String> myGroups)
 			throws IOException, URISyntaxException {
@@ -230,7 +224,10 @@ public class ClusterManager {
 	}
 
 	public boolean isLeader(String service, String group) throws ServerException {
-		return myAddress.equals(getNodeSetCacheService(service, group).leader);
+		final Cache cache = getNodeSetCacheService(service, group);
+		if (cache == null)
+			return false;
+		return myAddress.equals(cache.leader);
 	}
 
 	public boolean isMe(String address) {
