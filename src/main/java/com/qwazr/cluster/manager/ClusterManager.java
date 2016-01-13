@@ -29,11 +29,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.core.Response.Status;
-import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class ClusterManager {
@@ -44,20 +44,20 @@ public class ClusterManager {
 
 	static ClusterManager INSTANCE = null;
 
-	public synchronized static Class<? extends ClusterServiceInterface> load(String myAddress, File dataDirectory)
-					throws IOException {
+	public synchronized static Class<? extends ClusterServiceInterface> load(ExecutorService executor, String myAddress,
+			Set<String> myGroups) throws IOException {
 		if (INSTANCE != null)
 			throw new IOException("Already loaded");
 		try {
-			INSTANCE = new ClusterManager(myAddress);
+			INSTANCE = new ClusterManager(executor, myAddress, myGroups);
 			if (INSTANCE.isMaster()) {
 				// First, we get the node list from another master (if any)
 				ClusterManager.INSTANCE.loadNodesFromOtherMaster();
 				// All is set, let's start the monitoring
 				INSTANCE.clusterMasterThread = (ClusterMasterThread) INSTANCE
-								.addPeriodicThread(new ClusterMasterThread(120));
+						.addPeriodicThread(new ClusterMasterThread(120));
 				INSTANCE.clusterMonitoringThread = (ClusterMonitoringThread) INSTANCE
-								.addPeriodicThread(new ClusterMonitoringThread(60));
+						.addPeriodicThread(new ClusterMonitoringThread(60));
 			}
 			return ClusterServiceImpl.class;
 		} catch (URISyntaxException e) {
@@ -79,6 +79,8 @@ public class ClusterManager {
 
 	public final String myAddress;
 
+	private final Set<String> myGroups;
+
 	private List<PeriodicThread> periodicThreads = null;
 
 	private ClusterMasterThread clusterMasterThread = null;
@@ -97,9 +99,16 @@ public class ClusterManager {
 
 	private final boolean isCluster;
 
-	private ClusterManager(String publicAddress) throws IOException, URISyntaxException {
+	private final ExecutorService executor;
+
+	private ClusterManager(ExecutorService executor, String publicAddress, Set<String> myGroups)
+			throws IOException, URISyntaxException {
 		myAddress = ClusterNode.toAddress(publicAddress);
-		logger.info("Server: " + myAddress);
+		if (logger.isInfoEnabled())
+			logger.info("Server: " + myAddress);
+		this.myGroups = myGroups;
+
+		this.executor = executor;
 
 		// Load the configuration
 		String masters_env = System.getenv("QWAZR_MASTERS");
@@ -113,7 +122,8 @@ public class ClusterManager {
 			lastTimeCheck = null;
 			isMaster = false;
 			isCluster = false;
-			logger.info("No QWAZR_MASTERS environment variable. This node is not part of a cluster.");
+			if (logger.isInfoEnabled())
+				logger.info("No QWAZR_MASTERS environment variable. This node is not part of a cluster.");
 			return;
 		}
 
@@ -132,16 +142,16 @@ public class ClusterManager {
 			masterSet.add(masterAddress);
 			if (masterAddress == myAddress) {
 				isMaster = true;
-				logger.info("I am a master!");
+				if (logger.isInfoEnabled())
+					logger.info("I am a master!");
 			}
 		}
 		isCluster = true;
 		clusterMasterArray = masterSet.toArray(new String[masterSet.size()]);
-		clusterClient = new ClusterMultiClient(clusterMasterArray, 60000);
+		clusterClient = new ClusterMultiClient(executor, clusterMasterArray, 60000);
 		this.isMaster = isMaster;
 		if (!isMaster) {
 			clusterNodeMap = null;
-			isMaster = false;
 			return;
 		}
 
@@ -193,6 +203,16 @@ public class ClusterManager {
 		return clusterNode;
 	}
 
+	public boolean isGroup(String group) {
+		if (group == null)
+			return true;
+		if (myGroups == null)
+			return true;
+		if (group.isEmpty())
+			return true;
+		return myGroups.contains(group);
+	}
+
 	void updateNodeStatus(ClusterNode node) throws ServerException {
 		checkMaster().status(node);
 	}
@@ -211,6 +231,10 @@ public class ClusterManager {
 
 	public boolean isLeader(String service, String group) throws ServerException {
 		return myAddress.equals(getNodeSetCacheService(service, group).leader);
+	}
+
+	public boolean isMe(String address) {
+		return myAddress.equals(address);
 	}
 
 	public boolean isMaster() {
@@ -306,7 +330,7 @@ public class ClusterManager {
 			return;
 		}
 		clusterRegisteringThead = (ClusterRegisteringThread) addPeriodicThread(
-						new ClusterRegisteringThread(90, clusterClient, clusterNodeDef));
+				new ClusterRegisteringThread(90, clusterClient, clusterNodeDef));
 		if (clusterNodeShutdownThread == null) {
 			clusterNodeShutdownThread = new Thread() {
 				@Override
@@ -336,7 +360,7 @@ public class ClusterManager {
 		for (Map.Entry<String, ClusterNodeSet> entry : nodeMap.entrySet()) {
 			Cache cache = entry.getValue().getCache();
 			StatusEnum status = ClusterServiceStatusJson
-							.findStatus(cache.activeArray.length, cache.inactiveArray.length);
+					.findStatus(cache.activeArray.length, cache.inactiveArray.length);
 			statusMap.put(entry.getKey(), status);
 		}
 		return statusMap;

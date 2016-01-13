@@ -28,11 +28,12 @@ import javax.servlet.ServletException;
 import javax.ws.rs.ApplicationPath;
 import java.io.IOException;
 import java.util.Set;
+import java.util.concurrent.Executors;
 
 public class ClusterServer extends AbstractServer {
 
 	private ClusterServer() {
-		super(new ServerDefinition());
+		super(new ServerDefinition(), Executors.newCachedThreadPool());
 	}
 
 	@ApplicationPath("/")
@@ -48,7 +49,7 @@ public class ClusterServer extends AbstractServer {
 
 	@Override
 	public void load() throws IOException {
-		ClusterManager.load(getWebServicePublicAddress(), getCurrentDataDir());
+		ClusterManager.load(executorService, getWebServicePublicAddress(), null);
 	}
 
 	@Override

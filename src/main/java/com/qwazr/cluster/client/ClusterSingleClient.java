@@ -42,7 +42,7 @@ public class ClusterSingleClient extends JsonClientAbstract implements ClusterSe
 	public ClusterStatusJson list() {
 		UBuilder uriBuilder = new UBuilder("/cluster");
 		Request request = Request.Get(uriBuilder.build());
-		return commonServiceRequest(request, null, msTimeOut, ClusterStatusJson.class, 200);
+		return commonServiceRequest(request, null, null, ClusterStatusJson.class, 200);
 	}
 
 	public final static TypeReference<Map<String, ClusterNodeJson>> MapStringClusterNodeJsonTypeRef = new TypeReference<Map<String, ClusterNodeJson>>() {
@@ -52,14 +52,14 @@ public class ClusterSingleClient extends JsonClientAbstract implements ClusterSe
 	public Map<String, ClusterNodeJson> getNodes() {
 		UBuilder uriBuilder = new UBuilder("/cluster/nodes");
 		Request request = Request.Get(uriBuilder.build());
-		return commonServiceRequest(request, null, msTimeOut, MapStringClusterNodeJsonTypeRef, 200);
+		return commonServiceRequest(request, null, null, MapStringClusterNodeJsonTypeRef, 200);
 	}
 
 	@Override
 	public ClusterNodeStatusJson register(ClusterNodeJson register) {
 		UBuilder uriBuilder = new UBuilder("/cluster");
 		Request request = Request.Post(uriBuilder.build());
-		return commonServiceRequest(request, register, msTimeOut, ClusterNodeStatusJson.class, 200);
+		return commonServiceRequest(request, register, null, ClusterNodeStatusJson.class, 200);
 	}
 
 	@Override
@@ -68,7 +68,7 @@ public class ClusterSingleClient extends JsonClientAbstract implements ClusterSe
 			UBuilder uriBuilder = new UBuilder("/cluster");
 			uriBuilder.setParameter("address", address);
 			Request request = Request.Delete(uriBuilder.build());
-			HttpResponse response = execute(request, null, msTimeOut);
+			HttpResponse response = execute(request, null, null);
 			HttpUtils.checkStatusCodes(response, 200);
 			return Response.status(response.getStatusLine().getStatusCode()).build();
 		} catch (IOException e) {
@@ -88,30 +88,30 @@ public class ClusterSingleClient extends JsonClientAbstract implements ClusterSe
 	public TreeMap<String, ClusterServiceStatusJson.StatusEnum> getServiceMap(String group) {
 		UBuilder uriBuilder = new UBuilder("/cluster/services").setParameter("group", group);
 		Request request = Request.Get(uriBuilder.build());
-		return commonServiceRequest(request, null, msTimeOut, MapStringStatusEnumTypeRef, 200);
+		return commonServiceRequest(request, null, null, MapStringStatusEnumTypeRef, 200);
 	}
 
 	@Override
 	public ClusterServiceStatusJson getServiceStatus(String service_name, String group) {
 		UBuilder uriBuilder = new UBuilder("/cluster/services/", service_name).setParameter("group", group);
 		Request request = Request.Get(uriBuilder.build());
-		return commonServiceRequest(request, null, msTimeOut, ClusterServiceStatusJson.class, 200);
+		return commonServiceRequest(request, null, null, ClusterServiceStatusJson.class, 200);
 	}
 
 	@Override
 	public String[] getActiveNodesByService(String service_name, String group) {
 		UBuilder uriBuilder = new UBuilder("/cluster/services/", service_name, "/active").setParameter("group", group);
 		Request request = Request.Get(uriBuilder.build());
-		return commonServiceRequest(request, null, msTimeOut, String[].class, 200);
+		return commonServiceRequest(request, null, null, String[].class, 200);
 	}
 
 	@Override
 	public String getActiveNodeRandomByService(String service_name, String group) {
 		try {
 			UBuilder uriBuilder = new UBuilder("/cluster/services/" + service_name + "/active/random")
-							.setParameter("group", group);
+					.setParameter("group", group);
 			Request request = Request.Get(uriBuilder.build());
-			HttpResponse response = execute(request, null, msTimeOut);
+			HttpResponse response = execute(request, null, null);
 			HttpUtils.checkStatusCodes(response, 200);
 			return IOUtils.toString(HttpUtils.checkIsEntity(response, ContentType.TEXT_PLAIN).getContent());
 		} catch (IOException e) {
@@ -123,9 +123,9 @@ public class ClusterSingleClient extends JsonClientAbstract implements ClusterSe
 	public String getActiveNodeMasterByService(String service_name, String group) {
 		try {
 			UBuilder uriBuilder = new UBuilder("/cluster/services/" + service_name + "/active/master")
-							.setParameter("group", group);
+					.setParameter("group", group);
 			Request request = Request.Get(uriBuilder.build());
-			HttpResponse response = execute(request, null, msTimeOut);
+			HttpResponse response = execute(request, null, null);
 			HttpUtils.checkStatusCodes(response, 200);
 			return IOUtils.toString(HttpUtils.checkIsEntity(response, ContentType.TEXT_PLAIN).getContent());
 		} catch (IOException e) {

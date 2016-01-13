@@ -17,6 +17,7 @@ package com.qwazr.cluster.client;
 
 import com.qwazr.cluster.service.*;
 import com.qwazr.utils.json.client.JsonMultiClientAbstract;
+import com.qwazr.utils.server.WebAppExceptionHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,15 +27,15 @@ import javax.ws.rs.core.Response.Status;
 import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.ExecutorService;
 
 public class ClusterMultiClient extends JsonMultiClientAbstract<String, ClusterSingleClient>
-				implements ClusterServiceInterface {
+		implements ClusterServiceInterface {
 
 	private static final Logger logger = LoggerFactory.getLogger(ClusterMultiClient.class);
 
-	public ClusterMultiClient(String[] urls, Integer msTimeOut) throws URISyntaxException {
-		// TODO Pass executor
-		super(null, new ClusterSingleClient[urls.length], urls, msTimeOut);
+	public ClusterMultiClient(ExecutorService executor, String[] urls, Integer msTimeOut) throws URISyntaxException {
+		super(executor, new ClusterSingleClient[urls.length], urls, msTimeOut);
 	}
 
 	@Override
