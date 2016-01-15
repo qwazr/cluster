@@ -17,6 +17,7 @@ package com.qwazr.cluster.manager;
 
 import com.qwazr.cluster.client.ClusterMultiClient;
 import com.qwazr.cluster.service.ClusterNodeJson;
+import com.qwazr.utils.ArrayUtils;
 import com.qwazr.utils.threads.PeriodicThread;
 import com.qwazr.utils.threads.ThreadUtils;
 import org.apache.commons.lang3.RandomUtils;
@@ -50,9 +51,10 @@ public class ClusterRegisteringThread extends PeriodicThread {
 		if (lastCheck == null || lastCheck < removeTime) {
 			try {
 				if (logger.isInfoEnabled())
-					logger.info("Registering to the masters - last check: " + (lastCheck == null ?
-							0 :
-							new Date(lastCheck)));
+					logger.info(
+							"Registering to the masters - last check: " + (lastCheck == null ? 0 : new Date(lastCheck))
+									+ " - Services: " + ArrayUtils.prettyPrint(clusterNodeDef.services) + " - Groups: "
+									+ ArrayUtils.prettyPrint(clusterNodeDef.groups));
 				clusterClient.register(clusterNodeDef);
 			} catch (WebApplicationException e) {
 				logger.error("Registration failed", e);

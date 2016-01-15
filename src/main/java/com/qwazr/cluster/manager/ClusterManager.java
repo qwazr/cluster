@@ -20,10 +20,10 @@ import com.qwazr.cluster.client.ClusterSingleClient;
 import com.qwazr.cluster.manager.ClusterNodeSet.Cache;
 import com.qwazr.cluster.service.*;
 import com.qwazr.cluster.service.ClusterServiceStatusJson.StatusEnum;
+import com.qwazr.utils.ArrayUtils;
 import com.qwazr.utils.StringUtils;
 import com.qwazr.utils.server.ServerException;
 import com.qwazr.utils.threads.PeriodicThread;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -99,7 +99,7 @@ public class ClusterManager {
 			throws IOException, URISyntaxException {
 		myAddress = ClusterNode.toAddress(publicAddress);
 		if (logger.isInfoEnabled())
-			logger.info("Server: " + myAddress);
+			logger.info("Server: " + myAddress + " Groups: " + ArrayUtils.prettyPrint(myGroups));
 		this.myGroups = myGroups;
 
 		this.executor = executor;
@@ -323,7 +323,7 @@ public class ClusterManager {
 		if (clusterClient == null || clusterMasterArray == null)
 			return;
 		if (clusterRegisteringThead != null) {
-			logger.error("Node already registered");
+			logger.error("Node already registering");
 			return;
 		}
 		clusterRegisteringThead = (ClusterRegisteringThread) addPeriodicThread(
