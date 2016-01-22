@@ -16,6 +16,8 @@
 package com.qwazr.cluster.service;
 
 import com.qwazr.cluster.manager.ClusterManager;
+import com.qwazr.utils.server.ServiceInterface;
+import com.qwazr.utils.server.ServiceName;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.*;
@@ -26,25 +28,26 @@ import java.util.TreeMap;
 
 @RolesAllowed(ClusterManager.SERVICE_NAME_CLUSTER)
 @Path("/cluster")
-public interface ClusterServiceInterface {
+@ServiceName("cluster")
+public interface ClusterServiceInterface extends ServiceInterface {
 
 	String HEADER_CHECK_NAME = "X-OSS-CLUSTER-CHECK-TOKEN";
 	String HEADER_CHECK_ADDR = "X-OSS-CLUSTER-CHECK-ADDR";
 
 	@GET
 	@Path("/")
-	@Produces(MediaType.APPLICATION_JSON)
+	@Produces(ServiceInterface.APPLICATION_JSON_UTF8)
 	ClusterStatusJson list();
 
 	@GET
 	@Path("/nodes")
-	@Produces(MediaType.APPLICATION_JSON)
+	@Produces(ServiceInterface.APPLICATION_JSON_UTF8)
 	Map<String, ClusterNodeJson> getNodes();
 
 	@POST
 	@Path("/")
-	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(ServiceInterface.APPLICATION_JSON_UTF8)
+	@Produces(ServiceInterface.APPLICATION_JSON_UTF8)
 	ClusterNodeStatusJson register(ClusterNodeJson register);
 
 	@DELETE
@@ -57,18 +60,18 @@ public interface ClusterServiceInterface {
 
 	@GET
 	@Path("/services")
-	@Produces(MediaType.APPLICATION_JSON)
+	@Produces(ServiceInterface.APPLICATION_JSON_UTF8)
 	TreeMap<String, ClusterServiceStatusJson.StatusEnum> getServiceMap(@QueryParam("group") String group);
 
 	@GET
 	@Path("/services/{service_name}")
-	@Produces(MediaType.APPLICATION_JSON)
+	@Produces(ServiceInterface.APPLICATION_JSON_UTF8)
 	ClusterServiceStatusJson getServiceStatus(@PathParam("service_name") String service_name,
 					@QueryParam("group") String group);
 
 	@GET
 	@Path("/services/{service_name}/active")
-	@Produces(MediaType.APPLICATION_JSON)
+	@Produces(ServiceInterface.APPLICATION_JSON_UTF8)
 	String[] getActiveNodesByService(@PathParam("service_name") String service_name, @QueryParam("group") String group);
 
 	@GET

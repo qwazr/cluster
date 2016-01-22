@@ -18,7 +18,11 @@ package com.qwazr.cluster.service;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.qwazr.cluster.manager.ClusterNode;
+import com.qwazr.utils.server.ServiceInterface;
+import com.qwazr.utils.server.ServiceName;
 
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 @JsonInclude(Include.NON_NULL)
@@ -38,6 +42,16 @@ public class ClusterNodeJson {
 		this.address = address;
 		this.services = services;
 		this.groups = groups;
+	}
+
+	public ClusterNodeJson(String address, Collection<Class<? extends ServiceInterface>> services, Set<String> groups) {
+		this(address, new LinkedHashSet<String>(), groups);
+		for (Class<? extends ServiceInterface> service : services) {
+			ServiceName serviceName = service.getAnnotation(ServiceName.class);
+			if (serviceName == null)
+				throw new RuntimeException("The ServiceName annotation is missing for " + services);
+			this.services.add(serviceName.value());
+		}
 	}
 
 	public ClusterNodeJson(ClusterNode clusterNode) {
