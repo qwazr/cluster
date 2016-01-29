@@ -47,7 +47,7 @@ public class ClusterServer extends AbstractServer {
 
 	public static void main(String[] args) throws IOException, ParseException, ServletException, InstantiationException,
 					IllegalAccessException {
-		new ClusterServer().start(args);
+		new ClusterServer().start(args, true);
 	}
 
 	@Override
