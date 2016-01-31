@@ -21,7 +21,6 @@ import com.qwazr.utils.server.ServerConfiguration;
 import com.qwazr.utils.server.ServiceInterface;
 import com.qwazr.utils.server.ServletApplication;
 import io.undertow.security.idm.IdentityManager;
-import org.apache.commons.cli.ParseException;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -45,8 +44,7 @@ public class ClusterServer extends AbstractServer<ServerConfiguration> {
 		return null;
 	}
 
-	public static void main(String[] args)
-			throws IOException, ParseException, ServletException, InstantiationException, IllegalAccessException {
+	public static void main(String[] args) throws IOException, ServletException, ReflectiveOperationException {
 		new ClusterServer().start(true);
 	}
 
