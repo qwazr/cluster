@@ -17,7 +17,6 @@ package com.qwazr.cluster.manager;
 
 import com.qwazr.utils.server.ServerException;
 import com.qwazr.utils.threads.PeriodicThread;
-import com.qwazr.utils.threads.ThreadUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
@@ -59,7 +58,7 @@ public class ClusterMonitoringThread extends PeriodicThread {
 
 	@Override
 	public void run() {
-		ThreadUtils.sleepMs(RandomUtils.nextInt(10000, 15000));
+		sleepMs(RandomUtils.nextInt(10000, 15000));
 		super.run();
 	}
 }

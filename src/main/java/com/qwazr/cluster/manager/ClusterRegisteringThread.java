@@ -19,7 +19,6 @@ import com.qwazr.cluster.client.ClusterMultiClient;
 import com.qwazr.cluster.service.ClusterNodeJson;
 import com.qwazr.utils.ArrayUtils;
 import com.qwazr.utils.threads.PeriodicThread;
-import com.qwazr.utils.threads.ThreadUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,7 +64,7 @@ public class ClusterRegisteringThread extends PeriodicThread {
 
 	@Override
 	public void run() {
-		ThreadUtils.sleepMs(RandomUtils.nextInt(5000, 10000));
+		sleepMs(RandomUtils.nextInt(5000, 10000));
 		super.run();
 	}
 }

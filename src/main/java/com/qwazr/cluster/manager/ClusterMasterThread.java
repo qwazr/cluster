@@ -1,12 +1,12 @@
 /**
  * Copyright 2014-2016 Emmanuel Keller / QWAZR
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,7 +16,6 @@
 package com.qwazr.cluster.manager;
 
 import com.qwazr.utils.threads.PeriodicThread;
-import com.qwazr.utils.threads.ThreadUtils;
 import org.apache.commons.lang3.RandomUtils;
 
 public class ClusterMasterThread extends PeriodicThread {
@@ -34,7 +33,7 @@ public class ClusterMasterThread extends PeriodicThread {
 
 	@Override
 	public void run() {
-		ThreadUtils.sleepMs(RandomUtils.nextInt(0, 5000));
+		sleepMs(RandomUtils.nextInt(0, 5000));
 		super.run();
 	}
 }
