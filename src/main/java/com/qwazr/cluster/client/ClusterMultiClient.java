@@ -17,6 +17,7 @@ package com.qwazr.cluster.client;
 
 import com.qwazr.cluster.service.*;
 import com.qwazr.utils.json.client.JsonMultiClientAbstract;
+import com.qwazr.utils.server.RemoteService;
 import com.qwazr.utils.server.WebAppExceptionHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,23 +25,22 @@ import org.slf4j.LoggerFactory;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 
-public class ClusterMultiClient extends JsonMultiClientAbstract<String, ClusterSingleClient>
+public class ClusterMultiClient extends JsonMultiClientAbstract<ClusterSingleClient>
 		implements ClusterServiceInterface {
 
 	private static final Logger logger = LoggerFactory.getLogger(ClusterMultiClient.class);
 
-	public ClusterMultiClient(ExecutorService executor, String[] urls, Integer msTimeOut) throws URISyntaxException {
-		super(executor, new ClusterSingleClient[urls.length], urls, msTimeOut);
+	public ClusterMultiClient(final ExecutorService executor, final RemoteService... remotes) {
+		super(executor, new ClusterSingleClient[remotes.length], remotes);
 	}
 
 	@Override
-	protected ClusterSingleClient newClient(String url, Integer msTimeOut) throws URISyntaxException {
-		return new ClusterSingleClient(url, msTimeOut);
+	protected ClusterSingleClient newClient(RemoteService remote) {
+		return new ClusterSingleClient(remote);
 	}
 
 	@Override

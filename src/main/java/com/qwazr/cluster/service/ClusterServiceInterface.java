@@ -27,10 +27,11 @@ import java.util.Map;
 import java.util.TreeMap;
 
 @RolesAllowed(ClusterManager.SERVICE_NAME_CLUSTER)
-@Path("/cluster")
+@Path("/" + ClusterServiceInterface.PATH)
 @ServiceName("cluster")
 public interface ClusterServiceInterface extends ServiceInterface {
 
+	String PATH = "cluster";
 	String HEADER_CHECK_NAME = "X-OSS-CLUSTER-CHECK-TOKEN";
 	String HEADER_CHECK_ADDR = "X-OSS-CLUSTER-CHECK-ADDR";
 
@@ -67,7 +68,7 @@ public interface ClusterServiceInterface extends ServiceInterface {
 	@Path("/services/{service_name}")
 	@Produces(ServiceInterface.APPLICATION_JSON_UTF8)
 	ClusterServiceStatusJson getServiceStatus(@PathParam("service_name") String service_name,
-					@QueryParam("group") String group);
+			@QueryParam("group") String group);
 
 	@GET
 	@Path("/services/{service_name}/active")
@@ -78,12 +79,12 @@ public interface ClusterServiceInterface extends ServiceInterface {
 	@Path("/services/{service_name}/active/random")
 	@Produces(MediaType.TEXT_PLAIN)
 	String getActiveNodeRandomByService(@PathParam("service_name") String service_name,
-					@QueryParam("group") String group);
+			@QueryParam("group") String group);
 
 	@GET
 	@Path("/services/{service_name}/active/master")
 	@Produces(MediaType.TEXT_PLAIN)
 	String getActiveNodeMasterByService(@PathParam("service_name") String service_name,
-					@QueryParam("group") String group);
+			@QueryParam("group") String group);
 
 }

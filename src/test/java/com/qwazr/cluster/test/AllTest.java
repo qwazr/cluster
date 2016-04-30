@@ -15,14 +15,18 @@
  */
 package com.qwazr.cluster.test;
 
+import com.google.common.io.Files;
+import com.qwazr.cluster.ClusterServer;
 import com.qwazr.cluster.client.ClusterSingleClient;
 import com.qwazr.cluster.service.ClusterNodeJson;
 import com.qwazr.cluster.service.ClusterNodeStatusJson;
 import com.qwazr.cluster.service.ClusterServiceStatusJson;
 import com.qwazr.cluster.service.ClusterServiceStatusJson.StatusEnum;
 import com.qwazr.cluster.service.ClusterStatusJson;
+import com.qwazr.utils.server.RemoteService;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
@@ -30,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.core.Response;
+import java.io.File;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -40,8 +45,6 @@ public class AllTest {
 
 	private final String CLIENT_ADDRESS = "http://localhost:9091";
 
-	private final int CLIENT_TIMEOUT = 60000;
-
 	private final String[] SERVICES = { "job", "search" };
 
 	private final String[] GROUPS = { "group1", "group2", "group3" };
@@ -49,7 +52,14 @@ public class AllTest {
 	private static final Logger logger = LoggerFactory.getLogger(AllTest.class);
 
 	private ClusterSingleClient getClusterClient() throws URISyntaxException {
-		return new ClusterSingleClient(CLIENT_ADDRESS, CLIENT_TIMEOUT);
+		return new ClusterSingleClient(new RemoteService(CLIENT_ADDRESS));
+	}
+
+	@BeforeClass
+	public static void startServer() throws Exception {
+		final File dataDir = Files.createTempDir();
+		System.setProperty("QWAZR_DATA", dataDir.getAbsolutePath());
+		ClusterServer.main(null);
 	}
 
 	@Test
@@ -136,7 +146,7 @@ public class AllTest {
 				}
 			}
 			if (activated_services_count == SERVICES.length
-							&& activated_groups_count == GROUPS.length * SERVICES.length) {
+					&& activated_groups_count == GROUPS.length * SERVICES.length) {
 				logger.info("Check activation succeed");
 				break;
 			}

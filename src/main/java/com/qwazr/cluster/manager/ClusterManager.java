@@ -22,6 +22,7 @@ import com.qwazr.cluster.service.*;
 import com.qwazr.cluster.service.ClusterServiceStatusJson.StatusEnum;
 import com.qwazr.utils.ArrayUtils;
 import com.qwazr.utils.StringUtils;
+import com.qwazr.utils.server.RemoteService;
 import com.qwazr.utils.server.ServerException;
 import com.qwazr.utils.threads.PeriodicThread;
 import org.apache.commons.lang3.RandomUtils;
@@ -54,10 +55,10 @@ public class ClusterManager {
 				// First, we get the node list from another master (if any)
 				ClusterManager.INSTANCE.loadNodesFromOtherMaster();
 				// All is set, let's start the monitoring
-				INSTANCE.clusterMasterThread = (ClusterMasterThread) INSTANCE
-						.addPeriodicThread(new ClusterMasterThread(120));
-				INSTANCE.clusterMonitoringThread = (ClusterMonitoringThread) INSTANCE
-						.addPeriodicThread(new ClusterMonitoringThread(60));
+				INSTANCE.clusterMasterThread =
+						(ClusterMasterThread) INSTANCE.addPeriodicThread(new ClusterMasterThread(120));
+				INSTANCE.clusterMonitoringThread =
+						(ClusterMonitoringThread) INSTANCE.addPeriodicThread(new ClusterMonitoringThread(60));
 			}
 			return ClusterServiceImpl.class;
 		} catch (URISyntaxException e) {
@@ -97,12 +98,13 @@ public class ClusterManager {
 
 	private ClusterManager(ExecutorService executor, String publicAddress, Set<String> myGroups)
 			throws IOException, URISyntaxException {
+
+		this.executor = executor;
 		myAddress = ClusterNode.toAddress(publicAddress);
+
 		if (logger.isInfoEnabled())
 			logger.info("Server: " + myAddress + " Groups: " + ArrayUtils.prettyPrint(myGroups));
 		this.myGroups = myGroups;
-
-		this.executor = executor;
 
 		// Load the configuration
 		String masters_env = System.getenv("QWAZR_MASTERS");
@@ -127,8 +129,8 @@ public class ClusterManager {
 
 		// Build the master list and check if I am a master
 		boolean isMaster = false;
-		HashSet<String> masterSet = new HashSet<>();
-		int i = 0;
+		final HashSet<String> masterSet = new HashSet<>();
+
 		String[] masters = StringUtils.split(masters_env, ',');
 		for (String master : masters) {
 			String masterAddress = ClusterNode.toAddress(master.trim());
@@ -142,7 +144,7 @@ public class ClusterManager {
 		}
 		isCluster = true;
 		clusterMasterArray = masterSet.toArray(new String[masterSet.size()]);
-		clusterClient = new ClusterMultiClient(executor, clusterMasterArray, 60000);
+		clusterClient = new ClusterMultiClient(executor, RemoteService.build(clusterMasterArray));
 		this.isMaster = isMaster;
 		if (!isMaster) {
 			clusterNodeMap = null;
@@ -162,7 +164,7 @@ public class ClusterManager {
 				continue;
 			try {
 				logger.info("Get node list from  " + master);
-				Map<String, ClusterNodeJson> nodesMap = new ClusterSingleClient(master, 60000).getNodes();
+				Map<String, ClusterNodeJson> nodesMap = new ClusterSingleClient(new RemoteService(master)).getNodes();
 				if (nodesMap == null)
 					continue;
 				for (ClusterNodeJson node : nodesMap.values())
@@ -356,8 +358,8 @@ public class ClusterManager {
 			return statusMap;
 		for (Map.Entry<String, ClusterNodeSet> entry : nodeMap.entrySet()) {
 			Cache cache = entry.getValue().getCache();
-			StatusEnum status = ClusterServiceStatusJson
-					.findStatus(cache.activeArray.length, cache.inactiveArray.length);
+			StatusEnum status =
+					ClusterServiceStatusJson.findStatus(cache.activeArray.length, cache.inactiveArray.length);
 			statusMap.put(entry.getKey(), status);
 		}
 		return statusMap;
