@@ -24,6 +24,7 @@ import com.qwazr.utils.ArrayUtils;
 import com.qwazr.utils.StringUtils;
 import com.qwazr.utils.server.RemoteService;
 import com.qwazr.utils.server.ServerException;
+import com.qwazr.utils.server.UdpServerThread;
 import com.qwazr.utils.threads.PeriodicThread;
 import org.apache.commons.lang3.RandomUtils;
 import org.slf4j.Logger;
@@ -31,13 +32,15 @@ import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.core.Response.Status;
 import java.io.IOException;
+import java.net.DatagramPacket;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
-public class ClusterManager {
+public class ClusterManager implements Consumer<DatagramPacket> {
 
 	public final static String SERVICE_NAME_CLUSTER = "cluster";
 
@@ -45,12 +48,13 @@ public class ClusterManager {
 
 	public static ClusterManager INSTANCE = null;
 
-	public synchronized static Class<? extends ClusterServiceInterface> load(ExecutorService executor, String myAddress,
-			Set<String> myGroups) throws IOException {
+	public synchronized static Class<? extends ClusterServiceInterface> load(final ExecutorService executor,
+			final UdpServerThread udpServer, final String myAddress,
+			final Set<String> myGroups) throws IOException {
 		if (INSTANCE != null)
 			throw new IOException("Already loaded");
 		try {
-			INSTANCE = new ClusterManager(executor, myAddress, myGroups);
+			INSTANCE = new ClusterManager(executor, udpServer, myAddress, myGroups);
 			if (INSTANCE.isMaster()) {
 				// First, we get the node list from another master (if any)
 				ClusterManager.INSTANCE.loadNodesFromOtherMaster();
@@ -96,8 +100,13 @@ public class ClusterManager {
 
 	public final ExecutorService executor;
 
-	private ClusterManager(ExecutorService executor, String publicAddress, Set<String> myGroups)
+	private final UdpServerThread udpServer;
+
+	private ClusterManager(final ExecutorService executor, final UdpServerThread udpServer, final String publicAddress,
+			final Set<String> myGroups)
 			throws IOException, URISyntaxException {
+
+		this.udpServer = udpServer;
 
 		this.executor = executor;
 		myAddress = ClusterNode.toAddress(publicAddress);
@@ -146,6 +155,10 @@ public class ClusterManager {
 		clusterMasterArray = masterSet.toArray(new String[masterSet.size()]);
 		clusterClient = new ClusterMultiClient(executor, RemoteService.build(clusterMasterArray));
 		this.isMaster = isMaster;
+
+		if (this.udpServer != null)
+			this.udpServer.register(this);
+
 		if (!isMaster) {
 			clusterNodeMap = null;
 			return;
@@ -414,8 +427,17 @@ public class ClusterManager {
 		}
 	}
 
+	public void sayHello() throws IOException {
+		Objects.requireNonNull(udpServer, "Cannot say hello. No udp server has been setup");
+		udpServer.send("Hello".getBytes());
+	}
+
 	public ClusterMultiClient getClusterClient() {
 		return clusterClient;
 	}
 
+	@Override
+	final public void accept(final DatagramPacket datagramPacket) {
+		logger.info("DATAGRAMPACKET FROM: " + datagramPacket.getAddress().toString());
+	}
 }

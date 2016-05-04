@@ -18,6 +18,7 @@ package com.qwazr.cluster.test;
 import com.google.common.io.Files;
 import com.qwazr.cluster.ClusterServer;
 import com.qwazr.cluster.client.ClusterSingleClient;
+import com.qwazr.cluster.manager.ClusterManager;
 import com.qwazr.cluster.service.ClusterNodeJson;
 import com.qwazr.cluster.service.ClusterNodeStatusJson;
 import com.qwazr.cluster.service.ClusterServiceStatusJson;
@@ -35,6 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.core.Response;
 import java.io.File;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -45,9 +47,9 @@ public class AllTest {
 
 	private final String CLIENT_ADDRESS = "http://localhost:9091";
 
-	private final String[] SERVICES = { "job", "search" };
+	private final String[] SERVICES = {"job", "search"};
 
-	private final String[] GROUPS = { "group1", "group2", "group3" };
+	private final String[] GROUPS = {"group1", "group2", "group3"};
 
 	private static final Logger logger = LoggerFactory.getLogger(AllTest.class);
 
@@ -59,7 +61,13 @@ public class AllTest {
 	public static void startServer() throws Exception {
 		final File dataDir = Files.createTempDir();
 		System.setProperty("QWAZR_DATA", dataDir.getAbsolutePath());
+		System.setProperty("MULTICAST_ADDRESS", "224.0.0.1");
 		ClusterServer.main(null);
+	}
+
+	@Test
+	public void test00_sayhello() throws IOException {
+		ClusterManager.INSTANCE.sayHello();
 	}
 
 	@Test
