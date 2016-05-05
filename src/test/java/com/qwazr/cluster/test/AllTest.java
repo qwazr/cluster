@@ -51,7 +51,7 @@ public class AllTest {
 	public static void startServer() throws Exception {
 		final File dataDir = Files.createTempDir();
 		System.setProperty("QWAZR_DATA", dataDir.getAbsolutePath());
-		System.setProperty("MULTICAST_ADDRESS", "239.255.90.91");
+		System.setProperty("MULTICAST_ADDRESS", "localhost");
 		new ClusterServer(Arrays.asList(GROUPS)).start();
 	}
 
