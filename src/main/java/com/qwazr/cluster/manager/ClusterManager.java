@@ -19,10 +19,7 @@ import com.qwazr.cluster.service.*;
 import com.qwazr.utils.AnnotationsUtils;
 import com.qwazr.utils.ArrayUtils;
 import com.qwazr.utils.StringUtils;
-import com.qwazr.utils.server.ServerException;
-import com.qwazr.utils.server.ServiceInterface;
-import com.qwazr.utils.server.ServiceName;
-import com.qwazr.utils.server.UdpServerThread;
+import com.qwazr.utils.server.*;
 import org.apache.commons.lang3.RandomUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,6 +71,7 @@ public class ClusterManager implements Consumer<DatagramPacket> {
 	public final ExecutorService executor;
 
 	private final UdpServerThread udpServer;
+	private final UdpClient udpClient;
 
 	private ClusterManager(final ExecutorService executor, final UdpServerThread udpServer, final String publicAddress,
 			final Collection<String> myGroups) throws IOException, URISyntaxException {
@@ -87,24 +85,29 @@ public class ClusterManager implements Consumer<DatagramPacket> {
 			logger.info("Server: " + myAddress + " Groups: " + ArrayUtils.prettyPrint(myGroups));
 		this.myGroups = myGroups != null ? new HashSet<>(myGroups) : null;
 
+		clusterNodeMap = new ClusterNodeMap();
+
 		// Load the configuration
+		final String[] nodes;
 		String nodes_env = System.getenv("QWAZR_NODES");
 		if (nodes_env == null)
 			nodes_env = System.getenv("QWAZR_MASTERS");
 
-		clusterNodeMap = new ClusterNodeMap();
-
 		if (nodes_env != null) {
-			final String[] nodes = StringUtils.split(nodes_env, ',');
+			nodes = StringUtils.split(nodes_env, ',');
 			for (String node : nodes) {
 				String nodeAddress = toAddress(node.trim());
 				logger.info("Add a node: " + nodeAddress);
 				clusterNodeMap.register(nodeAddress);
 			}
-		}
+		} else
+			nodes = null;
 
-		if (this.udpServer != null)
+		if (this.udpServer != null) {
 			this.udpServer.register(this);
+			this.udpClient = udpServer.getClient(nodes);
+		} else
+			udpClient = null;
 
 		// We load the cluster node map
 		clusterNodeMap = new ClusterNodeMap();
@@ -189,14 +192,14 @@ public class ClusterManager implements Consumer<DatagramPacket> {
 	}
 
 	public synchronized void registerMe(Collection<Class<? extends ServiceInterface>> services) throws IOException {
-		if (udpServer == null)
+		if (udpClient == null)
 			return;
-		udpServer.send(new ClusterMessage(ClusterProtocol.joinCluster, new ClusterProtocol.AddressResponse(myAddress)));
+		udpClient.send(new ClusterMessage(ClusterProtocol.joinCluster, new ClusterProtocol.AddressResponse(myAddress)));
 		services.forEach(service -> {
 			ServiceName serviceName = AnnotationsUtils.getFirstAnnotation(service, ServiceName.class);
 			Objects.requireNonNull(serviceName, "The ServiceName annotation is missing for " + service);
 			try {
-				udpServer.send(new ClusterMessage(ClusterProtocol.registerService,
+				udpClient.send(new ClusterMessage(ClusterProtocol.registerService,
 						new ClusterProtocol.NameResponse(myAddress, serviceName.value())));
 			} catch (IOException e) {
 				logger.error("Failed in register the service: " + serviceName.value(), e);
@@ -205,7 +208,7 @@ public class ClusterManager implements Consumer<DatagramPacket> {
 		if (myGroups != null) {
 			myGroups.forEach(group -> {
 				try {
-					udpServer.send(new ClusterMessage(ClusterProtocol.registerGroup,
+					udpClient.send(new ClusterMessage(ClusterProtocol.registerGroup,
 							new ClusterProtocol.NameResponse(myAddress, group)));
 				} catch (IOException e) {
 					logger.error("Failed in register the group: " + group, e);
@@ -215,9 +218,9 @@ public class ClusterManager implements Consumer<DatagramPacket> {
 	}
 
 	public void unregisterMe() throws IOException {
-		if (udpServer == null)
+		if (udpClient == null)
 			return;
-		udpServer
+		udpClient
 				.send(new ClusterMessage(ClusterProtocol.leaveCluster, new ClusterProtocol.AddressResponse(myAddress)));
 	}
 

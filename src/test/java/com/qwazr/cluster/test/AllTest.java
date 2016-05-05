@@ -20,6 +20,7 @@ import com.qwazr.cluster.ClusterServer;
 import com.qwazr.cluster.service.ClusterServiceStatusJson;
 import com.qwazr.cluster.service.ClusterSingleClient;
 import com.qwazr.utils.server.RemoteService;
+import com.qwazr.utils.server.UdpServerThread;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -51,7 +52,8 @@ public class AllTest {
 	public static void startServer() throws Exception {
 		final File dataDir = Files.createTempDir();
 		System.setProperty("QWAZR_DATA", dataDir.getAbsolutePath());
-		System.setProperty("MULTICAST_ADDRESS", "localhost");
+		System.setProperty("UDP_ADDRESS", UdpServerThread.DEFAULT_MULTICAST);
+		System.setProperty("QWAZR_NODES", "localhost:9091");
 		new ClusterServer(Arrays.asList(GROUPS)).start();
 	}
 

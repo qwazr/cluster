@@ -24,6 +24,7 @@ import io.undertow.security.idm.IdentityManager;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.concurrent.Executors;
 
@@ -31,7 +32,7 @@ public class ClusterServer extends AbstractServer<ServerConfiguration> {
 
 	private final Collection<String> groups;
 
-	public ClusterServer(Collection<String> groups) {
+	public ClusterServer(Collection<String> groups) throws UnknownHostException {
 		super(Executors.newCachedThreadPool(), new ServerConfiguration());
 		this.groups = groups;
 	}
