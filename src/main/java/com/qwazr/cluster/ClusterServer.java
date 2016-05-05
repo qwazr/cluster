@@ -29,14 +29,22 @@ import java.util.concurrent.Executors;
 
 public class ClusterServer extends AbstractServer<ServerConfiguration> {
 
-	private ClusterServer() {
+	private final Collection<String> groups;
+
+	public ClusterServer(Collection<String> groups) {
 		super(Executors.newCachedThreadPool(), new ServerConfiguration());
+		this.groups = groups;
 	}
 
 	@Override
 	public ServletApplication load(Collection<Class<? extends ServiceInterface>> services) throws IOException {
-		services.add(ClusterManager.load(executorService, udpServer, getWebServicePublicAddress(), null));
+		services.add(ClusterManager.load(executorService, udpServer, getWebServicePublicAddress(), groups));
 		return null;
+	}
+
+	public void start() throws IOException, ServletException, ReflectiveOperationException {
+		start(true);
+		ClusterManager.INSTANCE.registerMe(services);
 	}
 
 	@Override
@@ -45,7 +53,7 @@ public class ClusterServer extends AbstractServer<ServerConfiguration> {
 	}
 
 	public static void main(String[] args) throws IOException, ServletException, ReflectiveOperationException {
-		new ClusterServer().start(true);
+		new ClusterServer(null).start();
 	}
 
 }

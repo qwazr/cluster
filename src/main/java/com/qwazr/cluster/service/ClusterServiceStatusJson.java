@@ -18,43 +18,38 @@ package com.qwazr.cluster.service;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.qwazr.utils.StringUtils;
-import org.apache.commons.lang3.ArrayUtils;
 
-import java.util.Collections;
-import java.util.Map;
+import java.util.TreeSet;
 
 @JsonInclude(Include.NON_NULL)
 public class ClusterServiceStatusJson {
 
 	public enum StatusEnum {
-		ok, degraded, failure
+		ok, failure
 	}
 
 	public final String leader;
 	public final StatusEnum status;
 	public final int active_count;
-	public final String[] active;
-	public final int inactive_count;
-	public final Map<String, ClusterNodeStatusJson> inactive;
+	public final TreeSet<String> active;
 
 	public ClusterServiceStatusJson() {
-		this(StringUtils.EMPTY, ArrayUtils.EMPTY_STRING_ARRAY, Collections.emptyMap());
+		leader = StringUtils.EMPTY;
+		status = null;
+		active_count = 0;
+		active = null;
 	}
 
-	public ClusterServiceStatusJson(String leader, String[] active, Map<String, ClusterNodeStatusJson> inactive) {
-		this.active = active;
-		this.inactive = inactive;
-		this.leader = leader;
-		this.active_count = active == null ? 0 : active.length;
-		this.inactive_count = inactive == null || inactive.isEmpty() ? 0 : inactive.size();
-		status = findStatus(active_count, inactive_count);
+	public ClusterServiceStatusJson(final TreeSet<String> nodes) {
+		this.active = nodes;
+		this.leader = nodes != null ? !nodes.isEmpty() ? nodes.first() : null : null;
+		this.active_count = active == null ? 0 : active.size();
+		status = findStatus(active_count);
 	}
 
-	public static StatusEnum findStatus(int active_count, int inactive_count) {
+	public static StatusEnum findStatus(int active_count) {
 		if (active_count == 0)
 			return StatusEnum.failure;
-		if (inactive_count == 0)
-			return StatusEnum.ok;
-		return StatusEnum.degraded;
+		return StatusEnum.ok;
 	}
 }

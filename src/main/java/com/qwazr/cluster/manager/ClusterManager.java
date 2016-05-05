@@ -15,29 +15,24 @@
  */
 package com.qwazr.cluster.manager;
 
-import com.qwazr.cluster.client.ClusterMultiClient;
-import com.qwazr.cluster.client.ClusterSingleClient;
-import com.qwazr.cluster.manager.ClusterNodeSet.Cache;
 import com.qwazr.cluster.service.*;
-import com.qwazr.cluster.service.ClusterServiceStatusJson.StatusEnum;
+import com.qwazr.utils.AnnotationsUtils;
 import com.qwazr.utils.ArrayUtils;
 import com.qwazr.utils.StringUtils;
-import com.qwazr.utils.server.RemoteService;
 import com.qwazr.utils.server.ServerException;
+import com.qwazr.utils.server.ServiceInterface;
+import com.qwazr.utils.server.ServiceName;
 import com.qwazr.utils.server.UdpServerThread;
-import com.qwazr.utils.threads.PeriodicThread;
 import org.apache.commons.lang3.RandomUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.net.DatagramPacket;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 public class ClusterManager implements Consumer<DatagramPacket> {
@@ -49,167 +44,70 @@ public class ClusterManager implements Consumer<DatagramPacket> {
 	public static ClusterManager INSTANCE = null;
 
 	public synchronized static Class<? extends ClusterServiceInterface> load(final ExecutorService executor,
-			final UdpServerThread udpServer, final String myAddress,
-			final Set<String> myGroups) throws IOException {
+			final UdpServerThread udpServer, final String myAddress, final Collection<String> myGroups)
+			throws IOException {
 		if (INSTANCE != null)
 			throw new IOException("Already loaded");
 		try {
 			INSTANCE = new ClusterManager(executor, udpServer, myAddress, myGroups);
-			if (INSTANCE.isMaster()) {
-				// First, we get the node list from another master (if any)
-				ClusterManager.INSTANCE.loadNodesFromOtherMaster();
-				// All is set, let's start the monitoring
-				INSTANCE.clusterMasterThread =
-						(ClusterMasterThread) INSTANCE.addPeriodicThread(new ClusterMasterThread(120));
-				INSTANCE.clusterMonitoringThread =
-						(ClusterMonitoringThread) INSTANCE.addPeriodicThread(new ClusterMonitoringThread(60));
-			}
+			Runtime.getRuntime().addShutdownHook(new Thread() {
+				public void run() {
+					try {
+						INSTANCE.unregisterMe();
+					} catch (IOException e) {
+						logger.warn(e.getMessage(), e);
+					}
+				}
+			});
 			return ClusterServiceImpl.class;
 		} catch (URISyntaxException e) {
 			throw new IOException(e);
 		}
 	}
 
-	private final ClusterNodeMap clusterNodeMap;
-
-	private final String[] clusterMasterArray;
-
-	private final ClusterMultiClient clusterClient;
+	private ClusterNodeMap clusterNodeMap;
 
 	public final String myAddress;
 
 	private final Set<String> myGroups;
-
-	private List<PeriodicThread> periodicThreads = null;
-
-	private ClusterMasterThread clusterMasterThread = null;
-
-	private ClusterMonitoringThread clusterMonitoringThread = null;
-
-	private volatile ClusterRegisteringThread clusterRegisteringThead = null;
-
-	private Thread clusterNodeShutdownThread = null;
-
-	private final ConcurrentHashMap<String, Long> checkTimeMap;
-
-	private final AtomicLong lastTimeCheck;
-
-	private final boolean isMaster;
-
-	private final boolean isCluster;
 
 	public final ExecutorService executor;
 
 	private final UdpServerThread udpServer;
 
 	private ClusterManager(final ExecutorService executor, final UdpServerThread udpServer, final String publicAddress,
-			final Set<String> myGroups)
-			throws IOException, URISyntaxException {
+			final Collection<String> myGroups) throws IOException, URISyntaxException {
 
 		this.udpServer = udpServer;
 
 		this.executor = executor;
-		myAddress = ClusterNode.toAddress(publicAddress);
+		myAddress = toAddress(publicAddress);
 
 		if (logger.isInfoEnabled())
 			logger.info("Server: " + myAddress + " Groups: " + ArrayUtils.prettyPrint(myGroups));
-		this.myGroups = myGroups;
+		this.myGroups = myGroups != null ? new HashSet<>(myGroups) : null;
 
 		// Load the configuration
-		String masters_env = System.getenv("QWAZR_MASTERS");
+		String nodes_env = System.getenv("QWAZR_NODES");
+		if (nodes_env == null)
+			nodes_env = System.getenv("QWAZR_MASTERS");
 
-		// No configuration file ? Okay, we are a simple node
-		if (StringUtils.isEmpty(masters_env)) {
-			clusterMasterArray = null;
-			clusterNodeMap = null;
-			clusterClient = null;
-			checkTimeMap = null;
-			lastTimeCheck = null;
-			isMaster = false;
-			isCluster = false;
-			if (logger.isInfoEnabled())
-				logger.info("No QWAZR_MASTERS environment variable. This node is not part of a cluster.");
-			return;
-		}
+		clusterNodeMap = new ClusterNodeMap();
 
-		// Store the last time a master checked the node
-		checkTimeMap = new ConcurrentHashMap<>();
-		lastTimeCheck = new AtomicLong();
-
-		// Build the master list and check if I am a master
-		boolean isMaster = false;
-		final HashSet<String> masterSet = new HashSet<>();
-
-		String[] masters = StringUtils.split(masters_env, ',');
-		for (String master : masters) {
-			String masterAddress = ClusterNode.toAddress(master.trim());
-			logger.info("Add a master: " + masterAddress);
-			masterSet.add(masterAddress);
-			if (masterAddress == myAddress) {
-				isMaster = true;
-				if (logger.isInfoEnabled())
-					logger.info("I am a master!");
+		if (nodes_env != null) {
+			final String[] nodes = StringUtils.split(nodes_env, ',');
+			for (String node : nodes) {
+				String nodeAddress = toAddress(node.trim());
+				logger.info("Add a node: " + nodeAddress);
+				clusterNodeMap.register(nodeAddress);
 			}
 		}
-		isCluster = true;
-		clusterMasterArray = masterSet.toArray(new String[masterSet.size()]);
-		clusterClient = new ClusterMultiClient(executor, RemoteService.build(clusterMasterArray));
-		this.isMaster = isMaster;
 
 		if (this.udpServer != null)
 			this.udpServer.register(this);
 
-		if (!isMaster) {
-			clusterNodeMap = null;
-			return;
-		}
-
 		// We load the cluster node map
 		clusterNodeMap = new ClusterNodeMap();
-	}
-
-	/**
-	 * Load the node list from another master
-	 */
-	void loadNodesFromOtherMaster() {
-		for (String master : clusterMasterArray) {
-			if (master == myAddress)
-				continue;
-			try {
-				logger.info("Get node list from  " + master);
-				Map<String, ClusterNodeJson> nodesMap = new ClusterSingleClient(new RemoteService(master)).getNodes();
-				if (nodesMap == null)
-					continue;
-				for (ClusterNodeJson node : nodesMap.values())
-					upsertNode(node);
-				break;
-			} catch (Exception e) {
-				logger.warn("Unable to load the node list from " + master, e);
-			}
-		}
-	}
-
-	/**
-	 * Start the periodic threads
-	 */
-	private synchronized PeriodicThread addPeriodicThread(PeriodicThread periodicThread) {
-		logger.info("Starting the periodic thread " + periodicThread.getName());
-		if (periodicThreads == null)
-			periodicThreads = new ArrayList<PeriodicThread>(3);
-		periodicThreads.add(periodicThread);
-		return periodicThread;
-	}
-
-	private ClusterNodeMap checkMaster() throws ServerException {
-		if (clusterNodeMap == null)
-			throw new ServerException(Status.NOT_ACCEPTABLE, "I am not a master");
-		return clusterNodeMap;
-	}
-
-	public ClusterNode upsertNode(ClusterNodeJson clusterNodeJson) throws URISyntaxException, ServerException {
-		ClusterNode clusterNode = checkMaster().upsert(clusterNodeJson);
-		clusterMonitoringThread.checkNode(clusterNode);
-		return clusterNode;
 	}
 
 	public boolean isGroup(String group) {
@@ -222,222 +120,152 @@ public class ClusterManager implements Consumer<DatagramPacket> {
 		return myGroups.contains(group);
 	}
 
-	void updateNodeStatus(ClusterNode node) throws ServerException {
-		checkMaster().status(node);
-	}
-
-	public ClusterNode removeNode(String address) throws URISyntaxException, ServerException {
-		return checkMaster().remove(address);
-	}
-
-	public List<ClusterNode> getNodeList() throws ServerException {
-		return checkMaster().getNodeList();
-	}
-
-	public String[] getMasterArray() {
-		return clusterMasterArray;
+	public Map<String, ClusterNodeJson> getNodesMap() throws ServerException {
+		return clusterNodeMap.getNodesMap();
 	}
 
 	public boolean isLeader(String service, String group) throws ServerException {
-		final Cache cache = getNodeSetCacheService(service, group);
-		if (cache == null)
+		TreeSet<String> nodes = clusterNodeMap.getGroupService(service, group);
+		if (nodes == null || nodes.isEmpty())
 			return false;
-		return myAddress.equals(cache.leader);
+		return myAddress.equals(nodes.first());
 	}
 
 	public boolean isMe(String address) {
 		return myAddress.equals(address);
 	}
 
-	public boolean isMaster() {
-		return isMaster;
+	final public ClusterStatusJson getStatus() {
+		return new ClusterStatusJson(clusterNodeMap.getNodesMap(), clusterNodeMap.getGroups(),
+				clusterNodeMap.getServices());
 	}
 
-	public boolean isCluster() {
-		return isCluster;
+	final public TreeMap<String, ClusterServiceStatusJson.StatusEnum> getServicesStatus(final String group) {
+		final TreeMap<String, ClusterServiceStatusJson.StatusEnum> servicesStatus = new TreeMap();
+		final Set<String> services = clusterNodeMap.getServices().keySet();
+		if (services == null || services.isEmpty())
+			return servicesStatus;
+		services.forEach(service -> {
+			final TreeSet<String> nodes = getNodesByGroupByService(group, service);
+			if (nodes != null && !nodes.isEmpty())
+				servicesStatus.put(service, ClusterServiceStatusJson.findStatus(nodes.size()));
+		});
+		return servicesStatus;
 	}
 
-	private static String[] buildArray(ClusterNode[]... nodesArray) {
-		if (nodesArray == null)
-			return ArrayUtils.EMPTY_STRING_ARRAY;
-		int count = 0;
-		for (ClusterNode[] nodes : nodesArray)
-			if (nodes != null)
-				count += nodes.length;
-		if (count == 0)
-			return ArrayUtils.EMPTY_STRING_ARRAY;
-
-		String[] array = new String[count];
-		int i = 0;
-		for (ClusterNode[] nodes : nodesArray)
-			for (ClusterNode node : nodes)
-				array[i++] = node.address;
-		return array;
+	final public ClusterServiceStatusJson getServiceStatus(final String group, final String service) {
+		final TreeSet<String> nodes = getNodesByGroupByService(group, service);
+		return nodes == null || nodes.isEmpty() ? new ClusterServiceStatusJson() : new ClusterServiceStatusJson(nodes);
 	}
 
-	public Cache getNodeSetCacheService(String service, String group) throws ServerException {
-		ClusterNodeSet nodeSet = checkMaster().getNodeSetByService(service, group);
-		if (nodeSet == null)
+	final public TreeSet<String> getNodesByGroupByService(final String group, final String service) {
+		if (StringUtils.isEmpty(group))
+			return clusterNodeMap.getByService(service);
+		else if (StringUtils.isEmpty(service))
+			return clusterNodeMap.getByGroup(group);
+		else
+			return clusterNodeMap.getGroupService(group, service);
+	}
+
+	final public String getLeaderNode(final String group, final String service) {
+		final TreeSet<String> nodes = getNodesByGroupByService(group, service);
+		if (nodes == null || nodes.isEmpty())
 			return null;
-		return nodeSet.getCache();
+		return nodes.first();
 	}
 
-	public static String[] getAllNodes(Cache cache) throws ServerException {
-		if (cache == null)
-			return ArrayUtils.EMPTY_STRING_ARRAY;
-		return buildArray(cache.activeArray, cache.inactiveArray);
-	}
-
-	public static String[] getInactiveNodes(Cache cache) throws ServerException {
-		if (cache == null)
-			return ArrayUtils.EMPTY_STRING_ARRAY;
-		return buildArray(cache.inactiveArray);
-	}
-
-	public static String[] getActiveNodes(Cache cache) throws ServerException {
-		if (cache == null)
-			return ArrayUtils.EMPTY_STRING_ARRAY;
-		return buildArray(cache.activeArray);
-	}
-
-	/**
-	 * @param cache the service cache
-	 * @return a randomly choosen node
-	 * @throws ServerException if any error occurs
-	 */
-	public static String getActiveNodeRandom(Cache cache) throws ServerException {
-		if (cache == null)
+	final public String getRandomNode(final String group, final String service) {
+		final TreeSet<String> nodes = getNodesByGroupByService(group, service);
+		if (nodes == null || nodes.isEmpty())
 			return null;
-		final ClusterNode[] aa = cache.activeArray;
-		if (aa == null || aa.length == 0)
-			return null;
-		return aa[RandomUtils.nextInt(0, aa.length)].address;
-	}
-
-	/**
-	 * Build a status of the given service. The list of active nodes and the
-	 * list of inactive nodes with their latest status.
-	 *
-	 * @param cache the name of the service
-	 * @return the status of the service
-	 * @throws ServerException if any error occurs
-	 */
-	public static ClusterServiceStatusJson getStatus(Cache cache) throws ServerException {
-		if (cache == null)
-			return new ClusterServiceStatusJson();
-		String[] activeList = buildArray(cache.activeArray);
-		if (cache.inactiveArray == null)
-			return new ClusterServiceStatusJson(cache.leader, activeList, Collections.emptyMap());
-		Map<String, ClusterNodeStatusJson> inactiveMap = new LinkedHashMap<String, ClusterNodeStatusJson>();
-		for (ClusterNode node : cache.inactiveArray)
-			inactiveMap.put(node.address, node.getStatus());
-		return new ClusterServiceStatusJson(cache.leader, activeList, inactiveMap);
-	}
-
-	public synchronized void registerMe(ClusterNodeJson clusterNodeDef) {
-		if (clusterClient == null || clusterMasterArray == null)
-			return;
-		if (clusterRegisteringThead != null) {
-			logger.error("Node already registering");
-			return;
+		int rand = RandomUtils.nextInt(0, nodes.size());
+		Iterator<String> it = nodes.iterator();
+		for (; ; ) {
+			final String node = it.next();
+			if (rand == 0)
+				return node;
+			rand--;
 		}
-		clusterRegisteringThead = (ClusterRegisteringThread) addPeriodicThread(
-				new ClusterRegisteringThread(90, clusterClient, clusterNodeDef));
-		if (clusterNodeShutdownThread == null) {
-			clusterNodeShutdownThread = new Thread() {
-				@Override
-				public void run() {
-					try {
-						unregisterMe();
-					} catch (Exception e) {
-						logger.warn(e.getMessage(), e);
-					}
+	}
+
+	public synchronized void registerMe(Collection<Class<? extends ServiceInterface>> services) throws IOException {
+		if (udpServer == null)
+			return;
+		udpServer.send(new ClusterMessage(ClusterProtocol.joinCluster, new ClusterProtocol.AddressResponse(myAddress)));
+		services.forEach(service -> {
+			ServiceName serviceName = AnnotationsUtils.getFirstAnnotation(service, ServiceName.class);
+			Objects.requireNonNull(serviceName, "The ServiceName annotation is missing for " + service);
+			try {
+				udpServer.send(new ClusterMessage(ClusterProtocol.registerService,
+						new ClusterProtocol.NameResponse(myAddress, serviceName.value())));
+			} catch (IOException e) {
+				logger.error("Failed in register the service: " + serviceName.value(), e);
+			}
+		});
+		if (myGroups != null) {
+			myGroups.forEach(group -> {
+				try {
+					udpServer.send(new ClusterMessage(ClusterProtocol.registerGroup,
+							new ClusterProtocol.NameResponse(myAddress, group)));
+				} catch (IOException e) {
+					logger.error("Failed in register the group: " + group, e);
 				}
-			};
-			Runtime.getRuntime().addShutdownHook(clusterNodeShutdownThread);
+			});
 		}
 	}
 
-	public void unregisterMe() throws URISyntaxException {
-		if (clusterClient == null)
+	public void unregisterMe() throws IOException {
+		if (udpServer == null)
 			return;
-		logger.info("Unregistering from masters");
-		clusterClient.unregister(myAddress);
-	}
-
-	private static TreeMap<String, StatusEnum> getStatusMap(HashMap<String, ClusterNodeSet> nodeMap) {
-		TreeMap<String, StatusEnum> statusMap = new TreeMap<String, StatusEnum>();
-		if (nodeMap == null)
-			return statusMap;
-		for (Map.Entry<String, ClusterNodeSet> entry : nodeMap.entrySet()) {
-			Cache cache = entry.getValue().getCache();
-			StatusEnum status =
-					ClusterServiceStatusJson.findStatus(cache.activeArray.length, cache.inactiveArray.length);
-			statusMap.put(entry.getKey(), status);
-		}
-		return statusMap;
-	}
-
-	public TreeMap<String, StatusEnum> getServicesStatusMap(String group) throws ServerException {
-		return getStatusMap(checkMaster().getServicesMap(group == null ? StringUtils.EMPTY : group));
-	}
-
-	public Map<String, Date> getLastExecutions() {
-		if (periodicThreads == null)
-			return null;
-		Map<String, Date> threadsMap = new HashMap<String, Date>();
-		for (PeriodicThread thread : periodicThreads)
-			threadsMap.put(thread.getName(), thread.getLastExecutionDate());
-		return threadsMap;
-	}
-
-	/**
-	 * Called by a master when a master check the node
-	 *
-	 * @param masterAddress the public address of the master
-	 */
-	public void check(String masterAddress) {
-		long time = System.currentTimeMillis();
-		if (lastTimeCheck != null) {
-			if (lastTimeCheck.getAndSet(time) == 0)
-				if (logger.isInfoEnabled())
-					logger.info("Initial check by master: " + masterAddress);
-		}
-		if (checkTimeMap != null && masterAddress != null)
-			checkTimeMap.put(masterAddress, time);
-	}
-
-	/**
-	 * @return the last time the node was checked
-	 */
-	public Long getLastCheck() {
-		if (lastTimeCheck == null)
-			return null;
-		long res = lastTimeCheck.get();
-		return res == 0 ? null : res;
-	}
-
-	public void removeOldCheck(long removeTime) {
-		if (checkTimeMap == null)
-			return;
-		Iterator<Map.Entry<String, Long>> iterator = checkTimeMap.entrySet().iterator();
-		while (iterator.hasNext()) {
-			if (iterator.next().getValue() < removeTime)
-				iterator.remove();
-		}
-	}
-
-	public void sayHello() throws IOException {
-		Objects.requireNonNull(udpServer, "Cannot say hello. No udp server has been setup");
-		udpServer.send("Hello".getBytes());
-	}
-
-	public ClusterMultiClient getClusterClient() {
-		return clusterClient;
+		udpServer
+				.send(new ClusterMessage(ClusterProtocol.leaveCluster, new ClusterProtocol.AddressResponse(myAddress)));
 	}
 
 	@Override
 	final public void accept(final DatagramPacket datagramPacket) {
-		logger.info("DATAGRAMPACKET FROM: " + datagramPacket.getAddress().toString());
+		try {
+			ClusterMessage message = new ClusterMessage(datagramPacket.getData());
+			logger.info("DATAGRAMPACKET FROM: " + datagramPacket.getAddress().toString() + " " + message.getCommand());
+			switch (message.getCommand()) {
+			case joinCluster:
+				clusterNodeMap.register((ClusterProtocol.AddressResponse) message.getContent());
+				break;
+			case leaveCluster:
+				clusterNodeMap.unregister(message.getContent());
+				break;
+			case registerGroup:
+				clusterNodeMap.registerGroup(message.getContent());
+				break;
+			case registerService:
+				clusterNodeMap.registerService(message.getContent());
+				break;
+			case serviceGroupRequest:
+				break;
+			default:
+				break;
+			}
+		} catch (Exception e) {
+			logger.warn(e.getMessage(), e);
+		}
 	}
+
+	private static URI toUri(String address) throws URISyntaxException {
+		if (!address.contains("//"))
+			address = "//" + address;
+		URI u = new URI(address);
+		return new URI(StringUtils.isEmpty(u.getScheme()) ? "http" : u.getScheme(), null, u.getHost(), u.getPort(),
+				null, null, null);
+	}
+
+	/**
+	 * Format an address which can be used in hashset or hashmap
+	 *
+	 * @param hostname the address and port
+	 * @return the address usable as a key
+	 * @throws URISyntaxException thrown if the hostname format is not valid
+	 */
+	static String toAddress(String hostname) throws URISyntaxException {
+		return toUri(hostname).toString().intern();
+	}
+
 }

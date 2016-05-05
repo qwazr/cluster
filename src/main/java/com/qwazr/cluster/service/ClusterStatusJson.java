@@ -17,45 +17,35 @@ package com.qwazr.cluster.service;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.qwazr.cluster.manager.ClusterManager;
-import com.qwazr.cluster.manager.ClusterNode;
 import com.qwazr.cluster.service.ClusterServiceStatusJson.StatusEnum;
 import com.qwazr.utils.server.ServerException;
 
-import java.util.*;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 @JsonInclude(Include.NON_NULL)
 public class ClusterStatusJson {
 
-	public final boolean is_master;
-	public final Set<String> active_nodes;
-	public final Map<String, ClusterNodeStatusJson> inactive_nodes;
-	public final Map<String, StatusEnum> services;
-	public final String[] masters;
-	public final Map<String, Date> last_executions;
+	public final TreeMap<String, ClusterNodeJson> active_nodes;
+	public final TreeMap<String, TreeSet<String>> groups;
+	public final TreeMap<String, StatusEnum> services;
 
 	public ClusterStatusJson() {
-		is_master = false;
 		active_nodes = null;
-		inactive_nodes = null;
+		groups = null;
 		services = null;
-		masters = null;
-		last_executions = null;
 	}
 
-	public ClusterStatusJson(ClusterManager clusterManager) throws ServerException {
-		this.is_master = clusterManager.isMaster();
-		this.active_nodes = new TreeSet<String>();
-		this.inactive_nodes = new TreeMap<String, ClusterNodeStatusJson>();
-		this.services = clusterManager.getServicesStatusMap(null);
-		this.masters = clusterManager.getMasterArray();
-		this.last_executions = clusterManager.getLastExecutions();
+	public ClusterStatusJson(final Map<String, ClusterNodeJson> nodesMap, final TreeMap<String, TreeSet<String>> groups,
+			final TreeMap<String, TreeSet<String>> services) throws ServerException {
+		this.active_nodes = nodesMap == null ? null : new TreeMap<>(nodesMap);
+		this.groups = groups;
+		this.services = new TreeMap<>();
+		if (services != null) {
+			services.forEach((service, nodesSet) -> this.services
+					.put(service, ClusterServiceStatusJson.findStatus(nodesSet.size())));
+		}
 	}
 
-	public void addNodeStatus(ClusterNode node) {
-		if (node.isActive())
-			active_nodes.add(node.address);
-		else
-			inactive_nodes.put(node.address, node.getStatus());
-	}
 }

@@ -22,9 +22,8 @@ import com.qwazr.utils.server.ServiceName;
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.util.Map;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 @RolesAllowed(ClusterManager.SERVICE_NAME_CLUSTER)
 @Path("/" + ClusterServiceInterface.PATH)
@@ -32,8 +31,6 @@ import java.util.TreeMap;
 public interface ClusterServiceInterface extends ServiceInterface {
 
 	String PATH = "cluster";
-	String HEADER_CHECK_NAME = "X-OSS-CLUSTER-CHECK-TOKEN";
-	String HEADER_CHECK_ADDR = "X-OSS-CLUSTER-CHECK-ADDR";
 
 	@GET
 	@Path("/")
@@ -43,21 +40,7 @@ public interface ClusterServiceInterface extends ServiceInterface {
 	@GET
 	@Path("/nodes")
 	@Produces(ServiceInterface.APPLICATION_JSON_UTF8)
-	Map<String, ClusterNodeJson> getNodes();
-
-	@POST
-	@Path("/")
-	@Consumes(ServiceInterface.APPLICATION_JSON_UTF8)
-	@Produces(ServiceInterface.APPLICATION_JSON_UTF8)
-	ClusterNodeStatusJson register(ClusterNodeJson register);
-
-	@DELETE
-	@Path("/")
-	Response unregister(@QueryParam("address") String address);
-
-	@HEAD
-	@Path("/")
-	Response check(@HeaderParam(HEADER_CHECK_NAME) String checkValue, @HeaderParam(HEADER_CHECK_ADDR) String checkAddr);
+	TreeSet<String> getNodes();
 
 	@GET
 	@Path("/services")
@@ -73,7 +56,8 @@ public interface ClusterServiceInterface extends ServiceInterface {
 	@GET
 	@Path("/services/{service_name}/active")
 	@Produces(ServiceInterface.APPLICATION_JSON_UTF8)
-	String[] getActiveNodesByService(@PathParam("service_name") String service_name, @QueryParam("group") String group);
+	TreeSet<String> getActiveNodesByService(@PathParam("service_name") String service_name,
+			@QueryParam("group") String group);
 
 	@GET
 	@Path("/services/{service_name}/active/random")
@@ -82,9 +66,9 @@ public interface ClusterServiceInterface extends ServiceInterface {
 			@QueryParam("group") String group);
 
 	@GET
-	@Path("/services/{service_name}/active/master")
+	@Path("/services/{service_name}/active/leader")
 	@Produces(MediaType.TEXT_PLAIN)
-	String getActiveNodeMasterByService(@PathParam("service_name") String service_name,
+	String getActiveNodeLeaderByService(@PathParam("service_name") String service_name,
 			@QueryParam("group") String group);
 
 }

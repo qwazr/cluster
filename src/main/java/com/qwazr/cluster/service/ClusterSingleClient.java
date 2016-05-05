@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.qwazr.cluster.client;
+package com.qwazr.cluster.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.qwazr.cluster.service.*;
 import com.qwazr.utils.http.HttpUtils;
 import com.qwazr.utils.json.client.JsonClientAbstract;
 import com.qwazr.utils.server.RemoteService;
@@ -26,11 +25,10 @@ import org.apache.http.client.fluent.Request;
 import org.apache.http.entity.ContentType;
 
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.io.IOException;
-import java.util.Map;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 public class ClusterSingleClient extends JsonClientAbstract implements ClusterServiceInterface {
 
@@ -45,41 +43,15 @@ public class ClusterSingleClient extends JsonClientAbstract implements ClusterSe
 		return commonServiceRequest(request, null, null, ClusterStatusJson.class, 200);
 	}
 
-	public final static TypeReference<Map<String, ClusterNodeJson>> MapStringClusterNodeJsonTypeRef =
-			new TypeReference<Map<String, ClusterNodeJson>>() {
+	public final static TypeReference<TreeSet<String>> TreeSetStringClusterNodeJsonTypeRef =
+			new TypeReference<TreeSet<String>>() {
 			};
 
 	@Override
-	public Map<String, ClusterNodeJson> getNodes() {
+	public TreeSet<String> getNodes() {
 		UBuilder uriBuilder = new UBuilder("/cluster/nodes");
 		Request request = Request.Get(uriBuilder.build());
-		return commonServiceRequest(request, null, null, MapStringClusterNodeJsonTypeRef, 200);
-	}
-
-	@Override
-	public ClusterNodeStatusJson register(ClusterNodeJson register) {
-		UBuilder uriBuilder = new UBuilder("/cluster");
-		Request request = Request.Post(uriBuilder.build());
-		return commonServiceRequest(request, register, null, ClusterNodeStatusJson.class, 200);
-	}
-
-	@Override
-	public Response unregister(String address) {
-		try {
-			UBuilder uriBuilder = new UBuilder("/cluster");
-			uriBuilder.setParameter("address", address);
-			Request request = Request.Delete(uriBuilder.build());
-			HttpResponse response = execute(request, null, null);
-			HttpUtils.checkStatusCodes(response, 200);
-			return Response.status(response.getStatusLine().getStatusCode()).build();
-		} catch (IOException e) {
-			throw new WebApplicationException(e.getMessage(), e, Status.INTERNAL_SERVER_ERROR);
-		}
-	}
-
-	@Override
-	public Response check(String checkValue, String checkAddr) {
-		return Response.status(Status.NOT_IMPLEMENTED).build();
+		return commonServiceRequest(request, null, null, TreeSetStringClusterNodeJsonTypeRef, 200);
 	}
 
 	public final static TypeReference<TreeMap<String, ClusterServiceStatusJson.StatusEnum>> MapStringStatusEnumTypeRef =
@@ -101,10 +73,10 @@ public class ClusterSingleClient extends JsonClientAbstract implements ClusterSe
 	}
 
 	@Override
-	public String[] getActiveNodesByService(String service_name, String group) {
+	public TreeSet<String> getActiveNodesByService(String service_name, String group) {
 		UBuilder uriBuilder = new UBuilder("/cluster/services/", service_name, "/active").setParameter("group", group);
 		Request request = Request.Get(uriBuilder.build());
-		return commonServiceRequest(request, null, null, String[].class, 200);
+		return commonServiceRequest(request, null, null, TreeSetStringClusterNodeJsonTypeRef, 200);
 	}
 
 	@Override
@@ -122,10 +94,10 @@ public class ClusterSingleClient extends JsonClientAbstract implements ClusterSe
 	}
 
 	@Override
-	public String getActiveNodeMasterByService(String service_name, String group) {
+	public String getActiveNodeLeaderByService(String service_name, String group) {
 		try {
 			UBuilder uriBuilder =
-					new UBuilder("/cluster/services/" + service_name + "/active/master").setParameter("group", group);
+					new UBuilder("/cluster/services/" + service_name + "/active/leader").setParameter("group", group);
 			Request request = Request.Get(uriBuilder.build());
 			HttpResponse response = execute(request, null, null);
 			HttpUtils.checkStatusCodes(response, 200);
