@@ -45,7 +45,7 @@ public class ClusterServer extends AbstractServer<ServerConfiguration> {
 
 	public void start() throws IOException, ServletException, ReflectiveOperationException {
 		start(true);
-		ClusterManager.INSTANCE.registerMe(services);
+		ClusterManager.INSTANCE.joinCluster(services, null);
 	}
 
 	@Override

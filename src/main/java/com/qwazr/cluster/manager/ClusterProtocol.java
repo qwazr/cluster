@@ -15,18 +15,28 @@
  */
 package com.qwazr.cluster.manager;
 
-import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+import com.qwazr.utils.DatagramUtils;
+import com.qwazr.utils.server.UdpServerThread;
+
+import java.io.*;
+import java.net.DatagramPacket;
+import java.net.InetSocketAddress;
+import java.net.URISyntaxException;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 
 enum ClusterProtocol {
 
-	serviceGroupRequest('q', ServiceGroupRequest.class),
-	joinCluster('j', AddressResponse.class),
-	leaveCluster('l', AddressResponse.class),
-	registerService('s', NameResponse.class),
-	registerGroup('g', NameResponse.class);
+	join('J', Full.class),
+	notify('N', Address.class),
+	forward('F', Full.class),
+	reply('R', Full.class),
+	leave('L', Address.class);
+
+
+	private final static String CHAR_HEADER = "QWAZR";
 
 	public final char cmd;
 	public final Class<? extends Externalizable> messageClass;
@@ -43,84 +53,173 @@ enum ClusterProtocol {
 		throw new IllegalArgumentException("Command not found: " + cmd);
 	}
 
-	static class ServiceGroupRequest implements Externalizable {
+	final static Message newJoin(final String address, final UUID nodeLiveId, final Set<String> groups,
+			final Set<String> services) {
+		return new Message(join, new Full(address, nodeLiveId, groups, services));
+	}
 
-		private String service;
-		private String group;
+	final static Message newNotify(final Address address) {
+		return new Message(notify, address);
+	}
 
-		ServiceGroupRequest() {
+	final static Message newForward(final String address, final UUID nodeLiveId, final Set<String> groups,
+			final Set<String> services) {
+		return new Message(forward, new Full(address, nodeLiveId, groups, services));
+	}
+
+	final static Message newReply(final String address, final UUID nodeLiveId, final Set<String> groups,
+			final Set<String> services) {
+		return new Message(reply, new Full(address, nodeLiveId, groups, services));
+	}
+
+	public static Message newLeave(final String address, final UUID nodeLiveId) {
+		return new Message(leave, new Address(address, nodeLiveId));
+	}
+
+	static class Message implements Externalizable {
+
+		private ClusterProtocol command;
+		private Externalizable content;
+
+		private Message(final ClusterProtocol command, final Externalizable content) {
+			this.command = command;
+			this.content = content;
 		}
 
-		ServiceGroupRequest(String service, String group) {
-			this.service = service;
-			this.group = group;
+		Message(DatagramPacket packet) throws IOException, ReflectiveOperationException {
+			try (final ByteArrayInputStream bis = new ByteArrayInputStream(packet.getData())) {
+				try (final ObjectInputStream ois = new ObjectInputStream(bis)) {
+					readExternal(ois);
+				}
+			}
+		}
+
+		final ClusterProtocol getCommand() {
+			return command;
+		}
+
+		final <T extends Externalizable> T getContent() {
+			return (T) content;
 		}
 
 		@Override
-		public void writeExternal(ObjectOutput out) throws IOException {
-			out.writeUTF(service);
-			out.writeUTF(group);
+		final public void writeExternal(final ObjectOutput out) throws IOException {
+			out.writeUTF(CHAR_HEADER);
+			out.writeChar(command.cmd);
+			content.writeExternal(out);
 		}
 
 		@Override
-		public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-			this.service = in.readUTF();
-			this.group = in.readUTF();
+		final public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
+			if (!CHAR_HEADER.equals(in.readUTF()))
+				throw new IOException("Unknown UDP message (wrong header)");
+			command = ClusterProtocol.findCommand(in.readChar());
+			try {
+				content = command.messageClass.newInstance();
+			} catch (InstantiationException | IllegalAccessException e) {
+				throw new IOException(e);
+			}
+			content.readExternal(in);
+		}
+
+		/**
+		 * Send the message using UDP (Datagram)
+		 *
+		 * @param recipients
+		 * @param exclusions
+		 * @throws IOException
+		 */
+		final Message send(final Collection<InetSocketAddress> recipients, final InetSocketAddress... exclusions)
+				throws IOException {
+			DatagramUtils.send(this, UdpServerThread.DEFAULT_BUFFER_SIZE, recipients, exclusions);
+			return this;
+		}
+
+		final Message send(final String httpAddress)
+				throws IOException, URISyntaxException {
+			DatagramUtils.send(this, UdpServerThread.DEFAULT_BUFFER_SIZE, new ClusterNodeAddress(httpAddress).address);
+			return this;
 		}
 	}
 
-	static class AddressResponse implements Externalizable {
+	static class Address implements Externalizable {
 
+		/**
+		 * The address of the node
+		 */
 		private String address;
+		/**
+		 * The UUID of the node
+		 */
+		private UUID nodeLiveId;
 
-		AddressResponse() {
+		Address() {
 		}
 
-		AddressResponse(String address) {
+		private Address(final String address, final UUID nodeLiveId) {
 			this.address = address;
+			this.nodeLiveId = nodeLiveId;
 		}
 
 		String getAddress() {
 			return address;
 		}
 
+		UUID getNodeLiveId() {
+			return nodeLiveId;
+		}
+
 		@Override
 		public void writeExternal(ObjectOutput out) throws IOException {
 			out.writeUTF(address);
+			out.writeLong(nodeLiveId.getMostSignificantBits());
+			out.writeLong(nodeLiveId.getLeastSignificantBits());
 		}
 
 		@Override
 		public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
 			this.address = in.readUTF();
+			this.nodeLiveId = new UUID(in.readLong(), in.readLong());
 		}
 	}
 
-	static class NameResponse extends AddressResponse {
+	static class Full extends Address {
 
-		private String name;
+		final Set<String> groups;
+		final Set<String> services;
 
-		NameResponse() {
+		Full() {
+			groups = new HashSet<>();
+			services = new HashSet<>();
 		}
 
-		NameResponse(String address, String name) {
-			super(address);
-			this.name = name;
-		}
-
-		final String getName() {
-			return name;
+		private Full(final String address, final UUID nodeLiveId, final Set<String> groups,
+				final Set<String> services) {
+			super(address, nodeLiveId);
+			this.groups = groups;
+			this.services = services;
 		}
 
 		@Override
 		public void writeExternal(ObjectOutput out) throws IOException {
 			super.writeExternal(out);
-			out.writeUTF(name);
+			out.writeInt(groups.size());
+			for (String group : groups)
+				out.writeUTF(group);
+			out.writeInt(services.size());
+			for (String service : services)
+				out.writeUTF(service);
 		}
 
 		@Override
 		public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
 			super.readExternal(in);
-			this.name = in.readUTF();
+			int size = in.readInt();
+			while (size-- > 0)
+				groups.add(in.readUTF());
+			size = in.readInt();
+			while (size-- > 0)
+				services.add(in.readUTF());
 		}
 	}
 

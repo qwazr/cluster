@@ -16,8 +16,11 @@
 package com.qwazr.cluster.manager;
 
 import com.qwazr.cluster.service.ClusterNodeJson;
+import com.qwazr.utils.DatagramUtils;
 import com.qwazr.utils.LockUtils.ReadWriteLock;
 
+import java.net.InetSocketAddress;
+import java.net.URISyntaxException;
 import java.util.*;
 
 public class ClusterNodeMap {
@@ -28,7 +31,8 @@ public class ClusterNodeMap {
 	private final HashMap<String, HashSet<String>> groupsMap;
 	private final HashMap<String, HashSet<String>> servicesMap;
 
-	private volatile HashMap<String, ClusterNodeJson> cacheNodesMap;
+	private volatile HashMap<String, ClusterNode> cacheNodesMap;
+	private volatile Set<InetSocketAddress> cacheNodesAddresses;
 	private volatile TreeMap<String, TreeSet<String>> cacheGroupsMap;
 	private volatile TreeMap<String, TreeSet<String>> cacheServicesMap;
 
@@ -39,26 +43,30 @@ public class ClusterNodeMap {
 		buildCaches();
 	}
 
-	private void buildCacheGroupsMap() {
+	private synchronized void buildCacheGroupsMap() {
 		final TreeMap<String, TreeSet<String>> newMap = new TreeMap<>();
 		groupsMap.forEach((key, nodes) -> newMap.put(key, new TreeSet<>(nodes)));
 		cacheGroupsMap = newMap;
 	}
 
-	private void buildCacheServicesMap() {
+	private synchronized void buildCacheServicesMap() {
 		final TreeMap<String, TreeSet<String>> newMap = new TreeMap<>();
 		servicesMap.forEach((key, nodes) -> newMap.put(key, new TreeSet<>(nodes)));
 		cacheServicesMap = newMap;
 	}
 
-	private void buildCacheNodesList() {
-		final HashMap<String, ClusterNodeJson> newMap = new HashMap<>();
-		nodesMap.forEach((address, clusterNode) -> newMap
-				.put(address, new ClusterNodeJson(address, clusterNode.groups, clusterNode.getServices())));
+	private synchronized void buildCacheNodesList() {
+		final HashSet<InetSocketAddress> newSet = new HashSet();
+		final HashMap<String, ClusterNode> newMap = new HashMap<>();
+		nodesMap.forEach((address, clusterNode) -> {
+			newSet.add(clusterNode.address.address);
+			newMap.put(address, clusterNode);
+		});
 		cacheNodesMap = newMap;
+		cacheNodesAddresses = newSet;
 	}
 
-	private void buildCaches() {
+	private synchronized void buildCaches() {
 		buildCacheGroupsMap();
 		buildCacheServicesMap();
 		buildCacheNodesList();
@@ -109,19 +117,25 @@ public class ClusterNodeMap {
 	/**
 	 * @return a map which contains the nodes
 	 */
-	final Map<String, ClusterNodeJson> getNodesMap() {
+	final Map<String, ClusterNode> getNodesMap() {
 		return cacheNodesMap;
 	}
 
-	private static void registerSet(final String key, final HashMap<String, HashSet<String>> nodesMap,
+	final Set<InetSocketAddress> getNodeAddresses() {
+		return cacheNodesAddresses;
+	}
+
+	private static void registerSet(final Collection<String> keys, final HashMap<String, HashSet<String>> nodesMap,
 			final String address) {
-		HashSet<String> nodeSet = nodesMap.get(key);
-		if (nodeSet == null) {
-			nodeSet = new HashSet<>();
-			nodesMap.put(key, nodeSet);
-		} else if (nodeSet.contains(address))
-			return;
-		nodeSet.add(address);
+		for (String key : keys) {
+			HashSet<String> nodeSet = nodesMap.get(key);
+			if (nodeSet == null) {
+				nodeSet = new HashSet<>();
+				nodesMap.put(key, nodeSet);
+			} else if (nodeSet.contains(address))
+				return;
+			nodeSet.add(address);
+		}
 	}
 
 	private static void unregisterSet(final HashMap<String, HashSet<String>> nodesMap, final String address) {
@@ -136,73 +150,75 @@ public class ClusterNodeMap {
 		toRemove.forEach(nodesMap::remove);
 	}
 
-	private ClusterNode registerNode(final String address) {
-		ClusterNode node = nodesMap.get(address);
-		if (node == null) {
-			node = new ClusterNode();
-			nodesMap.put(address, node);
-		}
+	private final static ClusterNode getIfExists(final HashMap<String, ClusterNode> nodesMap, final String httpAddress)
+			throws URISyntaxException {
+		final ClusterNode node = nodesMap.get(httpAddress);
+		if (node != null)
+			return node;
+		return nodesMap.get(new ClusterNodeAddress(httpAddress).httpAddressKey);
+	}
+
+	final ClusterNode getIfExists(final String httpAddress) throws URISyntaxException {
+		return getIfExists(cacheNodesMap, httpAddress);
+	}
+
+	private ClusterNode put(final String httpAddress, final UUID nodeLiveId) throws URISyntaxException {
+		final ClusterNodeAddress clusterNodeAddress = new ClusterNodeAddress(httpAddress);
+		ClusterNode node = new ClusterNode(clusterNodeAddress, nodeLiveId);
+		nodesMap.put(clusterNodeAddress.httpAddressKey, node);
 		return node;
+	}
+
+	private ClusterNode registerNode(final String httpAddress, final UUID nodeLiveId)
+			throws URISyntaxException {
+		ClusterNode node = nodesMap.get(httpAddress);
+		if (node == null)
+			return put(httpAddress, nodeLiveId);
+		if (nodeLiveId == null)
+			return node;
+		if (nodeLiveId.equals(node.nodeLiveId))
+			return node;
+		return put(httpAddress, nodeLiveId);
 	}
 
 	/**
 	 * Insert or update a node
 	 *
-	 * @param address the node to register
+	 * @param httpAddress the address of the node
+	 * @param nodeLiveId  the ID of the live
+	 * @throws URISyntaxException
 	 */
-	final void register(final String address) {
-		if (address == null)
+	final void register(final String httpAddress, final UUID nodeLiveId) throws URISyntaxException {
+		if (httpAddress == null)
 			return;
 		readWriteLock.w.lock();
 		try {
-			registerNode(address);
+			registerNode(httpAddress, nodeLiveId);
 			buildCacheNodesList();
 		} finally {
 			readWriteLock.w.unlock();
 		}
 	}
 
-	final void register(final ClusterProtocol.AddressResponse response) {
-		if (response == null)
-			return;
-		registerNode(response.getAddress());
-	}
-
-	public void registerGroup(ClusterProtocol.NameResponse response) {
-		if (response == null)
-			return;
-		final String address = response.getAddress();
+	final ClusterNode register(final ClusterProtocol.Full message) throws URISyntaxException {
+		if (message == null)
+			return null;
+		final String address = message.getAddress();
 		if (address == null)
-			return;
-		final String group = response.getName();
-		if (group == null)
-			return;
+			return null;
 		readWriteLock.w.lock();
 		try {
-			registerNode(address).registerGroup(group);
-			registerSet(group, groupsMap, address);
+			final ClusterNode clusterNode = registerNode(message.getAddress(), message.getNodeLiveId());
+			unregisterSet(groupsMap, clusterNode.address.httpAddressKey);
+			unregisterSet(servicesMap, clusterNode.address.httpAddressKey);
+			clusterNode.registerGroups(message.groups);
+			clusterNode.registerServices(message.services);
+			registerSet(message.groups, groupsMap, address);
+			registerSet(message.services, servicesMap, address);
 			buildCacheNodesList();
 			buildCacheGroupsMap();
-		} finally {
-			readWriteLock.w.unlock();
-		}
-	}
-
-	public void registerService(ClusterProtocol.NameResponse response) {
-		if (response == null)
-			return;
-		final String address = response.getAddress();
-		if (address == null)
-			return;
-		final String service = response.getName();
-		if (service == null)
-			return;
-		readWriteLock.w.lock();
-		try {
-			registerNode(address).registerService(service);
-			registerSet(service, servicesMap, address);
-			buildCacheNodesList();
 			buildCacheServicesMap();
+			return clusterNode;
 		} finally {
 			readWriteLock.w.unlock();
 		}
@@ -213,22 +229,29 @@ public class ClusterNodeMap {
 	 *
 	 * @param address the node to unregister
 	 */
-	private void unregisterAll(final String address) {
-		unregisterSet(groupsMap, address);
-		unregisterSet(servicesMap, address);
-		nodesMap.remove(address);
-		buildCaches();
+	private void unregisterAll(final String address) throws URISyntaxException {
+		final ClusterNode node = nodesMap.get(address);
+		final ClusterNodeAddress nodeAddress = node != null ? node.address : new ClusterNodeAddress(address);
+		unregisterSet(groupsMap, nodeAddress.httpAddressKey);
+		unregisterSet(servicesMap, nodeAddress.httpAddressKey);
+		nodesMap.remove(nodeAddress.httpAddressKey);
 	}
 
 	/**
 	 * Remove the node
 	 *
-	 * @param response the node to unregister
+	 * @param message the node to unregister
 	 */
-	final void unregister(final ClusterProtocol.AddressResponse response) {
-		if (response == null)
+	final void unregister(final ClusterProtocol.Address message) throws URISyntaxException {
+		if (message == null)
 			return;
-		unregisterAll(response.getAddress());
+		readWriteLock.w.lock();
+		try {
+			unregisterAll(message.getAddress());
+			buildCaches();
+		} finally {
+			readWriteLock.w.unlock();
+		}
 	}
 
 }

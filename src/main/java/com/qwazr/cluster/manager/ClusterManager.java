@@ -15,9 +15,11 @@
  */
 package com.qwazr.cluster.manager;
 
+import com.datastax.driver.core.utils.UUIDs;
 import com.qwazr.cluster.service.*;
 import com.qwazr.utils.AnnotationsUtils;
 import com.qwazr.utils.ArrayUtils;
+import com.qwazr.utils.DatagramUtils;
 import com.qwazr.utils.StringUtils;
 import com.qwazr.utils.server.*;
 import org.apache.commons.lang3.RandomUtils;
@@ -26,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
@@ -50,7 +53,7 @@ public class ClusterManager implements Consumer<DatagramPacket> {
 			Runtime.getRuntime().addShutdownHook(new Thread() {
 				public void run() {
 					try {
-						INSTANCE.unregisterMe();
+						INSTANCE.leaveCluster();
 					} catch (IOException e) {
 						logger.warn(e.getMessage(), e);
 					}
@@ -64,53 +67,46 @@ public class ClusterManager implements Consumer<DatagramPacket> {
 
 	private ClusterNodeMap clusterNodeMap;
 
-	public final String myAddress;
-
-	private final Set<String> myGroups;
+	public final ClusterNodeAddress me;
 
 	public final ExecutorService executor;
 
+	private final Set<String> myServices;
+
+	private final Set<String> myGroups;
+
 	private final UdpServerThread udpServer;
-	private final UdpClient udpClient;
+
+	private final UUID nodeLiveId;
 
 	private ClusterManager(final ExecutorService executor, final UdpServerThread udpServer, final String publicAddress,
 			final Collection<String> myGroups) throws IOException, URISyntaxException {
 
 		this.udpServer = udpServer;
-
+		this.nodeLiveId = UUIDs.timeBased();
 		this.executor = executor;
-		myAddress = toAddress(publicAddress);
+
+		me = new ClusterNodeAddress(publicAddress);
 
 		if (logger.isInfoEnabled())
-			logger.info("Server: " + myAddress + " Groups: " + ArrayUtils.prettyPrint(myGroups));
+			logger.info("Server: " + me.httpAddressKey + " Groups: " + ArrayUtils.prettyPrint(myGroups));
 		this.myGroups = myGroups != null ? new HashSet<>(myGroups) : null;
+		this.myServices = new HashSet<>();
 
 		clusterNodeMap = new ClusterNodeMap();
+		clusterNodeMap.register(me.httpAddressKey, nodeLiveId);
 
 		// Load the configuration
-		final String[] nodes;
 		String nodes_env = System.getenv("QWAZR_NODES");
 		if (nodes_env == null)
 			nodes_env = System.getenv("QWAZR_MASTERS");
 
-		if (nodes_env != null) {
-			nodes = StringUtils.split(nodes_env, ',');
-			for (String node : nodes) {
-				String nodeAddress = toAddress(node.trim());
-				logger.info("Add a node: " + nodeAddress);
-				clusterNodeMap.register(nodeAddress);
-			}
-		} else
-			nodes = null;
+		if (nodes_env != null)
+			for (String node : StringUtils.split(nodes_env, ','))
+				clusterNodeMap.register(node, null);
 
-		if (this.udpServer != null) {
+		if (this.udpServer != null)
 			this.udpServer.register(this);
-			this.udpClient = udpServer.getClient(nodes);
-		} else
-			udpClient = null;
-
-		// We load the cluster node map
-		clusterNodeMap = new ClusterNodeMap();
 	}
 
 	public boolean isGroup(String group) {
@@ -123,24 +119,27 @@ public class ClusterManager implements Consumer<DatagramPacket> {
 		return myGroups.contains(group);
 	}
 
-	public Map<String, ClusterNodeJson> getNodesMap() throws ServerException {
-		return clusterNodeMap.getNodesMap();
-	}
-
 	public boolean isLeader(String service, String group) throws ServerException {
 		TreeSet<String> nodes = clusterNodeMap.getGroupService(service, group);
 		if (nodes == null || nodes.isEmpty())
 			return false;
-		return myAddress.equals(nodes.first());
-	}
-
-	public boolean isMe(String address) {
-		return myAddress.equals(address);
+		return me.httpAddressKey.equals(nodes.first());
 	}
 
 	final public ClusterStatusJson getStatus() {
-		return new ClusterStatusJson(clusterNodeMap.getNodesMap(), clusterNodeMap.getGroups(),
+		final Map<String, ClusterNode> nodesMap = clusterNodeMap.getNodesMap();
+		final TreeMap<String, ClusterNodeJson> nodesJsonMap = new TreeMap<>();
+		if (nodesMap != null)
+			nodesMap.forEach((address, clusterNode) -> nodesJsonMap.put(address,
+					new ClusterNodeJson(clusterNode.address.httpAddressKey, clusterNode.nodeLiveId, clusterNode.groups,
+							clusterNode.services)));
+		return new ClusterStatusJson(nodesJsonMap, clusterNodeMap.getGroups(),
 				clusterNodeMap.getServices());
+	}
+
+	final public Set<String> getNodes() {
+		final Map<String, ClusterNode> nodesMap = clusterNodeMap.getNodesMap();
+		return nodesMap == null ? Collections.emptySet() : nodesMap.keySet();
 	}
 
 	final public TreeMap<String, ClusterServiceStatusJson.StatusEnum> getServicesStatus(final String group) {
@@ -191,84 +190,82 @@ public class ClusterManager implements Consumer<DatagramPacket> {
 		}
 	}
 
-	public synchronized void registerMe(Collection<Class<? extends ServiceInterface>> services) throws IOException {
-		if (udpClient == null)
-			return;
-		udpClient.send(new ClusterMessage(ClusterProtocol.joinCluster, new ClusterProtocol.AddressResponse(myAddress)));
-		services.forEach(service -> {
-			ServiceName serviceName = AnnotationsUtils.getFirstAnnotation(service, ServiceName.class);
-			Objects.requireNonNull(serviceName, "The ServiceName annotation is missing for " + service);
-			try {
-				udpClient.send(new ClusterMessage(ClusterProtocol.registerService,
-						new ClusterProtocol.NameResponse(myAddress, serviceName.value())));
-			} catch (IOException e) {
-				logger.error("Failed in register the service: " + serviceName.value(), e);
-			}
-		});
-		if (myGroups != null) {
-			myGroups.forEach(group -> {
-				try {
-					udpClient.send(new ClusterMessage(ClusterProtocol.registerGroup,
-							new ClusterProtocol.NameResponse(myAddress, group)));
-				} catch (IOException e) {
-					logger.error("Failed in register the group: " + group, e);
-				}
+	public synchronized void joinCluster(final Collection<Class<? extends ServiceInterface>> services,
+			final Collection<InetSocketAddress> recipients) throws IOException {
+		if (services != null) {
+			myServices.clear();
+			services.forEach(service -> {
+				ServiceName serviceName = AnnotationsUtils.getFirstAnnotation(service, ServiceName.class);
+				Objects.requireNonNull(serviceName, "The ServiceName annotation is missing for " + service);
+				myServices.add(serviceName.value());
 			});
 		}
+		final Collection<InetSocketAddress> fRecipients =
+				recipients != null ? recipients : clusterNodeMap.getNodeAddresses();
+		ClusterProtocol.newJoin(me.httpAddressKey, nodeLiveId, myGroups, myServices).send(fRecipients);
 	}
 
-	public void unregisterMe() throws IOException {
-		if (udpClient == null)
+	public synchronized void leaveCluster() throws IOException {
+		final Set<InetSocketAddress> recipients = clusterNodeMap.getNodeAddresses();
+		ClusterProtocol.newLeave(me.httpAddressKey, nodeLiveId).send(recipients);
+	}
+
+	final public void acceptJoin(ClusterProtocol.Full message) throws URISyntaxException, IOException {
+		// Registering the node
+		final ClusterNode node =
+				clusterNodeMap.register(message);
+		// Notify  peers
+		ClusterProtocol.newNotify(message).send(clusterNodeMap.getNodeAddresses(),
+				me.address, node.address.address);
+	}
+
+	final public void acceptNotify(ClusterProtocol.Address message) throws URISyntaxException, IOException {
+		final ClusterNode clusterNode = clusterNodeMap.getIfExists(message.getAddress());
+		// If we already know the node, we can leave
+		if (clusterNode != null &&
+				message.getNodeLiveId().equals(clusterNode.nodeLiveId))
 			return;
-		udpClient
-				.send(new ClusterMessage(ClusterProtocol.leaveCluster, new ClusterProtocol.AddressResponse(myAddress)));
+		// Otherwise we forward our configuration
+		ClusterProtocol.newForward(me.httpAddressKey, nodeLiveId, myGroups, myServices).send(message.getAddress());
+	}
+
+	final public void acceptForward(ClusterProtocol.Full message) throws URISyntaxException, IOException {
+		clusterNodeMap.register(message);
+		// Send back myself
+		ClusterProtocol.newReply(me.httpAddressKey, nodeLiveId, myGroups, myServices)
+				.send(message.getAddress());
+	}
+
+	final public void acceptReply(ClusterProtocol.Full message) throws URISyntaxException, IOException {
+		clusterNodeMap.register(message);
 	}
 
 	@Override
 	final public void accept(final DatagramPacket datagramPacket) {
 		try {
-			ClusterMessage message = new ClusterMessage(datagramPacket.getData());
+			ClusterProtocol.Message message = new ClusterProtocol.Message(datagramPacket);
 			logger.info("DATAGRAMPACKET FROM: " + datagramPacket.getAddress().toString() + " " + message.getCommand());
 			switch (message.getCommand()) {
-			case joinCluster:
-				clusterNodeMap.register((ClusterProtocol.AddressResponse) message.getContent());
-				break;
-			case leaveCluster:
-				clusterNodeMap.unregister(message.getContent());
-				break;
-			case registerGroup:
-				clusterNodeMap.registerGroup(message.getContent());
-				break;
-			case registerService:
-				clusterNodeMap.registerService(message.getContent());
-				break;
-			case serviceGroupRequest:
-				break;
-			default:
-				break;
+				case join:
+					acceptJoin(message.getContent());
+					break;
+				case notify:
+					acceptNotify(message.getContent());
+					break;
+				case forward:
+					acceptForward(message.getContent());
+					break;
+				case reply:
+					acceptReply(message.getContent());
+					break;
+				case leave:
+					clusterNodeMap.unregister(message.getContent());
+					break;
 			}
 		} catch (Exception e) {
 			logger.warn(e.getMessage(), e);
 		}
 	}
 
-	private static URI toUri(String address) throws URISyntaxException {
-		if (!address.contains("//"))
-			address = "//" + address;
-		URI u = new URI(address);
-		return new URI(StringUtils.isEmpty(u.getScheme()) ? "http" : u.getScheme(), null, u.getHost(), u.getPort(),
-				null, null, null);
-	}
-
-	/**
-	 * Format an address which can be used in hashset or hashmap
-	 *
-	 * @param hostname the address and port
-	 * @return the address usable as a key
-	 * @throws URISyntaxException thrown if the hostname format is not valid
-	 */
-	static String toAddress(String hostname) throws URISyntaxException {
-		return toUri(hostname).toString().intern();
-	}
 
 }

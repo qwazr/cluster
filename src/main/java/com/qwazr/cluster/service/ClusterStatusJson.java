@@ -37,9 +37,10 @@ public class ClusterStatusJson {
 		services = null;
 	}
 
-	public ClusterStatusJson(final Map<String, ClusterNodeJson> nodesMap, final TreeMap<String, TreeSet<String>> groups,
+	public ClusterStatusJson(final TreeMap<String, ClusterNodeJson> nodesMap,
+			final TreeMap<String, TreeSet<String>> groups,
 			final TreeMap<String, TreeSet<String>> services) throws ServerException {
-		this.active_nodes = nodesMap == null ? null : new TreeMap<>(nodesMap);
+		this.active_nodes = nodesMap;
 		this.groups = groups;
 		this.services = new TreeMap<>();
 		if (services != null) {

@@ -16,11 +16,12 @@
 
 package com.qwazr.cluster.manager;
 
-import com.qwazr.utils.StringUtils;
-
 import java.util.*;
 
 final class ClusterNode {
+
+	final ClusterNodeAddress address;
+	final UUID nodeLiveId;
 
 	final Set<String> groups;
 	final Set<String> services;
@@ -28,28 +29,28 @@ final class ClusterNode {
 	volatile List<String> groupsCache;
 	volatile List<String> servicesCache;
 
-	ClusterNode() {
+	ClusterNode(ClusterNodeAddress address, UUID nodeLiveId) {
+		this.nodeLiveId = nodeLiveId;
+		this.address = address;
 		this.groups = new HashSet<>();
 		this.services = new HashSet<>();
 		groupsCache = null;
 		servicesCache = null;
 	}
 
-	final void registerGroup(final String group) {
-		if (StringUtils.isEmpty(group))
+	final void registerGroups(final Collection<String> newGroups) {
+		if (newGroups == null)
 			return;
-		if (groups.contains(group))
-			return;
-		groups.add(group);
+		groups.clear();
+		groups.addAll(newGroups);
 		groupsCache = new ArrayList<>(groups);
 	}
 
-	final void registerService(final String service) {
-		if (StringUtils.isEmpty(service))
+	final void registerServices(final Collection<String> newServices) {
+		if (newServices == null)
 			return;
-		if (services.contains(service))
-			return;
-		services.add(service);
+		services.clear();
+		services.addAll(newServices);
 		servicesCache = new ArrayList<>(services);
 	}
 

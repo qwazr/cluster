@@ -41,7 +41,7 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 	@Override
 	public TreeSet<String> getNodes() {
 		try {
-			return new TreeSet<>(ClusterManager.INSTANCE.getNodesMap().keySet());
+			return new TreeSet<>(ClusterManager.INSTANCE.getNodes());
 		} catch (ServerException e) {
 			throw e.getJsonException();
 		}

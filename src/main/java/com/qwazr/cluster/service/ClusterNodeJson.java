@@ -15,6 +15,7 @@
  */
 package com.qwazr.cluster.service;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.qwazr.utils.AnnotationsUtils;
@@ -27,6 +28,7 @@ import java.util.*;
 public class ClusterNodeJson {
 
 	public final String address;
+	public final String nodeLiveId;
 	public final Set<String> services;
 	public final Set<String> groups;
 
@@ -34,21 +36,15 @@ public class ClusterNodeJson {
 		address = null;
 		services = null;
 		groups = null;
+		nodeLiveId = null;
 	}
 
-	public ClusterNodeJson(final String address, final Collection<String> groups, final Collection<String> services) {
+	public ClusterNodeJson(final String address, final UUID nodeLiveId, final Collection<String> groups,
+			final Collection<String> services) {
 		this.address = address;
+		this.nodeLiveId = nodeLiveId == null ? null : nodeLiveId.toString();
 		this.groups = groups == null ? null : new TreeSet<>(groups);
 		this.services = services == null ? null : new TreeSet<>(services);
 	}
 
-	public ClusterNodeJson(final String address, final Collection<Class<? extends ServiceInterface>> services,
-			final Set<String> groups) {
-		this(address, new LinkedHashSet<String>(), groups);
-		for (Class<? extends ServiceInterface> service : services) {
-			ServiceName serviceName = AnnotationsUtils.getFirstAnnotation(service, ServiceName.class);
-			Objects.requireNonNull(serviceName, "The ServiceName annotation is missing for " + service);
-			this.services.add(serviceName.value());
-		}
-	}
 }
