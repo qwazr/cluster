@@ -35,7 +35,6 @@ enum ClusterProtocol {
 	reply('R', Full.class),
 	leave('L', Address.class);
 
-
 	private final static String CHAR_HEADER = "QWAZR";
 
 	public final char cmd;
@@ -135,8 +134,7 @@ enum ClusterProtocol {
 			return this;
 		}
 
-		final Message send(final String httpAddress)
-				throws IOException, URISyntaxException {
+		final Message send(final String httpAddress) throws IOException, URISyntaxException {
 			DatagramUtils.send(this, UdpServerThread.DEFAULT_BUFFER_SIZE, new ClusterNodeAddress(httpAddress).address);
 			return this;
 		}
@@ -200,15 +198,21 @@ enum ClusterProtocol {
 			this.services = services;
 		}
 
+		private static void writeCollection(final Collection<String> collection, final ObjectOutput out)
+				throws IOException {
+			if (collection != null) {
+				out.writeInt(collection.size());
+				for (String s : collection)
+					out.writeUTF(s);
+			} else
+				out.writeInt(0);
+		}
+
 		@Override
 		public void writeExternal(ObjectOutput out) throws IOException {
 			super.writeExternal(out);
-			out.writeInt(groups.size());
-			for (String group : groups)
-				out.writeUTF(group);
-			out.writeInt(services.size());
-			for (String service : services)
-				out.writeUTF(service);
+			writeCollection(groups, out);
+			writeCollection(services, out);
 		}
 
 		@Override
