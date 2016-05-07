@@ -88,7 +88,7 @@ public class ClusterManager implements Consumer<DatagramPacket> {
 
 		builder.registerWebService(ClusterServiceImpl.class);
 		builder.registerDatagramConsumer(this);
-		builder.registerStartedListener(server -> joinCluster(server.getServices(), null));
+		builder.registerStartedListener(server -> joinCluster(server.getServiceNames(), null));
 		builder.registerShutdownListener(server -> leaveCluster());
 	}
 
@@ -172,7 +172,8 @@ public class ClusterManager implements Consumer<DatagramPacket> {
 		}
 	}
 
-	public synchronized void joinCluster(final Set<String> services, final Collection<InetSocketAddress> recipients) {
+	public synchronized void joinCluster(final Collection<String> services,
+			final Collection<InetSocketAddress> recipients) {
 		if (services != null) {
 			myServices.clear();
 			myServices.addAll(services);
