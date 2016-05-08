@@ -24,6 +24,7 @@ import com.qwazr.utils.ArrayUtils;
 import com.qwazr.utils.StringUtils;
 import com.qwazr.utils.server.ServerBuilder;
 import com.qwazr.utils.server.ServerException;
+import com.qwazr.utils.server.UdpServerThread;
 import org.apache.commons.lang3.RandomUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,9 +34,8 @@ import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
 import java.util.*;
-import java.util.function.Consumer;
 
-public class ClusterManager implements Consumer<DatagramPacket> {
+public class ClusterManager implements UdpServerThread.PacketListener {
 
 	public final static String SERVICE_NAME_CLUSTER = "cluster";
 
@@ -87,7 +87,7 @@ public class ClusterManager implements Consumer<DatagramPacket> {
 				clusterNodeMap.register(node, null);
 
 		builder.registerWebService(ClusterServiceImpl.class);
-		builder.registerDatagramConsumer(this);
+		builder.registerPacketListener(this);
 		builder.registerStartedListener(server -> joinCluster(server.getServiceNames(), null));
 		builder.registerShutdownListener(server -> leaveCluster());
 	}
@@ -223,29 +223,26 @@ public class ClusterManager implements Consumer<DatagramPacket> {
 	}
 
 	@Override
-	final public void accept(final DatagramPacket datagramPacket) {
-		try {
-			ClusterProtocol.Message message = new ClusterProtocol.Message(datagramPacket);
-			logger.info("DATAGRAMPACKET FROM: " + datagramPacket.getAddress().toString() + " " + message.getCommand());
-			switch (message.getCommand()) {
-			case join:
-				acceptJoin(message.getContent());
-				break;
-			case notify:
-				acceptNotify(message.getContent());
-				break;
-			case forward:
-				acceptForward(message.getContent());
-				break;
-			case reply:
-				acceptReply(message.getContent());
-				break;
-			case leave:
-				clusterNodeMap.unregister(message.getContent());
-				break;
-			}
-		} catch (Exception e) {
-			logger.warn(e.getMessage(), e);
+	final public void acceptPacket(final DatagramPacket datagramPacket)
+			throws IOException, ReflectiveOperationException, URISyntaxException {
+		ClusterProtocol.Message message = new ClusterProtocol.Message(datagramPacket);
+		logger.info("DATAGRAMPACKET FROM: " + datagramPacket.getAddress().toString() + " " + message.getCommand());
+		switch (message.getCommand()) {
+		case join:
+			acceptJoin(message.getContent());
+			break;
+		case notify:
+			acceptNotify(message.getContent());
+			break;
+		case forward:
+			acceptForward(message.getContent());
+			break;
+		case reply:
+			acceptReply(message.getContent());
+			break;
+		case leave:
+			clusterNodeMap.unregister(message.getContent());
+			break;
 		}
 	}
 

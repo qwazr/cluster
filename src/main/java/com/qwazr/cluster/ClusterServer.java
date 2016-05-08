@@ -29,11 +29,12 @@ public class ClusterServer {
 			throws IOException, InstantiationException, ServletException, IllegalAccessException {
 		final ServerBuilder builder = new ServerBuilder();
 		ClusterManager.load(builder, groups);
-		return new GenericServer(builder).start(true);
+		return builder.build().start(true);
 	}
 
 	public static void main(String[] args)
 			throws IOException, InstantiationException, ServletException, IllegalAccessException {
+		start(null);
 	}
 
 }
