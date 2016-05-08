@@ -23,6 +23,8 @@ import java.util.*;
 
 public class ClusterNodeMap {
 
+	private final InetSocketAddress myAddress;
+
 	private final ReadWriteLock readWriteLock = new ReadWriteLock();
 
 	private final HashMap<String, ClusterNode> nodesMap;
@@ -30,11 +32,13 @@ public class ClusterNodeMap {
 	private final HashMap<String, HashSet<String>> servicesMap;
 
 	private volatile HashMap<String, ClusterNode> cacheNodesMap;
-	private volatile Set<InetSocketAddress> cacheNodesAddresses;
+	private volatile Set<InetSocketAddress> cacheFullNodesAddresses;
+	private volatile Set<InetSocketAddress> cacheExternalNodesAddresses;
 	private volatile TreeMap<String, TreeSet<String>> cacheGroupsMap;
 	private volatile TreeMap<String, TreeSet<String>> cacheServicesMap;
 
-	ClusterNodeMap() {
+	ClusterNodeMap(final InetSocketAddress myAddress) {
+		this.myAddress = myAddress;
 		nodesMap = new HashMap<>();
 		groupsMap = new HashMap<>();
 		servicesMap = new HashMap<>();
@@ -54,14 +58,18 @@ public class ClusterNodeMap {
 	}
 
 	private synchronized void buildCacheNodesList() {
-		final HashSet<InetSocketAddress> newSet = new HashSet();
+		final HashSet<InetSocketAddress> newExternalSet = new HashSet();
+		final HashSet<InetSocketAddress> newFullSet = new HashSet();
 		final HashMap<String, ClusterNode> newMap = new HashMap<>();
 		nodesMap.forEach((address, clusterNode) -> {
-			newSet.add(clusterNode.address.address);
+			if (!myAddress.equals(clusterNode.address.address))
+				newExternalSet.add(clusterNode.address.address);
+			newFullSet.add(clusterNode.address.address);
 			newMap.put(address, clusterNode);
 		});
 		cacheNodesMap = newMap;
-		cacheNodesAddresses = newSet;
+		cacheFullNodesAddresses = newFullSet;
+		cacheExternalNodesAddresses = newExternalSet;
 	}
 
 	private synchronized void buildCaches() {
@@ -119,8 +127,12 @@ public class ClusterNodeMap {
 		return cacheNodesMap;
 	}
 
-	final Set<InetSocketAddress> getNodeAddresses() {
-		return cacheNodesAddresses;
+	final Set<InetSocketAddress> getExternalNodeAddresses() {
+		return cacheExternalNodesAddresses;
+	}
+
+	final Set<InetSocketAddress> getFullNodeAddresses() {
+		return cacheFullNodesAddresses;
 	}
 
 	private static void registerSet(final Collection<String> keys, final HashMap<String, HashSet<String>> nodesMap,

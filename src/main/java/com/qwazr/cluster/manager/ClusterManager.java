@@ -32,7 +32,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
-import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
 import java.util.*;
 
@@ -77,7 +76,7 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 		this.myGroups = myGroups != null ? new HashSet<>(myGroups) : null;
 		this.myServices = new HashSet<>();
 
-		clusterNodeMap = new ClusterNodeMap();
+		clusterNodeMap = new ClusterNodeMap(me.address);
 		clusterNodeMap.register(me.httpAddressKey);
 
 		// Load the configuration
@@ -94,7 +93,7 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 		builder.registerWebService(ClusterServiceImpl.class);
 		builder.registerPacketListener(this);
 		builder.registerStartedListener(server -> {
-			joinCluster(server.getServiceNames(), null);
+			joinCluster(server.getServiceNames());
 			keepAliveThread.start();
 		});
 		builder.registerShutdownListener(server -> leaveCluster());
@@ -181,35 +180,22 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 		}
 	}
 
-	public synchronized void joinCluster(final Collection<String> services,
-			final Collection<InetSocketAddress> recipients) {
+	public synchronized void joinCluster(final Collection<String> services) {
 		if (services != null) {
 			myServices.clear();
 			myServices.addAll(services);
 		}
-		final Collection<InetSocketAddress> fRecipients =
-				recipients != null ? recipients : clusterNodeMap.getNodeAddresses();
 		try {
-			ClusterProtocol.newJoin(me.httpAddressKey, nodeLiveId, myGroups, myServices).send(fRecipients);
+			ClusterProtocol.newJoin(me.httpAddressKey, nodeLiveId, myGroups, myServices)
+					.send(clusterNodeMap.getFullNodeAddresses());
 		} catch (IOException e) {
 			logger.error(e.getMessage(), e);
 		}
 	}
 
-	final public Collection<InetSocketAddress> buildRecipients(final Collection<InetSocketAddress> inclusions,
-			final InetSocketAddress... exclusions) {
-		if (exclusions == null || exclusions.length == 0)
-			return inclusions;
-		Collection<InetSocketAddress> addresses = new LinkedHashSet<>(inclusions);
-		for (InetSocketAddress address : addresses)
-			addresses.remove(address);
-		return addresses;
-	}
-
 	public synchronized void leaveCluster() {
 		try {
-			ClusterProtocol.newLeave(me.httpAddressKey, nodeLiveId)
-					.send(buildRecipients(clusterNodeMap.getNodeAddresses(), me.address));
+			ClusterProtocol.newLeave(me.httpAddressKey, nodeLiveId).send(clusterNodeMap.getExternalNodeAddresses());
 		} catch (IOException e) {
 			logger.error(e.getMessage(), e);
 		}
@@ -219,8 +205,7 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 		// Registering the node
 		final ClusterNode node = clusterNodeMap.register(message);
 		// Notify  peers
-		ClusterProtocol.newNotify(message)
-				.send(buildRecipients(clusterNodeMap.getNodeAddresses(), me.address, node.address.address));
+		ClusterProtocol.newNotify(message).send(clusterNodeMap.getFullNodeAddresses());
 	}
 
 	final public void acceptNotify(ClusterProtocol.Address message) throws URISyntaxException, IOException {
@@ -234,9 +219,7 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 	}
 
 	final public void acceptAlive(ClusterProtocol.Address message) throws URISyntaxException, IOException {
-		final ClusterNode node = clusterNodeMap.register(message.getAddress());
-		ClusterProtocol.newNotify(message)
-				.send(buildRecipients(clusterNodeMap.getNodeAddresses(), me.address, node.address.address));
+		ClusterProtocol.newNotify(message).send(clusterNodeMap.getFullNodeAddresses());
 	}
 
 	final public void acceptForward(ClusterProtocol.Full message) throws URISyntaxException, IOException {
@@ -286,8 +269,7 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 		@Override
 		protected void runner() {
 			try {
-				ClusterProtocol.newAlive(me.httpAddressKey, nodeLiveId)
-						.send(buildRecipients(clusterNodeMap.getNodeAddresses(), me.address));
+				ClusterProtocol.newAlive(me.httpAddressKey, nodeLiveId).send(clusterNodeMap.getExternalNodeAddresses());
 			} catch (IOException e) {
 				logger.error(e.getMessage(), e);
 			}
