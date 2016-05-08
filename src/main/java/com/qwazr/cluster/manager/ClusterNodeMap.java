@@ -160,18 +160,6 @@ public class ClusterNodeMap {
 		toRemove.forEach(nodesMap::remove);
 	}
 
-	private final static ClusterNode getIfExists(final HashMap<String, ClusterNode> nodesMap, final String httpAddress)
-			throws URISyntaxException {
-		final ClusterNode node = nodesMap.get(httpAddress);
-		if (node != null)
-			return node;
-		return nodesMap.get(new ClusterNodeAddress(httpAddress).httpAddressKey);
-	}
-
-	final ClusterNode getIfExists(final String httpAddress) throws URISyntaxException {
-		return getIfExists(cacheNodesMap, httpAddress);
-	}
-
 	private ClusterNode put(final String httpAddress, final UUID nodeLiveId) throws URISyntaxException {
 		final ClusterNodeAddress clusterNodeAddress = new ClusterNodeAddress(httpAddress);
 		ClusterNode node = new ClusterNode(clusterNodeAddress, nodeLiveId);

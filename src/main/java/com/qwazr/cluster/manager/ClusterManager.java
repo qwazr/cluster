@@ -211,10 +211,9 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 	}
 
 	final public void acceptNotify(ClusterProtocol.Address message) throws URISyntaxException, IOException {
-		final ClusterNode clusterNode = clusterNodeMap.getIfExists(message.getAddress());
+		final ClusterNode clusterNode = clusterNodeMap.register(message.getAddress());
 		// If we already know the node, we can leave
-		if (clusterNode != null && clusterNode.nodeLiveId != null && message.getNodeLiveId()
-				.equals(clusterNode.nodeLiveId))
+		if (clusterNode.nodeLiveId != null && message.getNodeLiveId().equals(clusterNode.nodeLiveId))
 			return;
 		// Otherwise we forward our configuration
 		ClusterProtocol.newForward(me.httpAddressKey, nodeLiveId, myGroups, myServices)
