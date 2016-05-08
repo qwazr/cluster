@@ -15,8 +15,6 @@
  */
 package com.qwazr.cluster.manager;
 
-import com.qwazr.cluster.service.ClusterNodeJson;
-import com.qwazr.utils.DatagramUtils;
 import com.qwazr.utils.LockUtils.ReadWriteLock;
 
 import java.net.InetSocketAddress;
@@ -169,8 +167,7 @@ public class ClusterNodeMap {
 		return node;
 	}
 
-	private ClusterNode registerNode(final String httpAddress, final UUID nodeLiveId)
-			throws URISyntaxException {
+	private ClusterNode registerNode(final String httpAddress, final UUID nodeLiveId) throws URISyntaxException {
 		ClusterNode node = nodesMap.get(httpAddress);
 		if (node == null)
 			return put(httpAddress, nodeLiveId);
@@ -185,16 +182,16 @@ public class ClusterNodeMap {
 	 * Insert or update a node
 	 *
 	 * @param httpAddress the address of the node
-	 * @param nodeLiveId  the ID of the live
 	 * @throws URISyntaxException
 	 */
-	final void register(final String httpAddress, final UUID nodeLiveId) throws URISyntaxException {
+	final ClusterNode register(final String httpAddress) throws URISyntaxException {
 		if (httpAddress == null)
-			return;
+			return null;
 		readWriteLock.w.lock();
 		try {
-			registerNode(httpAddress, nodeLiveId);
+			final ClusterNode clusterNode = registerNode(httpAddress, null);
 			buildCacheNodesList();
+			return clusterNode;
 		} finally {
 			readWriteLock.w.unlock();
 		}

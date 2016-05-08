@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.qwazr.cluster.service.ClusterServiceStatusJson.StatusEnum;
 import com.qwazr.utils.server.ServerException;
 
-import java.util.Map;
+import java.util.Date;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
@@ -30,16 +30,18 @@ public class ClusterStatusJson {
 	public final TreeMap<String, ClusterNodeJson> active_nodes;
 	public final TreeMap<String, TreeSet<String>> groups;
 	public final TreeMap<String, StatusEnum> services;
+	public final Date last_keep_alive_execution;
 
 	public ClusterStatusJson() {
 		active_nodes = null;
 		groups = null;
 		services = null;
+		last_keep_alive_execution = null;
 	}
 
 	public ClusterStatusJson(final TreeMap<String, ClusterNodeJson> nodesMap,
-			final TreeMap<String, TreeSet<String>> groups,
-			final TreeMap<String, TreeSet<String>> services) throws ServerException {
+			final TreeMap<String, TreeSet<String>> groups, final TreeMap<String, TreeSet<String>> services,
+			final Date lastKeepAliveExecution) throws ServerException {
 		this.active_nodes = nodesMap;
 		this.groups = groups;
 		this.services = new TreeMap<>();
@@ -47,6 +49,7 @@ public class ClusterStatusJson {
 			services.forEach((service, nodesSet) -> this.services
 					.put(service, ClusterServiceStatusJson.findStatus(nodesSet.size())));
 		}
+		this.last_keep_alive_execution = lastKeepAliveExecution;
 	}
 
 }

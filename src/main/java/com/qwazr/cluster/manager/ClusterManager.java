@@ -25,6 +25,7 @@ import com.qwazr.utils.StringUtils;
 import com.qwazr.utils.server.ServerBuilder;
 import com.qwazr.utils.server.ServerException;
 import com.qwazr.utils.server.UdpServerThread;
+import com.qwazr.utils.threads.PeriodicThread;
 import org.apache.commons.lang3.RandomUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,6 +64,8 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 
 	private final UUID nodeLiveId;
 
+	private final KeepAliveThread keepAliveThread;
+
 	private ClusterManager(final ServerBuilder builder, final Collection<String> myGroups) throws URISyntaxException {
 
 		this.nodeLiveId = UUIDs.timeBased();
@@ -75,7 +78,7 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 		this.myServices = new HashSet<>();
 
 		clusterNodeMap = new ClusterNodeMap();
-		clusterNodeMap.register(me.httpAddressKey, nodeLiveId);
+		clusterNodeMap.register(me.httpAddressKey);
 
 		// Load the configuration
 		String nodes_env = System.getenv("QWAZR_NODES");
@@ -84,11 +87,16 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 
 		if (nodes_env != null)
 			for (String node : StringUtils.split(nodes_env, ','))
-				clusterNodeMap.register(node, null);
+				clusterNodeMap.register(node);
+
+		keepAliveThread = new KeepAliveThread();
 
 		builder.registerWebService(ClusterServiceImpl.class);
 		builder.registerPacketListener(this);
-		builder.registerStartedListener(server -> joinCluster(server.getServiceNames(), null));
+		builder.registerStartedListener(server -> {
+			joinCluster(server.getServiceNames(), null);
+			keepAliveThread.start();
+		});
 		builder.registerShutdownListener(server -> leaveCluster());
 	}
 
@@ -116,7 +124,8 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 			nodesMap.forEach((address, clusterNode) -> nodesJsonMap.put(address,
 					new ClusterNodeJson(clusterNode.address.httpAddressKey, clusterNode.nodeLiveId, clusterNode.groups,
 							clusterNode.services)));
-		return new ClusterStatusJson(nodesJsonMap, clusterNodeMap.getGroups(), clusterNodeMap.getServices());
+		return new ClusterStatusJson(nodesJsonMap, clusterNodeMap.getGroups(), clusterNodeMap.getServices(),
+				keepAliveThread.getLastExecutionDate());
 	}
 
 	final public Set<String> getNodes() {
@@ -206,7 +215,8 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 	final public void acceptNotify(ClusterProtocol.Address message) throws URISyntaxException, IOException {
 		final ClusterNode clusterNode = clusterNodeMap.getIfExists(message.getAddress());
 		// If we already know the node, we can leave
-		if (clusterNode != null && message.getNodeLiveId().equals(clusterNode.nodeLiveId))
+		if (clusterNode != null && clusterNode.nodeLiveId != null && message.getNodeLiveId()
+				.equals(clusterNode.nodeLiveId))
 			return;
 		// Otherwise we forward our configuration
 		ClusterProtocol.newForward(me.httpAddressKey, nodeLiveId, myGroups, myServices).send(message.getAddress());
@@ -243,6 +253,24 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 		case leave:
 			clusterNodeMap.unregister(message.getContent());
 			break;
+		}
+	}
+
+	private class KeepAliveThread extends PeriodicThread {
+
+		private KeepAliveThread() {
+			super("KeepAliveThread", 120);
+			setDaemon(true);
+		}
+
+		@Override
+		protected void runner() {
+			try {
+				ClusterProtocol.newNotify(me.httpAddressKey, nodeLiveId)
+						.send(clusterNodeMap.getNodeAddresses(), me.address);
+			} catch (IOException e) {
+				logger.error(e.getMessage(), e);
+			}
 		}
 	}
 

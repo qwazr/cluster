@@ -61,6 +61,10 @@ enum ClusterProtocol {
 		return new Message(notify, address);
 	}
 
+	final static Message newNotify(final String address, final UUID nodeLiveId) {
+		return new Message(notify, new Address(address, nodeLiveId));
+	}
+
 	final static Message newForward(final String address, final UUID nodeLiveId, final Set<String> groups,
 			final Set<String> services) {
 		return new Message(forward, new Full(address, nodeLiveId, groups, services));
