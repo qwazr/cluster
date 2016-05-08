@@ -74,7 +74,7 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 		if (logger.isInfoEnabled())
 			logger.info("Server: " + me.httpAddressKey + " Groups: " + ArrayUtils.prettyPrint(myGroups));
 		this.myGroups = myGroups != null ? new HashSet<>(myGroups) : null;
-		this.myServices = new HashSet<>();
+		this.myServices = new HashSet<>(); // Will be filled later using server hook
 
 		clusterNodeMap = new ClusterNodeMap(me.address);
 		clusterNodeMap.register(me.httpAddressKey);
@@ -204,8 +204,10 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 	final public void acceptJoin(ClusterProtocol.Full message) throws URISyntaxException, IOException {
 		// Registering the node
 		final ClusterNode node = clusterNodeMap.register(message);
-		// Notify  peers
-		ClusterProtocol.newNotify(message).send(clusterNodeMap.getFullNodeAddresses());
+		// Send immediatly a reply
+		ClusterProtocol.newReply(me.httpAddressKey, nodeLiveId, myGroups, myServices).send(node.address.address);
+		// Notify the others
+		ClusterProtocol.newNotify(message).send(clusterNodeMap.getExternalNodeAddresses());
 	}
 
 	final public void acceptNotify(ClusterProtocol.Address message) throws URISyntaxException, IOException {
@@ -215,7 +217,8 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 				.equals(clusterNode.nodeLiveId))
 			return;
 		// Otherwise we forward our configuration
-		ClusterProtocol.newForward(me.httpAddressKey, nodeLiveId, myGroups, myServices).send(message.getAddress());
+		ClusterProtocol.newForward(me.httpAddressKey, nodeLiveId, myGroups, myServices)
+				.send(clusterNode.address.address);
 	}
 
 	final public void acceptAlive(ClusterProtocol.Address message) throws URISyntaxException, IOException {
@@ -223,9 +226,9 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 	}
 
 	final public void acceptForward(ClusterProtocol.Full message) throws URISyntaxException, IOException {
-		clusterNodeMap.register(message);
+		ClusterNode node = clusterNodeMap.register(message);
 		// Send back myself
-		ClusterProtocol.newReply(me.httpAddressKey, nodeLiveId, myGroups, myServices).send(message.getAddress());
+		ClusterProtocol.newReply(me.httpAddressKey, nodeLiveId, myGroups, myServices).send(node.address.address);
 	}
 
 	final public void acceptReply(ClusterProtocol.Full message) throws URISyntaxException, IOException {
@@ -274,6 +277,7 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 				logger.error(e.getMessage(), e);
 			}
 		}
+
 	}
 
 }

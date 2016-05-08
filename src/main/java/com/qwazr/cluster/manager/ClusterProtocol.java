@@ -31,9 +31,9 @@ enum ClusterProtocol {
 
 	join('J', Full.class),
 	notify('N', Address.class),
-	alive('A', Address.class),
 	forward('F', Full.class),
 	reply('R', Full.class),
+	alive('A', Address.class),
 	leave('L', Address.class);
 
 	private final static String CHAR_HEADER = "QWAZR";
@@ -62,10 +62,6 @@ enum ClusterProtocol {
 		return new Message(notify, address);
 	}
 
-	final static Message newAlive(final String address, final UUID nodeLiveId) {
-		return new Message(alive, new Address(address, nodeLiveId));
-	}
-
 	final static Message newForward(final String address, final UUID nodeLiveId, final Set<String> groups,
 			final Set<String> services) {
 		return new Message(forward, new Full(address, nodeLiveId, groups, services));
@@ -74,6 +70,10 @@ enum ClusterProtocol {
 	final static Message newReply(final String address, final UUID nodeLiveId, final Set<String> groups,
 			final Set<String> services) {
 		return new Message(reply, new Full(address, nodeLiveId, groups, services));
+	}
+
+	final static Message newAlive(final String address, final UUID nodeLiveId) {
+		return new Message(alive, new Address(address, nodeLiveId));
 	}
 
 	public static Message newLeave(final String address, final UUID nodeLiveId) {
@@ -127,7 +127,7 @@ enum ClusterProtocol {
 		}
 
 		/**
-		 * Send the message using UDP (Datagram)
+		 * Send a message using UDP (Datagram) to a collection of recipients
 		 *
 		 * @param recipients
 		 * @throws IOException
@@ -137,8 +137,16 @@ enum ClusterProtocol {
 			return this;
 		}
 
-		final Message send(final String httpAddress) throws IOException, URISyntaxException {
-			DatagramUtils.send(this, UdpServerThread.DEFAULT_BUFFER_SIZE, new ClusterNodeAddress(httpAddress).address);
+		/**
+		 * Send the message using UDP (Datagram)
+		 *
+		 * @param socketAddress
+		 * @return
+		 * @throws IOException
+		 * @throws URISyntaxException
+		 */
+		final Message send(final InetSocketAddress socketAddress) throws IOException, URISyntaxException {
+			DatagramUtils.send(this, UdpServerThread.DEFAULT_BUFFER_SIZE, socketAddress);
 			return this;
 		}
 	}
