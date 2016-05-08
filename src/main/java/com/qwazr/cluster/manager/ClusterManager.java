@@ -109,10 +109,12 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 		return myGroups.contains(group);
 	}
 
-	public boolean isLeader(String service, String group) throws ServerException {
-		TreeSet<String> nodes = clusterNodeMap.getGroupService(service, group);
-		if (nodes == null || nodes.isEmpty())
+	public boolean isLeader(final String group, final String service) throws ServerException {
+		TreeSet<String> nodes = clusterNodeMap.getGroupService(group, service);
+		if (nodes == null || nodes.isEmpty()) {
+			logger.warn("No node available for this service/group: " + service + '/' + group);
 			return false;
+		}
 		return me.httpAddressKey.equals(nodes.first());
 	}
 
