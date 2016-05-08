@@ -31,6 +31,7 @@ enum ClusterProtocol {
 
 	join('J', Full.class),
 	notify('N', Address.class),
+	alive('A', Address.class),
 	forward('F', Full.class),
 	reply('R', Full.class),
 	leave('L', Address.class);
@@ -61,8 +62,8 @@ enum ClusterProtocol {
 		return new Message(notify, address);
 	}
 
-	final static Message newNotify(final String address, final UUID nodeLiveId) {
-		return new Message(notify, new Address(address, nodeLiveId));
+	final static Message newAlive(final String address, final UUID nodeLiveId) {
+		return new Message(alive, new Address(address, nodeLiveId));
 	}
 
 	final static Message newForward(final String address, final UUID nodeLiveId, final Set<String> groups,
@@ -129,12 +130,10 @@ enum ClusterProtocol {
 		 * Send the message using UDP (Datagram)
 		 *
 		 * @param recipients
-		 * @param exclusions
 		 * @throws IOException
 		 */
-		final Message send(final Collection<InetSocketAddress> recipients, final InetSocketAddress... exclusions)
-				throws IOException {
-			DatagramUtils.send(this, UdpServerThread.DEFAULT_BUFFER_SIZE, recipients, exclusions);
+		final Message send(final Collection<InetSocketAddress> recipients) throws IOException {
+			DatagramUtils.send(this, UdpServerThread.DEFAULT_BUFFER_SIZE, recipients);
 			return this;
 		}
 

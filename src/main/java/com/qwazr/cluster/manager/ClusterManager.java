@@ -124,8 +124,8 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 			nodesMap.forEach((address, clusterNode) -> nodesJsonMap.put(address,
 					new ClusterNodeJson(clusterNode.address.httpAddressKey, clusterNode.nodeLiveId, clusterNode.groups,
 							clusterNode.services)));
-		return new ClusterStatusJson(nodesJsonMap, clusterNodeMap.getGroups(), clusterNodeMap.getServices(),
-				keepAliveThread.getLastExecutionDate());
+		return new ClusterStatusJson(me.httpAddressKey, nodesJsonMap, clusterNodeMap.getGroups(),
+				clusterNodeMap.getServices(), keepAliveThread.getLastExecutionDate());
 	}
 
 	final public Set<String> getNodes() {
@@ -196,10 +196,20 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 		}
 	}
 
+	final public Collection<InetSocketAddress> buildRecipients(final Collection<InetSocketAddress> inclusions,
+			final InetSocketAddress... exclusions) {
+		if (exclusions == null || exclusions.length == 0)
+			return inclusions;
+		Collection<InetSocketAddress> addresses = new LinkedHashSet<>(inclusions);
+		for (InetSocketAddress address : addresses)
+			addresses.remove(address);
+		return addresses;
+	}
+
 	public synchronized void leaveCluster() {
 		try {
-			final Set<InetSocketAddress> recipients = clusterNodeMap.getNodeAddresses();
-			ClusterProtocol.newLeave(me.httpAddressKey, nodeLiveId).send(recipients);
+			ClusterProtocol.newLeave(me.httpAddressKey, nodeLiveId)
+					.send(buildRecipients(clusterNodeMap.getNodeAddresses(), me.address));
 		} catch (IOException e) {
 			logger.error(e.getMessage(), e);
 		}
@@ -209,7 +219,8 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 		// Registering the node
 		final ClusterNode node = clusterNodeMap.register(message);
 		// Notify  peers
-		ClusterProtocol.newNotify(message).send(clusterNodeMap.getNodeAddresses(), me.address, node.address.address);
+		ClusterProtocol.newNotify(message)
+				.send(buildRecipients(clusterNodeMap.getNodeAddresses(), me.address, node.address.address));
 	}
 
 	final public void acceptNotify(ClusterProtocol.Address message) throws URISyntaxException, IOException {
@@ -220,6 +231,12 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 			return;
 		// Otherwise we forward our configuration
 		ClusterProtocol.newForward(me.httpAddressKey, nodeLiveId, myGroups, myServices).send(message.getAddress());
+	}
+
+	final public void acceptAlive(ClusterProtocol.Address message) throws URISyntaxException, IOException {
+		final ClusterNode node = clusterNodeMap.register(message.getAddress());
+		ClusterProtocol.newNotify(message)
+				.send(buildRecipients(clusterNodeMap.getNodeAddresses(), me.address, node.address.address));
 	}
 
 	final public void acceptForward(ClusterProtocol.Full message) throws URISyntaxException, IOException {
@@ -250,6 +267,9 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 		case reply:
 			acceptReply(message.getContent());
 			break;
+		case alive:
+			acceptAlive(message.getContent());
+			break;
 		case leave:
 			clusterNodeMap.unregister(message.getContent());
 			break;
@@ -266,8 +286,8 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 		@Override
 		protected void runner() {
 			try {
-				ClusterProtocol.newNotify(me.httpAddressKey, nodeLiveId)
-						.send(clusterNodeMap.getNodeAddresses(), me.address);
+				ClusterProtocol.newAlive(me.httpAddressKey, nodeLiveId)
+						.send(buildRecipients(clusterNodeMap.getNodeAddresses(), me.address));
 			} catch (IOException e) {
 				logger.error(e.getMessage(), e);
 			}
