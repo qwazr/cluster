@@ -25,7 +25,7 @@ import com.qwazr.utils.StringUtils;
 import com.qwazr.utils.server.ServerBuilder;
 import com.qwazr.utils.server.ServerException;
 import com.qwazr.utils.server.UdpServerThread;
-import com.qwazr.utils.threads.PeriodicThread;
+import com.qwazr.utils.concurrent.PeriodicThread;
 import org.apache.commons.lang3.RandomUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -244,24 +244,24 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 		ClusterProtocol.Message message = new ClusterProtocol.Message(datagramPacket);
 		logger.info("DATAGRAMPACKET FROM: " + datagramPacket.getAddress().toString() + " " + message.getCommand());
 		switch (message.getCommand()) {
-			case join:
-				acceptJoin(message.getContent());
-				break;
-			case notify:
-				acceptNotify(message.getContent());
-				break;
-			case forward:
-				acceptForward(message.getContent());
-				break;
-			case reply:
-				acceptReply(message.getContent());
-				break;
-			case alive:
-				acceptAlive(message.getContent());
-				break;
-			case leave:
-				clusterNodeMap.unregister(message.getContent());
-				break;
+		case join:
+			acceptJoin(message.getContent());
+			break;
+		case notify:
+			acceptNotify(message.getContent());
+			break;
+		case forward:
+			acceptForward(message.getContent());
+			break;
+		case reply:
+			acceptReply(message.getContent());
+			break;
+		case alive:
+			acceptAlive(message.getContent());
+			break;
+		case leave:
+			clusterNodeMap.unregister(message.getContent());
+			break;
 		}
 	}
 
