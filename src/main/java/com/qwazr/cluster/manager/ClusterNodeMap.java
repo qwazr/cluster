@@ -88,10 +88,14 @@ public class ClusterNodeMap {
 		final TreeSet<String> groupSet = group == null ? null : cacheGroupsMap.get(group);
 		final TreeSet<String> serviceSet = service == null ? null : cacheServicesMap.get(service);
 		final TreeSet<String> nodes = new TreeSet<>();
-		if (groupSet == null || serviceSet == null)
+		if (groupSet == null && serviceSet == null)
 			return nodes;
 		if (groupSet == null) {
 			nodes.addAll(serviceSet);
+			return nodes;
+		}
+		if (serviceSet == null) {
+			nodes.addAll(groupSet);
 			return nodes;
 		}
 		groupSet.forEach(node -> {
