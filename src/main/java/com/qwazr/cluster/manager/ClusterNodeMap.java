@@ -193,17 +193,14 @@ public class ClusterNodeMap {
 	 * @param httpAddress the address of the node
 	 * @throws URISyntaxException
 	 */
-	final ClusterNode register(final String httpAddress) throws URISyntaxException {
+	final ClusterNode register(final String httpAddress) {
 		if (httpAddress == null)
 			return null;
-		readWriteLock.w.lock();
-		try {
+		return readWriteLock.write(() -> {
 			final ClusterNode clusterNode = registerNode(httpAddress, null);
 			buildCacheNodesList();
 			return clusterNode;
-		} finally {
-			readWriteLock.w.unlock();
-		}
+		});
 	}
 
 	final ClusterNode register(final ClusterProtocol.Full message) throws URISyntaxException {
@@ -212,8 +209,7 @@ public class ClusterNodeMap {
 		final String address = message.getAddress();
 		if (address == null)
 			return null;
-		readWriteLock.w.lock();
-		try {
+		return readWriteLock.writeEx(() -> {
 			final ClusterNode clusterNode = registerNode(message.getAddress(), message.getNodeLiveId());
 			unregisterSet(groupsMap, clusterNode.address.httpAddressKey);
 			unregisterSet(servicesMap, clusterNode.address.httpAddressKey);
@@ -225,9 +221,7 @@ public class ClusterNodeMap {
 			buildCacheGroupsMap();
 			buildCacheServicesMap();
 			return clusterNode;
-		} finally {
-			readWriteLock.w.unlock();
-		}
+		});
 	}
 
 	/**
@@ -251,13 +245,10 @@ public class ClusterNodeMap {
 	final void unregister(final ClusterProtocol.Address message) throws URISyntaxException {
 		if (message == null)
 			return;
-		readWriteLock.w.lock();
-		try {
+		readWriteLock.writeEx(() -> {
 			unregisterAll(message.getAddress());
 			buildCaches();
-		} finally {
-			readWriteLock.w.unlock();
-		}
+		});
 	}
 
 }
