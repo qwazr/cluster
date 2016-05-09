@@ -18,6 +18,7 @@ package com.qwazr.cluster;
 import com.qwazr.cluster.manager.ClusterManager;
 import com.qwazr.utils.server.GenericServer;
 import com.qwazr.utils.server.ServerBuilder;
+import com.qwazr.utils.server.ServerConfiguration;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -25,7 +26,7 @@ import java.util.Collection;
 
 public class ClusterServer {
 
-	public static GenericServer start(Collection<String> groups)
+	public static GenericServer start(final Collection<String> groups)
 			throws IOException, InstantiationException, ServletException, IllegalAccessException {
 		final ServerBuilder builder = new ServerBuilder();
 		ClusterManager.load(builder, groups);
