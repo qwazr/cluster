@@ -69,7 +69,9 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 
 		this.nodeLiveId = UUIDs.timeBased();
 
-		me = new ClusterNodeAddress(builder.getServerConfiguration().webServicePublicAddress);
+		String myAddress = builder.getServerConfiguration().webServicePublicAddress;
+
+		me = new ClusterNodeAddress(myAddress);
 
 		if (logger.isInfoEnabled())
 			logger.info("Server: " + me.httpAddressKey + " Groups: " + ArrayUtils.prettyPrint(myGroups));
@@ -242,24 +244,24 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 		ClusterProtocol.Message message = new ClusterProtocol.Message(datagramPacket);
 		logger.info("DATAGRAMPACKET FROM: " + datagramPacket.getAddress().toString() + " " + message.getCommand());
 		switch (message.getCommand()) {
-		case join:
-			acceptJoin(message.getContent());
-			break;
-		case notify:
-			acceptNotify(message.getContent());
-			break;
-		case forward:
-			acceptForward(message.getContent());
-			break;
-		case reply:
-			acceptReply(message.getContent());
-			break;
-		case alive:
-			acceptAlive(message.getContent());
-			break;
-		case leave:
-			clusterNodeMap.unregister(message.getContent());
-			break;
+			case join:
+				acceptJoin(message.getContent());
+				break;
+			case notify:
+				acceptNotify(message.getContent());
+				break;
+			case forward:
+				acceptForward(message.getContent());
+				break;
+			case reply:
+				acceptReply(message.getContent());
+				break;
+			case alive:
+				acceptAlive(message.getContent());
+				break;
+			case leave:
+				clusterNodeMap.unregister(message.getContent());
+				break;
 		}
 	}
 

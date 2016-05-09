@@ -16,6 +16,7 @@
 package com.qwazr.cluster.manager;
 
 import com.qwazr.utils.LockUtils.ReadWriteLock;
+import com.qwazr.utils.StringUtils;
 
 import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
@@ -84,11 +85,15 @@ public class ClusterNodeMap {
 	 * @return a set of nodes for the given group and service
 	 */
 	final TreeSet<String> getGroupService(final String group, final String service) {
-		final TreeSet<String> groupSet = cacheGroupsMap.get(group);
-		final TreeSet<String> serviceSet = cacheServicesMap.get(service);
+		final TreeSet<String> groupSet = group == null ? null : cacheGroupsMap.get(group);
+		final TreeSet<String> serviceSet = service == null ? null : cacheServicesMap.get(service);
 		final TreeSet<String> nodes = new TreeSet<>();
 		if (groupSet == null || serviceSet == null)
 			return nodes;
+		if (groupSet == null) {
+			nodes.addAll(serviceSet);
+			return nodes;
+		}
 		groupSet.forEach(node -> {
 			if (serviceSet.contains(node))
 				nodes.add(node);
