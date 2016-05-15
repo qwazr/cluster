@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.qwazr.utils.StringUtils;
 
-import java.util.TreeSet;
+import java.util.SortedSet;
 
 @JsonInclude(Include.NON_NULL)
 public class ClusterServiceStatusJson {
@@ -31,7 +31,7 @@ public class ClusterServiceStatusJson {
 	public final String leader;
 	public final StatusEnum status;
 	public final int active_count;
-	public final TreeSet<String> active;
+	public final SortedSet<String> active;
 
 	public ClusterServiceStatusJson() {
 		leader = StringUtils.EMPTY;
@@ -40,7 +40,7 @@ public class ClusterServiceStatusJson {
 		active = null;
 	}
 
-	public ClusterServiceStatusJson(final TreeSet<String> nodes) {
+	public ClusterServiceStatusJson(final SortedSet<String> nodes) {
 		this.active = nodes;
 		this.leader = nodes != null ? !nodes.isEmpty() ? nodes.first() : null : null;
 		this.active_count = active == null ? 0 : active.size();

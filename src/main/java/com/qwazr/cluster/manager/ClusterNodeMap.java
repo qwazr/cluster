@@ -79,17 +79,23 @@ public class ClusterNodeMap {
 		buildCacheNodesList();
 	}
 
+	private final SortedSet<String> EMPTY = Collections.unmodifiableSortedSet(new TreeSet<>());
+
 	/**
 	 * @param group   the name of the group
 	 * @param service the name of the service
 	 * @return a set of nodes for the given group and service
 	 */
-	final TreeSet<String> getGroupService(final String group, final String service) {
+	final SortedSet<String> getGroupService(final String group, final String service) {
 		final TreeSet<String> groupSet = group == null ? null : cacheGroupsMap.get(group);
 		final TreeSet<String> serviceSet = service == null ? null : cacheServicesMap.get(service);
-		final TreeSet<String> nodes = new TreeSet<>();
+		if (!StringUtils.isEmpty(group) && (groupSet == null || groupSet.isEmpty()))
+			return EMPTY;
+		if (!StringUtils.isEmpty(service) && (serviceSet == null || serviceSet.isEmpty()))
+			return EMPTY;
 		if (groupSet == null && serviceSet == null)
-			return nodes;
+			return EMPTY;
+		final TreeSet<String> nodes = new TreeSet<>();
 		if (groupSet == null) {
 			nodes.addAll(serviceSet);
 			return nodes;

@@ -112,7 +112,7 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 	}
 
 	public boolean isLeader(final String group, final String service) throws ServerException {
-		TreeSet<String> nodes = clusterNodeMap.getGroupService(group, service);
+		SortedSet<String> nodes = clusterNodeMap.getGroupService(group, service);
 		if (nodes == null || nodes.isEmpty()) {
 			logger.warn("No node available for this service/group: " + service + '/' + group);
 			return false;
@@ -142,7 +142,7 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 		if (services == null || services.isEmpty())
 			return servicesStatus;
 		services.forEach(service -> {
-			final TreeSet<String> nodes = getNodesByGroupByService(group, service);
+			final SortedSet<String> nodes = getNodesByGroupByService(group, service);
 			if (nodes != null && !nodes.isEmpty())
 				servicesStatus.put(service, ClusterServiceStatusJson.findStatus(nodes.size()));
 		});
@@ -150,11 +150,11 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 	}
 
 	final public ClusterServiceStatusJson getServiceStatus(final String group, final String service) {
-		final TreeSet<String> nodes = getNodesByGroupByService(group, service);
+		final SortedSet<String> nodes = getNodesByGroupByService(group, service);
 		return nodes == null || nodes.isEmpty() ? new ClusterServiceStatusJson() : new ClusterServiceStatusJson(nodes);
 	}
 
-	final public TreeSet<String> getNodesByGroupByService(final String group, final String service) {
+	final public SortedSet<String> getNodesByGroupByService(final String group, final String service) {
 		if (StringUtils.isEmpty(group))
 			return clusterNodeMap.getByService(service);
 		else if (StringUtils.isEmpty(service))
@@ -164,14 +164,14 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 	}
 
 	final public String getLeaderNode(final String group, final String service) {
-		final TreeSet<String> nodes = getNodesByGroupByService(group, service);
+		final SortedSet<String> nodes = getNodesByGroupByService(group, service);
 		if (nodes == null || nodes.isEmpty())
 			return null;
 		return nodes.first();
 	}
 
 	final public String getRandomNode(final String group, final String service) {
-		final TreeSet<String> nodes = getNodesByGroupByService(group, service);
+		final SortedSet<String> nodes = getNodesByGroupByService(group, service);
 		if (nodes == null || nodes.isEmpty())
 			return null;
 		int rand = RandomUtils.nextInt(0, nodes.size());

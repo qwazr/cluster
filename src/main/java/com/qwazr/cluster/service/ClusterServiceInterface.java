@@ -22,8 +22,8 @@ import com.qwazr.utils.server.ServiceName;
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
-import java.util.TreeMap;
-import java.util.TreeSet;
+import java.util.SortedMap;
+import java.util.SortedSet;
 
 @RolesAllowed(ClusterManager.SERVICE_NAME_CLUSTER)
 @Path("/" + ClusterServiceInterface.PATH)
@@ -40,12 +40,12 @@ public interface ClusterServiceInterface extends ServiceInterface {
 	@GET
 	@Path("/nodes")
 	@Produces(ServiceInterface.APPLICATION_JSON_UTF8)
-	TreeSet<String> getNodes();
+	SortedSet<String> getNodes();
 
 	@GET
 	@Path("/services")
 	@Produces(ServiceInterface.APPLICATION_JSON_UTF8)
-	TreeMap<String, ClusterServiceStatusJson.StatusEnum> getServiceMap(@QueryParam("group") String group);
+	SortedMap<String, ClusterServiceStatusJson.StatusEnum> getServiceMap(@QueryParam("group") String group);
 
 	@GET
 	@Path("/services/{service_name}")
@@ -56,7 +56,7 @@ public interface ClusterServiceInterface extends ServiceInterface {
 	@GET
 	@Path("/services/{service_name}/active")
 	@Produces(ServiceInterface.APPLICATION_JSON_UTF8)
-	TreeSet<String> getActiveNodesByService(@PathParam("service_name") String service_name,
+	SortedSet<String> getActiveNodesByService(@PathParam("service_name") String service_name,
 			@QueryParam("group") String group);
 
 	@GET

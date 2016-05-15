@@ -21,7 +21,8 @@ import com.qwazr.utils.server.ServerException;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response.Status;
-import java.util.TreeMap;
+import java.util.SortedMap;
+import java.util.SortedSet;
 import java.util.TreeSet;
 
 public class ClusterServiceImpl implements ClusterServiceInterface {
@@ -39,7 +40,7 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 	}
 
 	@Override
-	public TreeSet<String> getNodes() {
+	public SortedSet<String> getNodes() {
 		try {
 			return new TreeSet<>(ClusterManager.INSTANCE.getNodes());
 		} catch (ServerException e) {
@@ -48,7 +49,7 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 	}
 
 	@Override
-	public TreeSet<String> getActiveNodesByService(String service_name, String group) {
+	public SortedSet<String> getActiveNodesByService(String service_name, String group) {
 		if (service_name == null)
 			throw new ServerException(Status.NOT_ACCEPTABLE).getJsonException();
 		try {
@@ -81,7 +82,7 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 	}
 
 	@Override
-	public TreeMap<String, ClusterServiceStatusJson.StatusEnum> getServiceMap(String group) {
+	public SortedMap<String, ClusterServiceStatusJson.StatusEnum> getServiceMap(String group) {
 		try {
 			return ClusterManager.INSTANCE.getServicesStatus(group);
 		} catch (ServerException e) {
