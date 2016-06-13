@@ -16,6 +16,7 @@
 package com.qwazr.cluster.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.qwazr.utils.UBuilder;
 import com.qwazr.utils.http.HttpUtils;
 import com.qwazr.utils.json.client.JsonClientAbstract;
 import com.qwazr.utils.server.RemoteService;
@@ -38,8 +39,8 @@ public class ClusterSingleClient extends JsonClientAbstract implements ClusterSe
 
 	@Override
 	public ClusterStatusJson list() {
-		UBuilder uriBuilder = new UBuilder("/cluster");
-		Request request = Request.Get(uriBuilder.build());
+		final UBuilder uriBuilder = RemoteService.getNewUBuilder(remote, "/cluster");
+		Request request = Request.Get(uriBuilder.buildNoEx());
 		return commonServiceRequest(request, null, null, ClusterStatusJson.class, 200);
 	}
 
@@ -49,8 +50,8 @@ public class ClusterSingleClient extends JsonClientAbstract implements ClusterSe
 
 	@Override
 	public TreeSet<String> getNodes() {
-		UBuilder uriBuilder = new UBuilder("/cluster/nodes");
-		Request request = Request.Get(uriBuilder.build());
+		final UBuilder uriBuilder = RemoteService.getNewUBuilder(remote, "/cluster/nodes");
+		Request request = Request.Get(uriBuilder.buildNoEx());
 		return commonServiceRequest(request, null, null, TreeSetStringClusterNodeJsonTypeRef, 200);
 	}
 
@@ -60,31 +61,35 @@ public class ClusterSingleClient extends JsonClientAbstract implements ClusterSe
 
 	@Override
 	public TreeMap<String, ClusterServiceStatusJson.StatusEnum> getServiceMap(String group) {
-		UBuilder uriBuilder = new UBuilder("/cluster/services").setParameter("group", group);
-		Request request = Request.Get(uriBuilder.build());
+		final UBuilder uriBuilder =
+				RemoteService.getNewUBuilder(remote, "/cluster/services").setParameter("group", group);
+		Request request = Request.Get(uriBuilder.buildNoEx());
 		return commonServiceRequest(request, null, null, MapStringStatusEnumTypeRef, 200);
 	}
 
 	@Override
 	public ClusterServiceStatusJson getServiceStatus(String service_name, String group) {
-		UBuilder uriBuilder = new UBuilder("/cluster/services/", service_name).setParameter("group", group);
-		Request request = Request.Get(uriBuilder.build());
+		final UBuilder uriBuilder =
+				RemoteService.getNewUBuilder(remote, "/cluster/services/", service_name).setParameter("group", group);
+		Request request = Request.Get(uriBuilder.buildNoEx());
 		return commonServiceRequest(request, null, null, ClusterServiceStatusJson.class, 200);
 	}
 
 	@Override
 	public TreeSet<String> getActiveNodesByService(String service_name, String group) {
-		UBuilder uriBuilder = new UBuilder("/cluster/services/", service_name, "/active").setParameter("group", group);
-		Request request = Request.Get(uriBuilder.build());
+		final UBuilder uriBuilder = RemoteService.getNewUBuilder(remote, "/cluster/services/", service_name, "/active")
+				.setParameter("group", group);
+		Request request = Request.Get(uriBuilder.buildNoEx());
 		return commonServiceRequest(request, null, null, TreeSetStringClusterNodeJsonTypeRef, 200);
 	}
 
 	@Override
 	public String getActiveNodeRandomByService(String service_name, String group) {
 		try {
-			UBuilder uriBuilder =
-					new UBuilder("/cluster/services/" + service_name + "/active/random").setParameter("group", group);
-			Request request = Request.Get(uriBuilder.build());
+			final UBuilder uriBuilder =
+					RemoteService.getNewUBuilder(remote, "/cluster/services/" + service_name + "/active/random")
+							.setParameter("group", group);
+			Request request = Request.Get(uriBuilder.buildNoEx());
 			HttpResponse response = execute(request, null, null);
 			HttpUtils.checkStatusCodes(response, 200);
 			return IOUtils.toString(HttpUtils.checkIsEntity(response, ContentType.TEXT_PLAIN).getContent());
@@ -96,9 +101,10 @@ public class ClusterSingleClient extends JsonClientAbstract implements ClusterSe
 	@Override
 	public String getActiveNodeLeaderByService(String service_name, String group) {
 		try {
-			UBuilder uriBuilder =
-					new UBuilder("/cluster/services/" + service_name + "/active/leader").setParameter("group", group);
-			Request request = Request.Get(uriBuilder.build());
+			final UBuilder uriBuilder =
+					RemoteService.getNewUBuilder(remote, "/cluster/services/" + service_name + "/active/leader")
+							.setParameter("group", group);
+			Request request = Request.Get(uriBuilder.buildNoEx());
 			HttpResponse response = execute(request, null, null);
 			HttpUtils.checkStatusCodes(response, 200);
 			return IOUtils.toString(HttpUtils.checkIsEntity(response, ContentType.TEXT_PLAIN).getContent());
