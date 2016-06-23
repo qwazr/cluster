@@ -20,6 +20,8 @@ import com.qwazr.utils.server.GenericServer;
 import com.qwazr.utils.server.ServerBuilder;
 import com.qwazr.utils.server.ServerConfiguration;
 
+import javax.management.MBeanException;
+import javax.management.OperationsException;
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.util.Collection;
@@ -27,14 +29,14 @@ import java.util.Collection;
 public class ClusterServer {
 
 	public static GenericServer start(final Collection<String> groups)
-			throws IOException, InstantiationException, ServletException, IllegalAccessException {
+			throws Exception {
 		final ServerBuilder builder = new ServerBuilder();
 		ClusterManager.load(builder, groups);
 		return builder.build().start(true);
 	}
 
 	public static void main(String[] args)
-			throws IOException, InstantiationException, ServletException, IllegalAccessException {
+			throws Exception {
 		start(null);
 	}
 
