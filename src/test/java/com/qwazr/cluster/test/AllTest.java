@@ -19,6 +19,7 @@ import com.google.common.io.Files;
 import com.qwazr.cluster.ClusterServer;
 import com.qwazr.cluster.service.ClusterServiceStatusJson;
 import com.qwazr.cluster.service.ClusterSingleClient;
+import com.qwazr.cluster.service.ClusterStatusJson;
 import com.qwazr.utils.server.RemoteService;
 import com.qwazr.utils.server.ServerConfiguration;
 import org.junit.Assert;
@@ -33,6 +34,7 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -127,4 +129,37 @@ public class AllTest {
 		}
 	}
 
+	@Test
+	public void test30_active_leader() throws URISyntaxException {
+		String result = getClusterClient().getActiveNodeLeaderByService("cluster", null);
+		Assert.assertNotNull(result);
+		Assert.assertEquals(CLIENT_ADDRESS, result);
+		for (String group : GROUPS) {
+			String resultGroup = getClusterClient().getActiveNodeLeaderByService("cluster", group);
+			Assert.assertNotNull(resultGroup);
+			Assert.assertEquals(CLIENT_ADDRESS, resultGroup);
+		}
+	}
+
+	@Test
+	public void test35_get_service_map() throws URISyntaxException {
+		TreeMap<String, ClusterServiceStatusJson.StatusEnum> result = getClusterClient().getServiceMap(null);
+		Assert.assertNotNull(result);
+		Assert.assertEquals(1, result.size());
+		Assert.assertEquals(ClusterServiceStatusJson.StatusEnum.ok, result.values().iterator().next());
+		for (String group : GROUPS) {
+			result = getClusterClient().getServiceMap(group);
+			Assert.assertNotNull(result);
+			Assert.assertEquals(1, result.size());
+			Assert.assertEquals(ClusterServiceStatusJson.StatusEnum.ok, result.values().iterator().next());
+		}
+	}
+
+	@Test
+	public void test40_list() throws URISyntaxException {
+		ClusterStatusJson status = getClusterClient().list();
+		Assert.assertNotNull(status);
+		Assert.assertEquals(1, status.active_nodes.size());
+		Assert.assertEquals(CLIENT_ADDRESS, status.active_nodes.values().iterator().next().address);
+	}
 }

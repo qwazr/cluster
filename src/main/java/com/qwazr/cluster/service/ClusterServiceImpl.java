@@ -75,7 +75,7 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 		if (service_name == null)
 			throw new ServerException(Status.NOT_ACCEPTABLE).getJsonException();
 		try {
-			return ClusterManager.INSTANCE.getLeaderNode(service_name, group);
+			return ClusterManager.INSTANCE.getLeaderNode(group, service_name);
 		} catch (ServerException e) {
 			throw e.getJsonException();
 		}
