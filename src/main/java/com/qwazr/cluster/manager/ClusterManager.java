@@ -22,10 +22,10 @@ import com.qwazr.cluster.service.ClusterServiceStatusJson;
 import com.qwazr.cluster.service.ClusterStatusJson;
 import com.qwazr.utils.ArrayUtils;
 import com.qwazr.utils.StringUtils;
+import com.qwazr.utils.concurrent.PeriodicThread;
 import com.qwazr.utils.server.ServerBuilder;
 import com.qwazr.utils.server.ServerException;
 import com.qwazr.utils.server.UdpServerThread;
-import com.qwazr.utils.concurrent.PeriodicThread;
 import org.apache.commons.lang3.RandomUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,6 +56,7 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 	private ClusterNodeMap clusterNodeMap;
 
 	public final ClusterNodeAddress me;
+	public final ClusterNodeAddress webApp;
 
 	private final Set<String> myServices;
 
@@ -69,9 +70,11 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 
 		this.nodeLiveId = UUIDs.timeBased();
 
-		String myAddress = builder.getServerConfiguration().webServicePublicAddress;
+		String address = builder.getServerConfiguration().webServicePublicAddress;
+		me = new ClusterNodeAddress(address);
+		address = builder.getServerConfiguration().webApplicationPublicAddress;
+		webApp = new ClusterNodeAddress(address);
 
-		me = new ClusterNodeAddress(myAddress);
 
 		if (logger.isInfoEnabled())
 			logger.info("Server: " + me.httpAddressKey + " Groups: " + ArrayUtils.prettyPrint(myGroups));
@@ -127,7 +130,8 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 			nodesMap.forEach((address, clusterNode) -> nodesJsonMap.put(address,
 					new ClusterNodeJson(clusterNode.address.httpAddressKey, clusterNode.nodeLiveId, clusterNode.groups,
 							clusterNode.services)));
-		return new ClusterStatusJson(me.httpAddressKey, nodesJsonMap, clusterNodeMap.getGroups(),
+		return new ClusterStatusJson(me.httpAddressKey, myServices.contains("webapps") ? webApp.httpAddressKey : null,
+				nodesJsonMap, clusterNodeMap.getGroups(),
 				clusterNodeMap.getServices(), keepAliveThread.getLastExecutionDate());
 	}
 
@@ -244,24 +248,24 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 		ClusterProtocol.Message message = new ClusterProtocol.Message(datagramPacket);
 		logger.info("DATAGRAMPACKET FROM: " + datagramPacket.getAddress().toString() + " " + message.getCommand());
 		switch (message.getCommand()) {
-		case join:
-			acceptJoin(message.getContent());
-			break;
-		case notify:
-			acceptNotify(message.getContent());
-			break;
-		case forward:
-			acceptForward(message.getContent());
-			break;
-		case reply:
-			acceptReply(message.getContent());
-			break;
-		case alive:
-			acceptAlive(message.getContent());
-			break;
-		case leave:
-			clusterNodeMap.unregister(message.getContent());
-			break;
+			case join:
+				acceptJoin(message.getContent());
+				break;
+			case notify:
+				acceptNotify(message.getContent());
+				break;
+			case forward:
+				acceptForward(message.getContent());
+				break;
+			case reply:
+				acceptReply(message.getContent());
+				break;
+			case alive:
+				acceptAlive(message.getContent());
+				break;
+			case leave:
+				clusterNodeMap.unregister(message.getContent());
+				break;
 		}
 	}
 

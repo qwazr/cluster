@@ -28,6 +28,7 @@ import java.util.TreeSet;
 public class ClusterStatusJson {
 
 	public final String me;
+	public final String webapp;
 	public final TreeMap<String, TreeSet<String>> groups;
 	public final TreeMap<String, StatusEnum> services;
 	public final Date last_keep_alive_execution;
@@ -35,16 +36,18 @@ public class ClusterStatusJson {
 
 	public ClusterStatusJson() {
 		me = null;
+		webapp = null;
 		groups = null;
 		services = null;
 		last_keep_alive_execution = null;
 		active_nodes = null;
 	}
 
-	public ClusterStatusJson(final String me, final TreeMap<String, ClusterNodeJson> nodesMap,
+	public ClusterStatusJson(final String me, final String webapp, final TreeMap<String, ClusterNodeJson> nodesMap,
 			final TreeMap<String, TreeSet<String>> groups, final TreeMap<String, TreeSet<String>> services,
 			final Date lastKeepAliveExecution) throws ServerException {
 		this.me = me;
+		this.webapp = webapp;
 		this.groups = groups;
 		this.services = new TreeMap<>();
 		if (services != null) {
