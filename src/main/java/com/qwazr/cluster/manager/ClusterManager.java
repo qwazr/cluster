@@ -43,11 +43,12 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 
 	public static ClusterManager INSTANCE = null;
 
-	public synchronized static void load(final ServerBuilder builder, final Collection<String> myGroups) {
+	public synchronized static void load(final ServerBuilder builder, final Collection<String> masters,
+			final Collection<String> myGroups) {
 		if (INSTANCE != null)
 			throw new RuntimeException("Already loaded");
 		try {
-			INSTANCE = new ClusterManager(builder, myGroups);
+			INSTANCE = new ClusterManager(builder, masters, myGroups);
 		} catch (URISyntaxException e) {
 			throw new RuntimeException(e);
 		}
@@ -66,7 +67,8 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 
 	private final KeepAliveThread keepAliveThread;
 
-	private ClusterManager(final ServerBuilder builder, final Collection<String> myGroups) throws URISyntaxException {
+	private ClusterManager(final ServerBuilder builder, final Collection<String> masters,
+			final Collection<String> myGroups) throws URISyntaxException {
 
 		this.nodeLiveId = UUIDs.timeBased();
 
@@ -74,7 +76,6 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 		me = new ClusterNodeAddress(address);
 		address = builder.getServerConfiguration().webApplicationPublicAddress;
 		webApp = new ClusterNodeAddress(address);
-
 
 		if (logger.isInfoEnabled())
 			logger.info("Server: " + me.httpAddressKey + " Groups: " + ArrayUtils.prettyPrint(myGroups));
@@ -84,14 +85,9 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 		clusterNodeMap = new ClusterNodeMap(me.address);
 		clusterNodeMap.register(me.httpAddressKey);
 
-		// Load the configuration
-		String nodes_env = System.getenv("QWAZR_NODES");
-		if (nodes_env == null)
-			nodes_env = System.getenv("QWAZR_MASTERS");
-
-		if (nodes_env != null)
-			for (String node : StringUtils.split(nodes_env, ','))
-				clusterNodeMap.register(node);
+		if (masters != null)
+			for (String master : masters)
+				clusterNodeMap.register(master);
 
 		keepAliveThread = new KeepAliveThread();
 
@@ -131,8 +127,8 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 					new ClusterNodeJson(clusterNode.address.httpAddressKey, clusterNode.nodeLiveId, clusterNode.groups,
 							clusterNode.services)));
 		return new ClusterStatusJson(me.httpAddressKey, myServices.contains("webapps") ? webApp.httpAddressKey : null,
-				nodesJsonMap, clusterNodeMap.getGroups(),
-				clusterNodeMap.getServices(), keepAliveThread.getLastExecutionDate());
+				nodesJsonMap, clusterNodeMap.getGroups(), clusterNodeMap.getServices(),
+				keepAliveThread.getLastExecutionDate());
 	}
 
 	final public Set<String> getNodes() {
@@ -248,24 +244,24 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 		ClusterProtocol.Message message = new ClusterProtocol.Message(datagramPacket);
 		logger.info("DATAGRAMPACKET FROM: " + datagramPacket.getAddress().toString() + " " + message.getCommand());
 		switch (message.getCommand()) {
-			case join:
-				acceptJoin(message.getContent());
-				break;
-			case notify:
-				acceptNotify(message.getContent());
-				break;
-			case forward:
-				acceptForward(message.getContent());
-				break;
-			case reply:
-				acceptReply(message.getContent());
-				break;
-			case alive:
-				acceptAlive(message.getContent());
-				break;
-			case leave:
-				clusterNodeMap.unregister(message.getContent());
-				break;
+		case join:
+			acceptJoin(message.getContent());
+			break;
+		case notify:
+			acceptNotify(message.getContent());
+			break;
+		case forward:
+			acceptForward(message.getContent());
+			break;
+		case reply:
+			acceptReply(message.getContent());
+			break;
+		case alive:
+			acceptAlive(message.getContent());
+			break;
+		case leave:
+			clusterNodeMap.unregister(message.getContent());
+			break;
 		}
 	}
 

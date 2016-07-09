@@ -21,7 +21,6 @@ import com.qwazr.cluster.service.ClusterServiceStatusJson;
 import com.qwazr.cluster.service.ClusterSingleClient;
 import com.qwazr.cluster.service.ClusterStatusJson;
 import com.qwazr.utils.server.RemoteService;
-import com.qwazr.utils.server.ServerConfiguration;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -48,7 +47,7 @@ public class AllTest {
 		return new ClusterSingleClient(new RemoteService(CLIENT_ADDRESS));
 	}
 
-	private final static String[] GROUPS = {"group1", "group2"};
+	private final static String[] GROUPS = { "group1", "group2" };
 
 	@BeforeClass
 	public static void startServer() throws Exception {
@@ -57,8 +56,7 @@ public class AllTest {
 		System.setProperty("PUBLIC_ADDR", "localhost");
 		System.setProperty("LISTEN_ADDR", "localhost");
 		//System.setProperty("UDP_ADDRESS", UdpServerThread.DEFAULT_MULTICAST);
-		System.setProperty("QWAZR_NODES", "localhost:9091");
-		ClusterServer.start(Arrays.asList(GROUPS));
+		ClusterServer.start(Arrays.asList("localhost:9091"), Arrays.asList(GROUPS));
 	}
 
 	/**

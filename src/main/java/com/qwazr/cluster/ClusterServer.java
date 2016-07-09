@@ -18,26 +18,20 @@ package com.qwazr.cluster;
 import com.qwazr.cluster.manager.ClusterManager;
 import com.qwazr.utils.server.GenericServer;
 import com.qwazr.utils.server.ServerBuilder;
-import com.qwazr.utils.server.ServerConfiguration;
 
-import javax.management.MBeanException;
-import javax.management.OperationsException;
-import javax.servlet.ServletException;
-import java.io.IOException;
 import java.util.Collection;
 
 public class ClusterServer {
 
-	public static GenericServer start(final Collection<String> groups)
+	public static GenericServer start(final Collection<String> masters, final Collection<String> groups)
 			throws Exception {
 		final ServerBuilder builder = new ServerBuilder();
-		ClusterManager.load(builder, groups);
+		ClusterManager.load(builder, masters, groups);
 		return builder.build().start(true);
 	}
 
-	public static void main(String[] args)
-			throws Exception {
-		start(null);
+	public static void main(String[] args) throws Exception {
+		start(null, null);
 	}
 
 }
