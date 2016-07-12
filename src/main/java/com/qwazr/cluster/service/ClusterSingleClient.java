@@ -16,6 +16,7 @@
 package com.qwazr.cluster.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.qwazr.utils.CharsetUtils;
 import com.qwazr.utils.UBuilder;
 import com.qwazr.utils.http.HttpUtils;
 import com.qwazr.utils.json.client.JsonClientAbstract;
@@ -92,7 +93,8 @@ public class ClusterSingleClient extends JsonClientAbstract implements ClusterSe
 			Request request = Request.Get(uriBuilder.buildNoEx());
 			HttpResponse response = execute(request, null, null);
 			HttpUtils.checkStatusCodes(response, 200);
-			return IOUtils.toString(HttpUtils.checkIsEntity(response, ContentType.TEXT_PLAIN).getContent());
+			return IOUtils.toString(HttpUtils.checkIsEntity(response, ContentType.TEXT_PLAIN).getContent(),
+					CharsetUtils.CharsetUTF8);
 		} catch (IOException e) {
 			throw new WebApplicationException(e.getMessage(), e, Status.INTERNAL_SERVER_ERROR);
 		}
@@ -107,7 +109,8 @@ public class ClusterSingleClient extends JsonClientAbstract implements ClusterSe
 			Request request = Request.Get(uriBuilder.buildNoEx());
 			HttpResponse response = execute(request, null, null);
 			HttpUtils.checkStatusCodes(response, 200);
-			return IOUtils.toString(HttpUtils.checkIsEntity(response, ContentType.TEXT_PLAIN).getContent());
+			return IOUtils.toString(HttpUtils.checkIsEntity(response, ContentType.TEXT_PLAIN).getContent(),
+					CharsetUtils.CharsetUTF8);
 		} catch (IOException e) {
 			throw new WebApplicationException(e.getMessage(), e, Status.INTERNAL_SERVER_ERROR);
 		}
