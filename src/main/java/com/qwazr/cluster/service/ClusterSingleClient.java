@@ -16,19 +16,11 @@
 package com.qwazr.cluster.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.qwazr.utils.CharsetUtils;
 import com.qwazr.utils.UBuilder;
-import com.qwazr.utils.http.HttpUtils;
+import com.qwazr.utils.http.HttpRequest;
 import com.qwazr.utils.json.client.JsonClientAbstract;
 import com.qwazr.utils.server.RemoteService;
-import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.fluent.Request;
-import org.apache.http.entity.ContentType;
 
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response.Status;
-import java.io.IOException;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
@@ -41,8 +33,8 @@ public class ClusterSingleClient extends JsonClientAbstract implements ClusterSe
 	@Override
 	public ClusterStatusJson list() {
 		final UBuilder uriBuilder = RemoteService.getNewUBuilder(remote, "/cluster");
-		Request request = Request.Get(uriBuilder.buildNoEx());
-		return commonServiceRequest(request, null, null, ClusterStatusJson.class, 200);
+		final HttpRequest request = HttpRequest.Get(uriBuilder.buildNoEx());
+		return executeJson(request, null, null, ClusterStatusJson.class, valid200);
 	}
 
 	public final static TypeReference<TreeSet<String>> TreeSetStringClusterNodeJsonTypeRef =
@@ -52,8 +44,8 @@ public class ClusterSingleClient extends JsonClientAbstract implements ClusterSe
 	@Override
 	public TreeSet<String> getNodes() {
 		final UBuilder uriBuilder = RemoteService.getNewUBuilder(remote, "/cluster/nodes");
-		Request request = Request.Get(uriBuilder.buildNoEx());
-		return commonServiceRequest(request, null, null, TreeSetStringClusterNodeJsonTypeRef, 200);
+		final HttpRequest request = HttpRequest.Get(uriBuilder.buildNoEx());
+		return executeJson(request, null, null, TreeSetStringClusterNodeJsonTypeRef, valid200);
 	}
 
 	public final static TypeReference<TreeMap<String, ClusterServiceStatusJson.StatusEnum>> MapStringStatusEnumTypeRef =
@@ -64,56 +56,42 @@ public class ClusterSingleClient extends JsonClientAbstract implements ClusterSe
 	public TreeMap<String, ClusterServiceStatusJson.StatusEnum> getServiceMap(String group) {
 		final UBuilder uriBuilder =
 				RemoteService.getNewUBuilder(remote, "/cluster/services").setParameter("group", group);
-		Request request = Request.Get(uriBuilder.buildNoEx());
-		return commonServiceRequest(request, null, null, MapStringStatusEnumTypeRef, 200);
+		final HttpRequest request = HttpRequest.Get(uriBuilder.buildNoEx());
+		return executeJson(request, null, null, MapStringStatusEnumTypeRef, valid200);
 	}
 
 	@Override
-	public ClusterServiceStatusJson getServiceStatus(String service_name, String group) {
+	public ClusterServiceStatusJson getServiceStatus(final String service_name, final String group) {
 		final UBuilder uriBuilder =
 				RemoteService.getNewUBuilder(remote, "/cluster/services/", service_name).setParameter("group", group);
-		Request request = Request.Get(uriBuilder.buildNoEx());
-		return commonServiceRequest(request, null, null, ClusterServiceStatusJson.class, 200);
+		final HttpRequest request = HttpRequest.Get(uriBuilder.buildNoEx());
+		return executeJson(request, null, null, ClusterServiceStatusJson.class, valid200);
 	}
 
 	@Override
-	public TreeSet<String> getActiveNodesByService(String service_name, String group) {
+	public TreeSet<String> getActiveNodesByService(final String service_name, final String group) {
 		final UBuilder uriBuilder = RemoteService.getNewUBuilder(remote, "/cluster/services/", service_name, "/active")
 				.setParameter("group", group);
-		Request request = Request.Get(uriBuilder.buildNoEx());
-		return commonServiceRequest(request, null, null, TreeSetStringClusterNodeJsonTypeRef, 200);
+		final HttpRequest request = HttpRequest.Get(uriBuilder.buildNoEx());
+		return executeJson(request, null, null, TreeSetStringClusterNodeJsonTypeRef, valid200);
 	}
 
 	@Override
-	public String getActiveNodeRandomByService(String service_name, String group) {
-		try {
-			final UBuilder uriBuilder =
-					RemoteService.getNewUBuilder(remote, "/cluster/services/" + service_name + "/active/random")
-							.setParameter("group", group);
-			Request request = Request.Get(uriBuilder.buildNoEx());
-			HttpResponse response = execute(request, null, null);
-			HttpUtils.checkStatusCodes(response, 200);
-			return IOUtils.toString(HttpUtils.checkIsEntity(response, ContentType.TEXT_PLAIN).getContent(),
-					CharsetUtils.CharsetUTF8);
-		} catch (IOException e) {
-			throw new WebApplicationException(e.getMessage(), e, Status.INTERNAL_SERVER_ERROR);
-		}
+	public String getActiveNodeRandomByService(final String service_name, final String group) {
+		final UBuilder uriBuilder =
+				RemoteService.getNewUBuilder(remote, "/cluster/services/" + service_name + "/active/random")
+						.setParameter("group", group);
+		final HttpRequest request = HttpRequest.Get(uriBuilder.buildNoEx());
+		return executeString(request, null, null, valid200TextPlain);
 	}
 
 	@Override
-	public String getActiveNodeLeaderByService(String service_name, String group) {
-		try {
-			final UBuilder uriBuilder =
-					RemoteService.getNewUBuilder(remote, "/cluster/services/" + service_name + "/active/leader")
-							.setParameter("group", group);
-			Request request = Request.Get(uriBuilder.buildNoEx());
-			HttpResponse response = execute(request, null, null);
-			HttpUtils.checkStatusCodes(response, 200);
-			return IOUtils.toString(HttpUtils.checkIsEntity(response, ContentType.TEXT_PLAIN).getContent(),
-					CharsetUtils.CharsetUTF8);
-		} catch (IOException e) {
-			throw new WebApplicationException(e.getMessage(), e, Status.INTERNAL_SERVER_ERROR);
-		}
+	public String getActiveNodeLeaderByService(final String service_name, final String group) {
+		final UBuilder uriBuilder =
+				RemoteService.getNewUBuilder(remote, "/cluster/services/" + service_name + "/active/leader")
+						.setParameter("group", group);
+		final HttpRequest request = HttpRequest.Get(uriBuilder.buildNoEx());
+		return executeString(request, null, null, valid200TextPlain);
 	}
 
 }
