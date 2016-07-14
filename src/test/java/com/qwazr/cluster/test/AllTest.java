@@ -20,9 +20,9 @@ import com.qwazr.cluster.ClusterServer;
 import com.qwazr.cluster.service.ClusterServiceStatusJson;
 import com.qwazr.cluster.service.ClusterSingleClient;
 import com.qwazr.cluster.service.ClusterStatusJson;
+import com.qwazr.utils.http.HttpClients;
 import com.qwazr.utils.server.RemoteService;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
@@ -49,8 +49,8 @@ public class AllTest {
 
 	private final static String[] GROUPS = { "group1", "group2" };
 
-	@BeforeClass
-	public static void startServer() throws Exception {
+	@Test
+	public void test00_startServer() throws Exception {
 		final File dataDir = Files.createTempDir();
 		System.setProperty("QWAZR_DATA", dataDir.getAbsolutePath());
 		System.setProperty("PUBLIC_ADDR", "localhost");
@@ -159,5 +159,12 @@ public class AllTest {
 		Assert.assertNotNull(status);
 		Assert.assertEquals(1, status.active_nodes.size());
 		Assert.assertEquals(CLIENT_ADDRESS, status.active_nodes.values().iterator().next().address);
+	}
+
+	@Test
+	public void testZZZhttpClient() {
+		Assert.assertEquals(0, HttpClients.CNX_MANAGER.getTotalStats().getLeased());
+		Assert.assertEquals(0, HttpClients.CNX_MANAGER.getTotalStats().getPending());
+		Assert.assertTrue(HttpClients.CNX_MANAGER.getTotalStats().getAvailable() > 0);
 	}
 }
