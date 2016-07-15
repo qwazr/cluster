@@ -26,9 +26,7 @@ import com.qwazr.utils.server.RemoteService;
 import com.qwazr.utils.server.UdpServerThread;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class TestServer {
 
@@ -37,7 +35,10 @@ public class TestServer {
 	final ClusterServiceInterface client;
 	final String address;
 
-	TestServer(final List<String> masters, final int port, final List<String> groups) throws Exception {
+	final static List<TestServer> servers = new ArrayList<>();
+
+	TestServer(final List<String> masters, final int port, final String multicastGroup, final String... groups)
+			throws Exception {
 
 		dataDir = Files.createTempDir();
 		address = "http://localhost:" + port;
@@ -51,7 +52,8 @@ public class TestServer {
 		env.put("PUBLIC_ADDR", "localhost");
 		env.put("LISTEN_ADDR", "localhost");
 		env.put("WEBSERVICE_PORT", Integer.toString(port));
-		env.put("UDP_ADDRESS", UdpServerThread.DEFAULT_MULTICAST);
+		if (multicastGroup != null)
+			env.put("UDP_ADDRESS", multicastGroup);
 
 		client = new ClusterSingleClient(new RemoteService(address));
 
@@ -66,10 +68,11 @@ public class TestServer {
 			});
 		} else {
 			env.forEach(System::setProperty);
-			ClusterServer.start(masters, groups);
+			ClusterServer.start(masters, groups == null ? null : Arrays.asList(groups));
 			process = null;
 		}
 
+		servers.add(this);
 	}
 
 }

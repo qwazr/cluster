@@ -16,10 +16,14 @@
 package com.qwazr.cluster;
 
 import com.qwazr.cluster.manager.ClusterManager;
+import com.qwazr.utils.StringUtils;
 import com.qwazr.utils.server.GenericServer;
 import com.qwazr.utils.server.ServerBuilder;
+import com.qwazr.utils.server.ServerConfiguration;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 public class ClusterServer {
 
@@ -30,8 +34,17 @@ public class ClusterServer {
 		return builder.build().start(true);
 	}
 
+	private static List<String> getList(final String key) {
+		String values = System.getenv().get(key);
+		if (values == null)
+			values = System.getProperty(key);
+		if (values == null)
+			return null;
+		return Arrays.asList(StringUtils.split(values, ", "));
+	}
+
 	public static void main(String[] args) throws Exception {
-		start(null, null);
+		start(getList("QWAZR_MASTERS"), getList("QWAZR_GROUPS"));
 	}
 
 }

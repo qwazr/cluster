@@ -41,7 +41,7 @@ public class AllTest {
 
 	@Test
 	public void test00_startServer() throws Exception {
-		server = new TestServer(Arrays.asList("localhost:9091"), 9091, Arrays.asList(GROUPS));
+		server = new TestServer(Arrays.asList("localhost:9091"), 9091, null, GROUPS);
 	}
 
 	/**
