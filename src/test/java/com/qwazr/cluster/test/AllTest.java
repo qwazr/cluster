@@ -15,13 +15,9 @@
  */
 package com.qwazr.cluster.test;
 
-import com.google.common.io.Files;
-import com.qwazr.cluster.ClusterServer;
 import com.qwazr.cluster.service.ClusterServiceStatusJson;
-import com.qwazr.cluster.service.ClusterSingleClient;
 import com.qwazr.cluster.service.ClusterStatusJson;
 import com.qwazr.utils.http.HttpClients;
-import com.qwazr.utils.server.RemoteService;
 import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -29,34 +25,23 @@ import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.net.URISyntaxException;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AllTest {
 
-	private final String CLIENT_ADDRESS = "http://localhost:9091";
-
 	private static final Logger logger = LoggerFactory.getLogger(AllTest.class);
 
-	private ClusterSingleClient getClusterClient() throws URISyntaxException {
-		return new ClusterSingleClient(new RemoteService(CLIENT_ADDRESS));
-	}
+	private final static String[] GROUPS = {"group1", "group2"};
 
-	private final static String[] GROUPS = { "group1", "group2" };
+	private static TestServer server;
 
 	@Test
 	public void test00_startServer() throws Exception {
-		final File dataDir = Files.createTempDir();
-		System.setProperty("QWAZR_DATA", dataDir.getAbsolutePath());
-		System.setProperty("PUBLIC_ADDR", "localhost");
-		System.setProperty("LISTEN_ADDR", "localhost");
-		//System.setProperty("UDP_ADDRESS", UdpServerThread.DEFAULT_MULTICAST);
-		ClusterServer.start(Arrays.asList("localhost:9091"), Arrays.asList(GROUPS));
+		server = new TestServer(Arrays.asList("localhost:9091"), 9091, Arrays.asList(GROUPS));
 	}
 
 	/**
@@ -75,13 +60,13 @@ public class AllTest {
 			activated_groups_count = 0;
 
 			logger.info("Check service activation: " + count);
-			ClusterServiceStatusJson result = getClusterClient().getServiceStatus("cluster", null);
-			if (result.active != null && result.active.contains(CLIENT_ADDRESS))
+			ClusterServiceStatusJson result = server.client.getServiceStatus("cluster", null);
+			if (result.active != null && result.active.contains(server.address))
 				activated_services_count++;
 			for (String group : GROUPS) {
 				logger.info("Check group activation: " + count);
-				ClusterServiceStatusJson resultGroup = getClusterClient().getServiceStatus("cluster", group);
-				if (resultGroup.active != null && resultGroup.active.contains(CLIENT_ADDRESS))
+				ClusterServiceStatusJson resultGroup = server.client.getServiceStatus("cluster", group);
+				if (resultGroup.active != null && resultGroup.active.contains(server.address))
 					activated_groups_count++;
 			}
 			if (activated_services_count == 1 && activated_groups_count == GROUPS.length) {
@@ -96,57 +81,57 @@ public class AllTest {
 
 	@Test
 	public void test20_get_node_list() throws URISyntaxException {
-		Set<String> result = getClusterClient().getNodes();
+		Set<String> result = server.client.getNodes();
 		Assert.assertNotNull(result);
 		Assert.assertEquals(1, result.size());
 	}
 
 	@Test
 	public void test22_get_active_list_by_service() throws URISyntaxException {
-		TreeSet<String> result = getClusterClient().getActiveNodesByService("cluster", null);
+		Set<String> result = server.client.getActiveNodesByService("cluster", null);
 		Assert.assertNotNull(result);
 		Assert.assertEquals(1, result.size());
-		Assert.assertEquals(CLIENT_ADDRESS, result.first());
+		Assert.assertEquals(server.address, result.iterator().next());
 		for (String group : GROUPS) {
-			TreeSet<String> resultGroup = getClusterClient().getActiveNodesByService("cluster", group);
+			Set<String> resultGroup = server.client.getActiveNodesByService("cluster", group);
 			Assert.assertNotNull(resultGroup);
 			Assert.assertEquals(1, resultGroup.size());
-			Assert.assertEquals(CLIENT_ADDRESS, resultGroup.first());
+			Assert.assertEquals(server.address, resultGroup.iterator().next());
 		}
 	}
 
 	@Test
 	public void test25_active_random_service() throws URISyntaxException {
-		String result = getClusterClient().getActiveNodeRandomByService("cluster", null);
+		String result = server.client.getActiveNodeRandomByService("cluster", null);
 		Assert.assertNotNull(result);
-		Assert.assertEquals(CLIENT_ADDRESS, result);
+		Assert.assertEquals(server.address, result);
 		for (String group : GROUPS) {
-			String resultGroup = getClusterClient().getActiveNodeRandomByService("cluster", group);
+			String resultGroup = server.client.getActiveNodeRandomByService("cluster", group);
 			Assert.assertNotNull(resultGroup);
-			Assert.assertEquals(CLIENT_ADDRESS, resultGroup);
+			Assert.assertEquals(server.address, resultGroup);
 		}
 	}
 
 	@Test
 	public void test30_active_leader() throws URISyntaxException {
-		String result = getClusterClient().getActiveNodeLeaderByService("cluster", null);
+		String result = server.client.getActiveNodeLeaderByService("cluster", null);
 		Assert.assertNotNull(result);
-		Assert.assertEquals(CLIENT_ADDRESS, result);
+		Assert.assertEquals(server.address, result);
 		for (String group : GROUPS) {
-			String resultGroup = getClusterClient().getActiveNodeLeaderByService("cluster", group);
+			String resultGroup = server.client.getActiveNodeLeaderByService("cluster", group);
 			Assert.assertNotNull(resultGroup);
-			Assert.assertEquals(CLIENT_ADDRESS, resultGroup);
+			Assert.assertEquals(server.address, resultGroup);
 		}
 	}
 
 	@Test
 	public void test35_get_service_map() throws URISyntaxException {
-		TreeMap<String, ClusterServiceStatusJson.StatusEnum> result = getClusterClient().getServiceMap(null);
+		Map<String, ClusterServiceStatusJson.StatusEnum> result = server.client.getServiceMap(null);
 		Assert.assertNotNull(result);
 		Assert.assertEquals(1, result.size());
 		Assert.assertEquals(ClusterServiceStatusJson.StatusEnum.ok, result.values().iterator().next());
 		for (String group : GROUPS) {
-			result = getClusterClient().getServiceMap(group);
+			result = server.client.getServiceMap(group);
 			Assert.assertNotNull(result);
 			Assert.assertEquals(1, result.size());
 			Assert.assertEquals(ClusterServiceStatusJson.StatusEnum.ok, result.values().iterator().next());
@@ -155,10 +140,10 @@ public class AllTest {
 
 	@Test
 	public void test40_list() throws URISyntaxException {
-		ClusterStatusJson status = getClusterClient().list();
+		ClusterStatusJson status = server.client.list();
 		Assert.assertNotNull(status);
 		Assert.assertEquals(1, status.active_nodes.size());
-		Assert.assertEquals(CLIENT_ADDRESS, status.active_nodes.values().iterator().next().address);
+		Assert.assertEquals(server.address, status.active_nodes.values().iterator().next().address);
 	}
 
 	@Test
