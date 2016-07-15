@@ -52,8 +52,10 @@ public class TestServer {
 		env.put("PUBLIC_ADDR", "localhost");
 		env.put("LISTEN_ADDR", "localhost");
 		env.put("WEBSERVICE_PORT", Integer.toString(port));
-		if (multicastGroup != null)
+		if (multicastGroup != null) {
+			env.put("UDP_PORT", Integer.toString(port));
 			env.put("UDP_ADDRESS", multicastGroup);
+		}
 
 		client = new ClusterSingleClient(new RemoteService(address));
 
