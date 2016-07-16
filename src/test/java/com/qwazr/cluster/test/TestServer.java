@@ -17,16 +17,17 @@ package com.qwazr.cluster.test;
 
 import com.google.common.io.Files;
 import com.qwazr.cluster.ClusterServer;
-import com.qwazr.cluster.manager.ClusterManager;
 import com.qwazr.cluster.service.ClusterServiceInterface;
 import com.qwazr.cluster.service.ClusterSingleClient;
 import com.qwazr.utils.StringUtils;
 import com.qwazr.utils.process.ProcessUtils;
-import com.qwazr.utils.server.GenericServer;
 import com.qwazr.utils.server.RemoteService;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class TestServer {
 
@@ -34,7 +35,6 @@ public class TestServer {
 	final Process process;
 	final ClusterServiceInterface client;
 	final String address;
-	final GenericServer server;
 
 	final static List<TestServer> servers = new ArrayList<>();
 
@@ -64,21 +64,14 @@ public class TestServer {
 
 		client = new ClusterSingleClient(new RemoteService(address));
 
-		if (ClusterManager.INSTANCE != null) {
-			server = null;
-			process = ProcessUtils.java(ClusterServer.class, env);
-			Runtime.getRuntime().addShutdownHook(new Thread() {
-				@Override
-				public void run() {
-					if (process.isAlive())
-						process.destroy();
-				}
-			});
-		} else {
-			env.forEach(System::setProperty);
-			server = ClusterServer.start(masters, groups == null ? null : Arrays.asList(groups));
-			process = null;
-		}
+		process = ProcessUtils.java(ClusterServer.class, env);
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+			@Override
+			public void run() {
+				if (process.isAlive())
+					process.destroy();
+			}
+		});
 
 		servers.add(this);
 	}
@@ -86,16 +79,11 @@ public class TestServer {
 	public void stop() {
 		if (process != null)
 			process.destroy();
-		if (server != null)
-			server.stopAll();
 	}
 
 	public static void closeAll() {
 		if (servers != null)
-			servers.forEach(testServer -> {
-				if (testServer.process != null)
-					testServer.process.destroy();
-			});
+			servers.forEach(testServer -> testServer.process.destroy());
 		servers.clear();
 	}
 

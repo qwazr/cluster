@@ -15,9 +15,13 @@
  */
 package com.qwazr.cluster.test;
 
+import com.qwazr.cluster.ClusterServer;
 import com.qwazr.cluster.service.ClusterServiceStatusJson;
+import com.qwazr.cluster.service.ClusterSingleClient;
 import com.qwazr.cluster.service.ClusterStatusJson;
 import com.qwazr.utils.http.HttpClients;
+import com.qwazr.utils.server.GenericServer;
+import com.qwazr.utils.server.RemoteService;
 import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -37,11 +41,17 @@ public class AllTest {
 
 	private final static String[] GROUPS = { "group1", "group2" };
 
-	private static TestServer server;
+	private final static String ADDRESS = "http://localhost:9091";
+
+	private static GenericServer server;
+	private static ClusterSingleClient client;
 
 	@Test
 	public void test00_startServer() throws Exception {
-		server = new TestServer(Arrays.asList("localhost:9091"), 9091, null, null, GROUPS);
+		System.setProperty("LISTEN_ADDR", "localhost");
+		System.setProperty("PUBLIC_ADDR", "localhost");
+		server = ClusterServer.start(Arrays.asList("localhost:9091"), Arrays.asList(GROUPS));
+		client = new ClusterSingleClient(new RemoteService(ADDRESS));
 	}
 
 	/**
@@ -60,13 +70,13 @@ public class AllTest {
 			activated_groups_count = 0;
 
 			logger.info("Check service activation: " + count);
-			ClusterServiceStatusJson result = server.client.getServiceStatus("cluster", null);
-			if (result.active != null && result.active.contains(server.address))
+			ClusterServiceStatusJson result = client.getServiceStatus("cluster", null);
+			if (result.active != null && result.active.contains(ADDRESS))
 				activated_services_count++;
 			for (String group : GROUPS) {
 				logger.info("Check group activation: " + count);
-				ClusterServiceStatusJson resultGroup = server.client.getServiceStatus("cluster", group);
-				if (resultGroup.active != null && resultGroup.active.contains(server.address))
+				ClusterServiceStatusJson resultGroup = client.getServiceStatus("cluster", group);
+				if (resultGroup.active != null && resultGroup.active.contains(ADDRESS))
 					activated_groups_count++;
 			}
 			if (activated_services_count == 1 && activated_groups_count == GROUPS.length) {
@@ -81,57 +91,57 @@ public class AllTest {
 
 	@Test
 	public void test20_get_node_list() throws URISyntaxException {
-		Set<String> result = server.client.getNodes();
+		Set<String> result = client.getNodes();
 		Assert.assertNotNull(result);
 		Assert.assertEquals(1, result.size());
 	}
 
 	@Test
 	public void test22_get_active_list_by_service() throws URISyntaxException {
-		Set<String> result = server.client.getActiveNodesByService("cluster", null);
+		Set<String> result = client.getActiveNodesByService("cluster", null);
 		Assert.assertNotNull(result);
 		Assert.assertEquals(1, result.size());
-		Assert.assertEquals(server.address, result.iterator().next());
+		Assert.assertEquals(ADDRESS, result.iterator().next());
 		for (String group : GROUPS) {
-			Set<String> resultGroup = server.client.getActiveNodesByService("cluster", group);
+			Set<String> resultGroup = client.getActiveNodesByService("cluster", group);
 			Assert.assertNotNull(resultGroup);
 			Assert.assertEquals(1, resultGroup.size());
-			Assert.assertEquals(server.address, resultGroup.iterator().next());
+			Assert.assertEquals(ADDRESS, resultGroup.iterator().next());
 		}
 	}
 
 	@Test
 	public void test25_active_random_service() throws URISyntaxException {
-		String result = server.client.getActiveNodeRandomByService("cluster", null);
+		String result = client.getActiveNodeRandomByService("cluster", null);
 		Assert.assertNotNull(result);
-		Assert.assertEquals(server.address, result);
+		Assert.assertEquals(ADDRESS, result);
 		for (String group : GROUPS) {
-			String resultGroup = server.client.getActiveNodeRandomByService("cluster", group);
+			String resultGroup = client.getActiveNodeRandomByService("cluster", group);
 			Assert.assertNotNull(resultGroup);
-			Assert.assertEquals(server.address, resultGroup);
+			Assert.assertEquals(ADDRESS, resultGroup);
 		}
 	}
 
 	@Test
 	public void test30_active_leader() throws URISyntaxException {
-		String result = server.client.getActiveNodeLeaderByService("cluster", null);
+		String result = client.getActiveNodeLeaderByService("cluster", null);
 		Assert.assertNotNull(result);
-		Assert.assertEquals(server.address, result);
+		Assert.assertEquals(ADDRESS, result);
 		for (String group : GROUPS) {
-			String resultGroup = server.client.getActiveNodeLeaderByService("cluster", group);
+			String resultGroup = client.getActiveNodeLeaderByService("cluster", group);
 			Assert.assertNotNull(resultGroup);
-			Assert.assertEquals(server.address, resultGroup);
+			Assert.assertEquals(ADDRESS, resultGroup);
 		}
 	}
 
 	@Test
 	public void test35_get_service_map() throws URISyntaxException {
-		Map<String, ClusterServiceStatusJson.StatusEnum> result = server.client.getServiceMap(null);
+		Map<String, ClusterServiceStatusJson.StatusEnum> result = client.getServiceMap(null);
 		Assert.assertNotNull(result);
 		Assert.assertEquals(1, result.size());
 		Assert.assertEquals(ClusterServiceStatusJson.StatusEnum.ok, result.values().iterator().next());
 		for (String group : GROUPS) {
-			result = server.client.getServiceMap(group);
+			result = client.getServiceMap(group);
 			Assert.assertNotNull(result);
 			Assert.assertEquals(1, result.size());
 			Assert.assertEquals(ClusterServiceStatusJson.StatusEnum.ok, result.values().iterator().next());
@@ -140,10 +150,10 @@ public class AllTest {
 
 	@Test
 	public void test40_list() throws URISyntaxException {
-		ClusterStatusJson status = server.client.list();
+		ClusterStatusJson status = client.list();
 		Assert.assertNotNull(status);
 		Assert.assertEquals(1, status.active_nodes.size());
-		Assert.assertEquals(server.address, status.active_nodes.values().iterator().next().address);
+		Assert.assertEquals(ADDRESS, status.active_nodes.values().iterator().next().address);
 	}
 
 	@Test
@@ -151,7 +161,7 @@ public class AllTest {
 		Assert.assertEquals(0, HttpClients.CNX_MANAGER.getTotalStats().getLeased());
 		Assert.assertEquals(0, HttpClients.CNX_MANAGER.getTotalStats().getPending());
 		Assert.assertTrue(HttpClients.CNX_MANAGER.getTotalStats().getAvailable() > 0);
-		TestServer.closeAll();
+		server.stopAll();
 	}
 
 }
