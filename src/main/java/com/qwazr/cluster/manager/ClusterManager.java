@@ -22,24 +22,22 @@ import com.qwazr.cluster.service.ClusterServiceStatusJson;
 import com.qwazr.cluster.service.ClusterStatusJson;
 import com.qwazr.utils.ArrayUtils;
 import com.qwazr.utils.StringUtils;
-import com.qwazr.utils.concurrent.PeriodicThread;
 import com.qwazr.utils.server.ServerBuilder;
+import com.qwazr.utils.server.ServerConfiguration;
 import com.qwazr.utils.server.ServerException;
-import com.qwazr.utils.server.UdpServerThread;
 import org.apache.commons.lang3.RandomUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.net.DatagramPacket;
 import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.util.*;
 
-public class ClusterManager implements UdpServerThread.PacketListener {
+public class ClusterManager {
 
 	public final static String SERVICE_NAME_CLUSTER = "cluster";
 
-	private static final Logger logger = LoggerFactory.getLogger(ClusterManager.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(ClusterManager.class);
 
 	public static ClusterManager INSTANCE = null;
 
@@ -49,36 +47,35 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 			throw new RuntimeException("Already loaded");
 		try {
 			INSTANCE = new ClusterManager(builder, masters, myGroups);
-		} catch (URISyntaxException e) {
+		} catch (URISyntaxException | UnknownHostException e) {
 			throw new RuntimeException(e);
 		}
 	}
 
-	private ClusterNodeMap clusterNodeMap;
+	ClusterNodeMap clusterNodeMap;
 
 	public final ClusterNodeAddress me;
 	public final ClusterNodeAddress webApp;
 
-	private final Set<String> myServices;
+	final Set<String> myServices;
+	final Set<String> myGroups;
 
-	private final Set<String> myGroups;
+	final UUID nodeLiveId;
 
-	private final UUID nodeLiveId;
-
-	private final KeepAliveThread keepAliveThread;
+	private final ProtocolListener protocolListener;
 
 	private ClusterManager(final ServerBuilder builder, final Collection<String> masters,
-			final Collection<String> myGroups) throws URISyntaxException {
+			final Collection<String> myGroups) throws URISyntaxException, UnknownHostException {
 
 		this.nodeLiveId = UUIDs.timeBased();
 
-		String address = builder.getServerConfiguration().webServicePublicAddress;
-		me = new ClusterNodeAddress(address);
-		address = builder.getServerConfiguration().webApplicationPublicAddress;
-		webApp = new ClusterNodeAddress(address);
+		final ServerConfiguration serverConfig = builder.getServerConfiguration();
 
-		if (logger.isInfoEnabled())
-			logger.info("Server: " + me.httpAddressKey + " Groups: " + ArrayUtils.prettyPrint(myGroups));
+		me = new ClusterNodeAddress(serverConfig.webServicePublicAddress);
+		webApp = new ClusterNodeAddress(serverConfig.webApplicationPublicAddress);
+
+		if (LOGGER.isInfoEnabled())
+			LOGGER.info("Server: " + me.httpAddressKey + " Groups: " + ArrayUtils.prettyPrint(myGroups));
 		this.myGroups = myGroups != null ? new HashSet<>(myGroups) : null;
 		this.myServices = new HashSet<>(); // Will be filled later using server hook
 
@@ -89,15 +86,18 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 			for (String master : masters)
 				clusterNodeMap.register(master);
 
-		keepAliveThread = new KeepAliveThread();
+		if (serverConfig.multicastAddress != null && serverConfig.multicastPort != null)
+			protocolListener = new MulticastListener(this, serverConfig.multicastAddress, serverConfig.multicastPort);
+		else
+			protocolListener = new DatagramListener(this);
 
 		builder.registerWebService(ClusterServiceImpl.class);
-		builder.registerPacketListener(this);
+		builder.registerPacketListener(protocolListener);
 		builder.registerStartedListener(server -> {
-			joinCluster(server.getServiceNames());
-			keepAliveThread.start();
+			protocolListener.joinCluster(server.getServiceNames());
+			protocolListener.start();
 		});
-		builder.registerShutdownListener(server -> leaveCluster());
+		builder.registerShutdownListener(server -> protocolListener.leaveCluster());
 	}
 
 	public boolean isGroup(String group) {
@@ -113,7 +113,7 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 	public boolean isLeader(final String group, final String service) throws ServerException {
 		SortedSet<String> nodes = clusterNodeMap.getGroupService(group, service);
 		if (nodes == null || nodes.isEmpty()) {
-			logger.warn("No node available for this service/group: " + service + '/' + group);
+			LOGGER.warn("No node available for this service/group: " + service + '/' + group);
 			return false;
 		}
 		return me.httpAddressKey.equals(nodes.first());
@@ -128,7 +128,7 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 							clusterNode.services)));
 		return new ClusterStatusJson(me.httpAddressKey, myServices.contains("webapps") ? webApp.httpAddressKey : null,
 				nodesJsonMap, clusterNodeMap.getGroups(), clusterNodeMap.getServices(),
-				keepAliveThread.getLastExecutionDate());
+				protocolListener.getLastExecutionDate());
 	}
 
 	final public Set<String> getNodes() {
@@ -182,105 +182,6 @@ public class ClusterManager implements UdpServerThread.PacketListener {
 				return node;
 			rand--;
 		}
-	}
-
-	public synchronized void joinCluster(final Collection<String> services) {
-		if (services != null) {
-			myServices.clear();
-			myServices.addAll(services);
-		}
-		try {
-			ClusterProtocol.newJoin(me.httpAddressKey, nodeLiveId, myGroups, myServices)
-					.send(clusterNodeMap.getFullNodeAddresses());
-		} catch (IOException e) {
-			logger.error(e.getMessage(), e);
-		}
-	}
-
-	public synchronized void leaveCluster() {
-		try {
-			ClusterProtocol.newLeave(me.httpAddressKey, nodeLiveId).send(clusterNodeMap.getExternalNodeAddresses());
-		} catch (IOException e) {
-			logger.error(e.getMessage(), e);
-		}
-	}
-
-	final public void acceptJoin(ClusterProtocol.Full message) throws URISyntaxException, IOException {
-		// Registering the node
-		final ClusterNode node = clusterNodeMap.register(message);
-		// Send immediatly a reply
-		ClusterProtocol.newReply(me.httpAddressKey, nodeLiveId, myGroups, myServices).send(node.address.address);
-		// Notify the others
-		ClusterProtocol.newNotify(message).send(clusterNodeMap.getExternalNodeAddresses());
-	}
-
-	final public void acceptNotify(ClusterProtocol.Address message) throws URISyntaxException, IOException {
-		final ClusterNode clusterNode = clusterNodeMap.register(message.getAddress());
-		// If we already know the node, we can leave
-		if (clusterNode.nodeLiveId != null && message.getNodeLiveId().equals(clusterNode.nodeLiveId))
-			return;
-		// Otherwise we forward our configuration
-		ClusterProtocol.newForward(me.httpAddressKey, nodeLiveId, myGroups, myServices)
-				.send(clusterNode.address.address);
-	}
-
-	final public void acceptAlive(ClusterProtocol.Address message) throws URISyntaxException, IOException {
-		ClusterProtocol.newNotify(message).send(clusterNodeMap.getFullNodeAddresses());
-	}
-
-	final public void acceptForward(ClusterProtocol.Full message) throws URISyntaxException, IOException {
-		ClusterNode node = clusterNodeMap.register(message);
-		// Send back myself
-		ClusterProtocol.newReply(me.httpAddressKey, nodeLiveId, myGroups, myServices).send(node.address.address);
-	}
-
-	final public void acceptReply(ClusterProtocol.Full message) throws URISyntaxException, IOException {
-		clusterNodeMap.register(message);
-	}
-
-	@Override
-	final public void acceptPacket(final DatagramPacket datagramPacket)
-			throws IOException, ReflectiveOperationException, URISyntaxException {
-		ClusterProtocol.Message message = new ClusterProtocol.Message(datagramPacket);
-		logger.info("DATAGRAMPACKET FROM: " + datagramPacket.getAddress().toString() + " " + message.getCommand());
-		switch (message.getCommand()) {
-		case join:
-			acceptJoin(message.getContent());
-			break;
-		case notify:
-			acceptNotify(message.getContent());
-			break;
-		case forward:
-			acceptForward(message.getContent());
-			break;
-		case reply:
-			acceptReply(message.getContent());
-			break;
-		case alive:
-			acceptAlive(message.getContent());
-			break;
-		case leave:
-			clusterNodeMap.unregister(message.getContent());
-			break;
-		}
-	}
-
-	private class KeepAliveThread extends PeriodicThread {
-
-		private KeepAliveThread() {
-			super("KeepAliveThread", 120);
-			setDaemon(true);
-		}
-
-		@Override
-		protected void runner() {
-			try {
-				ClusterProtocol.newAlive(me.httpAddressKey, nodeLiveId).send(clusterNodeMap.getExternalNodeAddresses());
-			} catch (IOException e) {
-				logger.error(e.getMessage(), e);
-			}
-		}
-
 	}
 
 }

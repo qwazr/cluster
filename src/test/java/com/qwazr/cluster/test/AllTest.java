@@ -35,13 +35,13 @@ public class AllTest {
 
 	private static final Logger logger = LoggerFactory.getLogger(AllTest.class);
 
-	private final static String[] GROUPS = {"group1", "group2"};
+	private final static String[] GROUPS = { "group1", "group2" };
 
 	private static TestServer server;
 
 	@Test
 	public void test00_startServer() throws Exception {
-		server = new TestServer(Arrays.asList("localhost:9091"), 9091, null, GROUPS);
+		server = new TestServer(Arrays.asList("localhost:9091"), 9091, null, null, GROUPS);
 	}
 
 	/**
@@ -151,5 +151,7 @@ public class AllTest {
 		Assert.assertEquals(0, HttpClients.CNX_MANAGER.getTotalStats().getLeased());
 		Assert.assertEquals(0, HttpClients.CNX_MANAGER.getTotalStats().getPending());
 		Assert.assertTrue(HttpClients.CNX_MANAGER.getTotalStats().getAvailable() > 0);
+		TestServer.closeAll();
 	}
+
 }

@@ -20,15 +20,16 @@ import java.util.List;
 
 public class MastersTest extends AbstractMultiTests {
 
-	private static final List<String> MASTERS = Arrays.asList("localhost:9091", "localhost:9092");
+	private static final List<String> MASTERS = Arrays.asList("localhost:9092", "localhost:9093");
 
 	@Override
 	protected void startServers() throws Exception {
-		master1 = new TestServer(MASTERS, 9091, null, GROUP_MASTER);
-		master2 = new TestServer(MASTERS, 9092, null, GROUP_MASTER);
-		front1 = new TestServer(MASTERS, 9093, null, GROUP_FRONT);
-		front2 = new TestServer(MASTERS, 9094, null, GROUP_FRONT);
-		front3 = new TestServer(MASTERS, 9095, null, GROUP_FRONT);
+		int port = 9092;
+		master1 = new TestServer(MASTERS, port++, null, null, GROUP_MASTER);
+		master2 = new TestServer(MASTERS, port++, null, null, GROUP_MASTER);
+		front1 = new TestServer(MASTERS, port++, null, null, GROUP_FRONT);
+		front2 = new TestServer(MASTERS, port++, null, null, GROUP_FRONT);
+		front3 = new TestServer(MASTERS, port++, null, null, GROUP_FRONT);
 	}
 
 }

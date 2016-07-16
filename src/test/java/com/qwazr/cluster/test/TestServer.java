@@ -22,8 +22,8 @@ import com.qwazr.cluster.service.ClusterServiceInterface;
 import com.qwazr.cluster.service.ClusterSingleClient;
 import com.qwazr.utils.StringUtils;
 import com.qwazr.utils.process.ProcessUtils;
+import com.qwazr.utils.server.GenericServer;
 import com.qwazr.utils.server.RemoteService;
-import com.qwazr.utils.server.UdpServerThread;
 
 import java.io.File;
 import java.util.*;
@@ -34,32 +34,38 @@ public class TestServer {
 	final Process process;
 	final ClusterServiceInterface client;
 	final String address;
+	final GenericServer server;
 
 	final static List<TestServer> servers = new ArrayList<>();
 
-	TestServer(final List<String> masters, final int port, final String multicastGroup, final String... groups)
-			throws Exception {
+	TestServer(final List<String> masters, final int tcpPort, final String multicastAddress,
+			final Integer multicastPort, final String... groups) throws Exception {
 
 		dataDir = Files.createTempDir();
-		address = "http://localhost:" + port;
+		address = "http://localhost:" + tcpPort;
 
 		Map<String, String> env = new HashMap<>();
 		env.put("QWAZR_DATA", dataDir.getAbsolutePath());
 		if (groups != null)
 			env.put("QWAZR_GROUPS", StringUtils.join(groups, ","));
+		else
+			env.remove("QWAZR_GROUPS");
 		if (masters != null)
 			env.put("QWAZR_MASTERS", StringUtils.join(masters, ","));
+		else
+			env.remove("QWAZR_MASTERS");
 		env.put("PUBLIC_ADDR", "localhost");
 		env.put("LISTEN_ADDR", "localhost");
-		env.put("WEBSERVICE_PORT", Integer.toString(port));
-		if (multicastGroup != null) {
-			env.put("UDP_PORT", Integer.toString(port));
-			env.put("UDP_ADDRESS", multicastGroup);
-		}
+		env.put("WEBSERVICE_PORT", Integer.toString(tcpPort));
+		if (multicastAddress != null)
+			env.put("MULTICAST_ADDR", multicastAddress);
+		if (multicastPort != null)
+			env.put("MULTICAST_PORT", Integer.toString(multicastPort));
 
 		client = new ClusterSingleClient(new RemoteService(address));
 
 		if (ClusterManager.INSTANCE != null) {
+			server = null;
 			process = ProcessUtils.java(ClusterServer.class, env);
 			Runtime.getRuntime().addShutdownHook(new Thread() {
 				@Override
@@ -70,11 +76,27 @@ public class TestServer {
 			});
 		} else {
 			env.forEach(System::setProperty);
-			ClusterServer.start(masters, groups == null ? null : Arrays.asList(groups));
+			server = ClusterServer.start(masters, groups == null ? null : Arrays.asList(groups));
 			process = null;
 		}
 
 		servers.add(this);
+	}
+
+	public void stop() {
+		if (process != null)
+			process.destroy();
+		if (server != null)
+			server.stopAll();
+	}
+
+	public static void closeAll() {
+		if (servers != null)
+			servers.forEach(testServer -> {
+				if (testServer.process != null)
+					testServer.process.destroy();
+			});
+		servers.clear();
 	}
 
 }

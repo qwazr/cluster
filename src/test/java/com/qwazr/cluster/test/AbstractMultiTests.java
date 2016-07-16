@@ -15,15 +15,20 @@
  */
 package com.qwazr.cluster.test;
 
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.WebApplicationException;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public abstract class AbstractMultiTests {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(AbstractMultiTests.class);
 
 	static TestServer master1;
 	static TestServer master2;
@@ -59,8 +64,14 @@ public abstract class AbstractMultiTests {
 					return;
 			} catch (WebApplicationException e) {
 			}
+			LOGGER.info(found + " / " + TestServer.servers.size());
 			Thread.sleep(1000);
 		}
 		Assert.fail();
+	}
+
+	@AfterClass
+	public static void after() {
+		TestServer.closeAll();
 	}
 }

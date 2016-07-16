@@ -15,20 +15,18 @@
  */
 package com.qwazr.cluster.test;
 
-import com.qwazr.utils.server.UdpServerThread;
-
 public class MulticastTest extends AbstractMultiTests {
 
 	@Override
 	protected void startServers() throws Exception {
-		final String multicastGroup = UdpServerThread.DEFAULT_MULTICAST;
-
-		master1 = new TestServer(null, 9091, multicastGroup, GROUP_MASTER);
-		master2 = new TestServer(null, 9092, multicastGroup, GROUP_MASTER);
-		front1 = new TestServer(null, 9093, multicastGroup, GROUP_FRONT);
-		front2 = new TestServer(null, 9094, multicastGroup, GROUP_FRONT);
-		front3 = new TestServer(null, 9095, multicastGroup, GROUP_FRONT);
+		final String multicastAddress = "224.0.0.1";
+		final Integer multicastPort = 9099;
+		int port = 9092;
+		master1 = new TestServer(null, port++, multicastAddress, multicastPort, GROUP_MASTER);
+		master2 = new TestServer(null, port++, multicastAddress, multicastPort, GROUP_MASTER);
+		front1 = new TestServer(null, port++, multicastAddress, multicastPort, GROUP_FRONT);
+		front2 = new TestServer(null, port++, multicastAddress, multicastPort, GROUP_FRONT);
+		front3 = new TestServer(null, port++, multicastAddress, multicastPort, GROUP_FRONT);
 	}
-
 
 }

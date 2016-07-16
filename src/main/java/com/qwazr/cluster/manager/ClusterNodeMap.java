@@ -19,6 +19,7 @@ import com.qwazr.utils.LockUtils.ReadWriteLock;
 import com.qwazr.utils.StringUtils;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.URISyntaxException;
 import java.util.*;
 
@@ -33,8 +34,8 @@ public class ClusterNodeMap {
 	private final HashMap<String, HashSet<String>> servicesMap;
 
 	private volatile HashMap<String, ClusterNode> cacheNodesMap;
-	private volatile Set<InetSocketAddress> cacheFullNodesAddresses;
-	private volatile Set<InetSocketAddress> cacheExternalNodesAddresses;
+	private volatile Set<SocketAddress> cacheFullNodesAddresses;
+	private volatile Set<SocketAddress> cacheExternalNodesAddresses;
 	private volatile TreeMap<String, TreeSet<String>> cacheGroupsMap;
 	private volatile TreeMap<String, TreeSet<String>> cacheServicesMap;
 
@@ -59,8 +60,8 @@ public class ClusterNodeMap {
 	}
 
 	private synchronized void buildCacheNodesList() {
-		final HashSet<InetSocketAddress> newExternalSet = new HashSet();
-		final HashSet<InetSocketAddress> newFullSet = new HashSet();
+		final HashSet<SocketAddress> newExternalSet = new HashSet();
+		final HashSet<SocketAddress> newFullSet = new HashSet();
 		final HashMap<String, ClusterNode> newMap = new HashMap<>();
 		nodesMap.forEach((address, clusterNode) -> {
 			if (!myAddress.equals(clusterNode.address.address))
@@ -142,11 +143,11 @@ public class ClusterNodeMap {
 		return cacheNodesMap;
 	}
 
-	final Set<InetSocketAddress> getExternalNodeAddresses() {
+	final Set<SocketAddress> getExternalNodeAddresses() {
 		return cacheExternalNodesAddresses;
 	}
 
-	final Set<InetSocketAddress> getFullNodeAddresses() {
+	final Set<SocketAddress> getFullNodeAddresses() {
 		return cacheFullNodesAddresses;
 	}
 
@@ -209,7 +210,7 @@ public class ClusterNodeMap {
 		});
 	}
 
-	final ClusterNode register(final ClusterProtocol.Full message) throws URISyntaxException {
+	final ClusterNode register(final FullContent message) throws URISyntaxException {
 		if (message == null)
 			return null;
 		final String address = message.getAddress();
@@ -248,7 +249,7 @@ public class ClusterNodeMap {
 	 *
 	 * @param message the node to unregister
 	 */
-	final void unregister(final ClusterProtocol.Address message) throws URISyntaxException {
+	final void unregister(final AddressContent message) throws URISyntaxException {
 		if (message == null)
 			return;
 		readWriteLock.writeEx(() -> {
