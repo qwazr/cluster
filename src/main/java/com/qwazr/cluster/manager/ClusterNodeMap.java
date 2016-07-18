@@ -17,13 +17,16 @@ package com.qwazr.cluster.manager;
 
 import com.qwazr.utils.LockUtils.ReadWriteLock;
 import com.qwazr.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.net.URISyntaxException;
 import java.util.*;
 
-public class ClusterNodeMap {
+class ClusterNodeMap {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(ClusterNodeMap.class);
 
 	private final InetSocketAddress myAddress;
 
@@ -33,51 +36,39 @@ public class ClusterNodeMap {
 	private final HashMap<String, HashSet<String>> groupsMap;
 	private final HashMap<String, HashSet<String>> servicesMap;
 
-	private volatile HashMap<String, ClusterNode> cacheNodesMap;
-	private volatile Set<SocketAddress> cacheFullNodesAddresses;
-	private volatile Set<SocketAddress> cacheExternalNodesAddresses;
-	private volatile TreeMap<String, TreeSet<String>> cacheGroupsMap;
-	private volatile TreeMap<String, TreeSet<String>> cacheServicesMap;
+	private volatile Cache cache;
+
+	private class Cache {
+
+		private final HashMap<String, ClusterNode> cacheNodesMap;
+		private final Set<SocketAddress> fullNodesAddresses;
+		private final Set<SocketAddress> externalNodesAddresses;
+		private final TreeMap<String, TreeSet<String>> cacheGroupsMap;
+		private final TreeMap<String, TreeSet<String>> cacheServicesMap;
+
+		private Cache() {
+			externalNodesAddresses = new HashSet<>();
+			fullNodesAddresses = new HashSet<>();
+			cacheNodesMap = new HashMap<>();
+			nodesMap.forEach((address, clusterNode) -> {
+				if (!myAddress.equals(clusterNode.address.address))
+					externalNodesAddresses.add(clusterNode.address.address);
+				fullNodesAddresses.add(clusterNode.address.address);
+				cacheNodesMap.put(address, clusterNode);
+			});
+			cacheGroupsMap = new TreeMap<>();
+			groupsMap.forEach((key, nodes) -> cacheGroupsMap.put(key, new TreeSet<>(nodes)));
+			cacheServicesMap = new TreeMap<>();
+			servicesMap.forEach((key, nodes) -> cacheServicesMap.put(key, new TreeSet<>(nodes)));
+		}
+	}
 
 	ClusterNodeMap(final InetSocketAddress myAddress) {
 		this.myAddress = myAddress;
 		nodesMap = new HashMap<>();
 		groupsMap = new HashMap<>();
 		servicesMap = new HashMap<>();
-		buildCaches();
-	}
-
-	private synchronized void buildCacheGroupsMap() {
-		final TreeMap<String, TreeSet<String>> newMap = new TreeMap<>();
-		groupsMap.forEach((key, nodes) -> newMap.put(key, new TreeSet<>(nodes)));
-		cacheGroupsMap = newMap;
-	}
-
-	private synchronized void buildCacheServicesMap() {
-		final TreeMap<String, TreeSet<String>> newMap = new TreeMap<>();
-		servicesMap.forEach((key, nodes) -> newMap.put(key, new TreeSet<>(nodes)));
-		cacheServicesMap = newMap;
-	}
-
-	private synchronized void buildCacheNodesList() {
-		final HashSet<SocketAddress> newExternalSet = new HashSet();
-		final HashSet<SocketAddress> newFullSet = new HashSet();
-		final HashMap<String, ClusterNode> newMap = new HashMap<>();
-		nodesMap.forEach((address, clusterNode) -> {
-			if (!myAddress.equals(clusterNode.address.address))
-				newExternalSet.add(clusterNode.address.address);
-			newFullSet.add(clusterNode.address.address);
-			newMap.put(address, clusterNode);
-		});
-		cacheNodesMap = newMap;
-		cacheFullNodesAddresses = newFullSet;
-		cacheExternalNodesAddresses = newExternalSet;
-	}
-
-	private synchronized void buildCaches() {
-		buildCacheGroupsMap();
-		buildCacheServicesMap();
-		buildCacheNodesList();
+		cache = new Cache();
 	}
 
 	private final SortedSet<String> EMPTY = Collections.unmodifiableSortedSet(new TreeSet<>());
@@ -88,8 +79,9 @@ public class ClusterNodeMap {
 	 * @return a set of nodes for the given group and service
 	 */
 	final SortedSet<String> getGroupService(final String group, final String service) {
-		final TreeSet<String> groupSet = group == null ? null : cacheGroupsMap.get(group);
-		final TreeSet<String> serviceSet = service == null ? null : cacheServicesMap.get(service);
+		final Cache cc = cache;
+		final TreeSet<String> groupSet = group == null ? null : cc.cacheGroupsMap.get(group);
+		final TreeSet<String> serviceSet = service == null ? null : cc.cacheServicesMap.get(service);
 		if (!StringUtils.isEmpty(group) && (groupSet == null || groupSet.isEmpty()))
 			return EMPTY;
 		if (!StringUtils.isEmpty(service) && (serviceSet == null || serviceSet.isEmpty()))
@@ -121,34 +113,34 @@ public class ClusterNodeMap {
 	}
 
 	final TreeSet<String> getByGroup(final String group) {
-		return getNodes(group, cacheGroupsMap);
+		return getNodes(group, cache.cacheGroupsMap);
 	}
 
 	final TreeSet<String> getByService(final String service) {
-		return getNodes(service, cacheServicesMap);
+		return getNodes(service, cache.cacheServicesMap);
 	}
 
 	final TreeMap<String, TreeSet<String>> getGroups() {
-		return cacheGroupsMap;
+		return cache.cacheGroupsMap;
 	}
 
 	final TreeMap<String, TreeSet<String>> getServices() {
-		return cacheServicesMap;
+		return cache.cacheServicesMap;
 	}
 
 	/**
 	 * @return a map which contains the nodes
 	 */
 	final Map<String, ClusterNode> getNodesMap() {
-		return cacheNodesMap;
+		return cache.cacheNodesMap;
 	}
 
 	final Set<SocketAddress> getExternalNodeAddresses() {
-		return cacheExternalNodesAddresses;
+		return cache.externalNodesAddresses;
 	}
 
 	final Set<SocketAddress> getFullNodeAddresses() {
-		return cacheFullNodesAddresses;
+		return cache.fullNodesAddresses;
 	}
 
 	private static void registerSet(final Collection<String> keys, final HashMap<String, HashSet<String>> nodesMap,
@@ -158,9 +150,9 @@ public class ClusterNodeMap {
 			if (nodeSet == null) {
 				nodeSet = new HashSet<>();
 				nodesMap.put(key, nodeSet);
-			} else if (nodeSet.contains(address))
-				return;
-			nodeSet.add(address);
+				nodeSet.add(address);
+			} else if (!nodeSet.contains(address))
+				nodeSet.add(address);
 		}
 	}
 
@@ -176,57 +168,58 @@ public class ClusterNodeMap {
 		toRemove.forEach(nodesMap::remove);
 	}
 
-	private ClusterNode put(final String httpAddress, final UUID nodeLiveId) throws URISyntaxException {
+	private ClusterNode put(final String httpAddress, final UUID nodeLiveId, final Long expirationTimeNs) {
 		final ClusterNodeAddress clusterNodeAddress = new ClusterNodeAddress(httpAddress);
-		ClusterNode node = new ClusterNode(clusterNodeAddress, nodeLiveId);
+		final ClusterNode node = new ClusterNode(clusterNodeAddress, nodeLiveId, expirationTimeNs);
 		nodesMap.put(clusterNodeAddress.httpAddressKey, node);
 		return node;
 	}
 
-	private ClusterNode registerNode(final String httpAddress, final UUID nodeLiveId) throws URISyntaxException {
-		ClusterNode node = nodesMap.get(httpAddress);
+	private ClusterNode registerNode(final String httpAddress, final UUID nodeLiveId, final Long expirationTimeMs) {
+		final ClusterNode node = nodesMap.get(httpAddress);
 		if (node == null)
-			return put(httpAddress, nodeLiveId);
+			return put(httpAddress, nodeLiveId, expirationTimeMs);
 		if (nodeLiveId == null)
 			return node;
-		if (nodeLiveId.equals(node.nodeLiveId))
+		if (nodeLiveId.equals(node.nodeLiveId)) {
+			node.setExpirationTime(expirationTimeMs);
 			return node;
-		return put(httpAddress, nodeLiveId);
+		}
+		return put(httpAddress, nodeLiveId, expirationTimeMs);
 	}
 
 	/**
 	 * Insert or update a node
 	 *
 	 * @param httpAddress the address of the node
-	 * @throws URISyntaxException
 	 */
 	final ClusterNode register(final String httpAddress) {
 		if (httpAddress == null)
 			return null;
 		return readWriteLock.write(() -> {
-			final ClusterNode clusterNode = registerNode(httpAddress, null);
-			buildCacheNodesList();
+			final ClusterNode clusterNode = registerNode(httpAddress, null, null);
+			cache = new Cache();
 			return clusterNode;
 		});
 	}
 
-	final ClusterNode register(final FullContent message) throws URISyntaxException {
+	final ClusterNode register(final FullContent message) {
 		if (message == null)
 			return null;
 		final String address = message.getAddress();
 		if (address == null)
 			return null;
 		return readWriteLock.writeEx(() -> {
-			final ClusterNode clusterNode = registerNode(message.getAddress(), message.getNodeLiveId());
+			final long expirationTimeMs = System.currentTimeMillis() + ProtocolListener.TWICE_DEFAULT_PERIOD_MS;
+			final ClusterNode clusterNode =
+					registerNode(address, message.getNodeLiveId(), expirationTimeMs);
 			unregisterSet(groupsMap, clusterNode.address.httpAddressKey);
 			unregisterSet(servicesMap, clusterNode.address.httpAddressKey);
 			clusterNode.registerGroups(message.groups);
 			clusterNode.registerServices(message.services);
 			registerSet(message.groups, groupsMap, address);
 			registerSet(message.services, servicesMap, address);
-			buildCacheNodesList();
-			buildCacheGroupsMap();
-			buildCacheServicesMap();
+			cache = new Cache();
 			return clusterNode;
 		});
 	}
@@ -236,7 +229,8 @@ public class ClusterNodeMap {
 	 *
 	 * @param address the node to unregister
 	 */
-	private void unregisterAll(final String address) throws URISyntaxException {
+	private void unregisterAll(final String address) {
+		LOGGER.info("Unregister " + address + " from " + myAddress);
 		final ClusterNode node = nodesMap.get(address);
 		final ClusterNodeAddress nodeAddress = node != null ? node.address : new ClusterNodeAddress(address);
 		unregisterSet(groupsMap, nodeAddress.httpAddressKey);
@@ -249,13 +243,27 @@ public class ClusterNodeMap {
 	 *
 	 * @param message the node to unregister
 	 */
-	final void unregister(final AddressContent message) throws URISyntaxException {
+	final void unregister(final AddressContent message) {
 		if (message == null)
 			return;
 		readWriteLock.writeEx(() -> {
 			unregisterAll(message.getAddress());
-			buildCaches();
+			cache = new Cache();
 		});
 	}
 
+	final synchronized void removeExpired() {
+		final List<String> deleteAdresses = new ArrayList<>();
+		final long currentMs = System.currentTimeMillis();
+		readWriteLock.writeEx(() -> {
+			nodesMap.forEach((address, node) -> {
+				if (node.isExpired(currentMs))
+					deleteAdresses.add(address);
+			});
+			if (deleteAdresses.isEmpty())
+				return;
+			deleteAdresses.forEach(this::unregisterAll);
+			cache = new Cache();
+		});
+	}
 }

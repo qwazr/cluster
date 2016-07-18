@@ -122,10 +122,21 @@ public class ClusterManager {
 	final public ClusterStatusJson getStatus() {
 		final Map<String, ClusterNode> nodesMap = clusterNodeMap.getNodesMap();
 		final TreeMap<String, ClusterNodeJson> nodesJsonMap = new TreeMap<>();
-		if (nodesMap != null)
-			nodesMap.forEach((address, clusterNode) -> nodesJsonMap.put(address,
-					new ClusterNodeJson(clusterNode.address.httpAddressKey, clusterNode.nodeLiveId, clusterNode.groups,
-							clusterNode.services)));
+		if (nodesMap != null) {
+			final long currentMs = System.currentTimeMillis();
+			nodesMap.forEach((address, clusterNode) -> {
+				final Integer timeToLive;
+				if (clusterNode.expirationTimeMs != null)
+					timeToLive = (int) ((clusterNode.expirationTimeMs - currentMs) / 1000);
+				else
+					timeToLive = null;
+				System.out.println(address + " " + currentMs + " " + clusterNode.expirationTimeMs + " " + timeToLive);
+				final ClusterNodeJson clusterNodeJson =
+						new ClusterNodeJson(clusterNode.address.httpAddressKey, clusterNode.nodeLiveId, timeToLive,
+								clusterNode.groups, clusterNode.services);
+				nodesJsonMap.put(address, clusterNodeJson);
+			});
+		}
 		return new ClusterStatusJson(me.httpAddressKey, myServices.contains("webapps") ? webApp.httpAddressKey : null,
 				nodesJsonMap, clusterNodeMap.getGroups(), clusterNodeMap.getServices(),
 				protocolListener.getLastExecutionDate());

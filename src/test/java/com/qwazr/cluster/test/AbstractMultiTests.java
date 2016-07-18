@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.WebApplicationException;
+import java.util.SortedSet;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public abstract class AbstractMultiTests {
@@ -53,19 +54,22 @@ public abstract class AbstractMultiTests {
 
 	@Test
 	public void test10_findClusters() throws InterruptedException {
-		for (int i = 0; i < 30; i++) {
+		final long end = System.currentTimeMillis() + 120 * 1000 * 2;
+		while (System.currentTimeMillis() < end) {
 			int found = 0;
 			try {
 				for (TestServer server : TestServer.servers) {
-					if (server.client.getActiveNodesByService("cluster", null).size() == TestServer.servers.size())
+					final SortedSet<String> founds = server.client.getActiveNodesByService("cluster", null);
+					if (founds.containsAll(TestServer.serverAdresses))
 						found++;
+					else
+						LOGGER.warn("Failed on " + server.address + " => " + founds.toString());
 				}
 				if (found == TestServer.servers.size())
 					return;
 			} catch (WebApplicationException e) {
 			}
-			LOGGER.info(found + " / " + TestServer.servers.size());
-			Thread.sleep(1000);
+			Thread.sleep(10000);
 		}
 		Assert.fail();
 	}

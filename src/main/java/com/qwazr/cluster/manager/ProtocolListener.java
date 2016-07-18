@@ -9,8 +9,11 @@ abstract class ProtocolListener extends PeriodicThread implements UdpServerThrea
 
 	protected final ClusterManager manager;
 
+	final public static int DEFAULT_PERIOD_SEC = 120;
+	final public static int TWICE_DEFAULT_PERIOD_MS = DEFAULT_PERIOD_SEC * 1000 * 2;
+
 	protected ProtocolListener(final ClusterManager manager) {
-		super("KeepAliveThread", 120);
+		super("KeepAliveThread", DEFAULT_PERIOD_SEC);
 		setDaemon(true);
 		this.manager = manager;
 	}
@@ -23,4 +26,9 @@ abstract class ProtocolListener extends PeriodicThread implements UdpServerThrea
 	}
 
 	protected abstract void leaveCluster();
+
+	@Override
+	protected void runner() {
+		ClusterManager.INSTANCE.clusterNodeMap.removeExpired();
+	}
 }

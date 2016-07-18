@@ -77,24 +77,24 @@ class DatagramListener extends ProtocolListener {
 			LOGGER.trace(manager.me.httpAddressKey + " DATAGRAMPACKET FROM: " + datagramPacket.getAddress() + " "
 					+ message.getCommand() + " " + message.getContent());
 		switch (message.getCommand()) {
-		case join:
-			acceptJoin(message.getContent());
-			break;
-		case notify:
-			acceptNotify(message.getContent());
-			break;
-		case forward:
-			acceptForward(message.getContent());
-			break;
-		case reply:
-			acceptReply(message.getContent());
-			break;
-		case alive:
-			acceptAlive(message.getContent());
-			break;
-		case leave:
-			manager.clusterNodeMap.unregister(message.getContent());
-			break;
+			case join:
+				acceptJoin(message.getContent());
+				break;
+			case notify:
+				acceptNotify(message.getContent());
+				break;
+			case forward:
+				acceptForward(message.getContent());
+				break;
+			case reply:
+				acceptReply(message.getContent());
+				break;
+			case alive:
+				acceptAlive(message.getContent());
+				break;
+			case leave:
+				manager.clusterNodeMap.unregister(message.getContent());
+				break;
 		}
 	}
 
@@ -124,6 +124,8 @@ class DatagramListener extends ProtocolListener {
 					.send(manager.clusterNodeMap.getExternalNodeAddresses());
 		} catch (IOException e) {
 			LOGGER.error(e.getMessage(), e);
+		} finally {
+			super.runner();
 		}
 	}
 }

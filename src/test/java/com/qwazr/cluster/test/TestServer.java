@@ -37,6 +37,7 @@ public class TestServer {
 	final String address;
 
 	final static List<TestServer> servers = new ArrayList<>();
+	final static List<String> serverAdresses = new ArrayList<>();
 
 	TestServer(final List<String> masters, final int tcpPort, final String multicastAddress,
 			final Integer multicastPort, final String... groups) throws Exception {
@@ -74,6 +75,7 @@ public class TestServer {
 		});
 
 		servers.add(this);
+		serverAdresses.add(this.address);
 	}
 
 	public void stop() {

@@ -15,34 +15,36 @@
  */
 package com.qwazr.cluster.service;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.qwazr.utils.AnnotationsUtils;
-import com.qwazr.utils.server.ServiceInterface;
-import com.qwazr.utils.server.ServiceName;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.UUID;
 
 @JsonInclude(Include.NON_NULL)
 public class ClusterNodeJson {
 
 	public final String address;
 	public final String nodeLiveId;
+	public final Integer timeToLive;
 	public final Set<String> services;
 	public final Set<String> groups;
 
 	public ClusterNodeJson() {
 		address = null;
+		nodeLiveId = null;
+		timeToLive = null;
 		services = null;
 		groups = null;
-		nodeLiveId = null;
 	}
 
-	public ClusterNodeJson(final String address, final UUID nodeLiveId, final Collection<String> groups,
-			final Collection<String> services) {
+	public ClusterNodeJson(final String address, final UUID nodeLiveId, final Integer timeToLive,
+			final Collection<String> groups, final Collection<String> services) {
 		this.address = address;
 		this.nodeLiveId = nodeLiveId == null ? null : nodeLiveId.toString();
+		this.timeToLive = timeToLive;
 		this.groups = groups == null ? null : new TreeSet<>(groups);
 		this.services = services == null ? null : new TreeSet<>(services);
 	}

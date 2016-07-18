@@ -16,7 +16,9 @@
 package com.qwazr.cluster.manager;
 
 import com.qwazr.utils.StringUtils;
+import com.qwazr.utils.server.ServerException;
 
+import javax.ws.rs.core.Response;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -29,16 +31,21 @@ public class ClusterNodeAddress {
 
 	/**
 	 * @param httpAddress the address of the node: {scheme}://{host}:{port}
-	 * @throws URISyntaxException
 	 */
-	ClusterNodeAddress(String httpAddress) throws URISyntaxException {
-		if (!httpAddress.contains("//"))
-			httpAddress = "http://" + httpAddress;
-		URI u = new URI(httpAddress);
-		uri = new URI(StringUtils.isEmpty(u.getScheme()) ? "http" : u.getScheme(), null, u.getHost(), u.getPort(), null,
-				null, null);
-		address = new InetSocketAddress(u.getHost(), u.getPort());
-		httpAddressKey = uri.toString().intern();
+	ClusterNodeAddress(String httpAddress) {
+		try {
+			if (!httpAddress.contains("//"))
+				httpAddress = "http://" + httpAddress;
+			final URI u = new URI(httpAddress);
+			uri = new URI(StringUtils.isEmpty(u.getScheme()) ? "http" : u.getScheme(), null, u.getHost(), u.getPort(),
+					null,
+					null, null);
+			address = new InetSocketAddress(u.getHost(), u.getPort());
+			httpAddressKey = uri.toString().intern();
+		} catch (URISyntaxException e) {
+			throw new ServerException(Response.Status.NOT_ACCEPTABLE,
+					"Cannot create node. Wrong address syntax: " + httpAddress, e);
+		}
 	}
 
 }

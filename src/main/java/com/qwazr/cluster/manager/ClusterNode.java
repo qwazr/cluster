@@ -26,16 +26,28 @@ final class ClusterNode {
 	final Set<String> groups;
 	final Set<String> services;
 
+	volatile Long expirationTimeMs;
+
 	volatile List<String> groupsCache;
 	volatile List<String> servicesCache;
 
-	ClusterNode(ClusterNodeAddress address, UUID nodeLiveId) {
+	ClusterNode(final ClusterNodeAddress address, final UUID nodeLiveId, final Long expirationTimeMs) {
 		this.nodeLiveId = nodeLiveId;
 		this.address = address;
+		this.expirationTimeMs = expirationTimeMs;
 		this.groups = new HashSet<>();
 		this.services = new HashSet<>();
 		groupsCache = null;
 		servicesCache = null;
+	}
+
+	final void setExpirationTime(final Long expirationTimeMs) {
+		this.expirationTimeMs = expirationTimeMs;
+	}
+
+	final boolean isExpired(final long currentTimeMs) {
+		final Long ns = expirationTimeMs;
+		return ns == null ? false : currentTimeMs > expirationTimeMs;
 	}
 
 	final void registerGroups(final Collection<String> newGroups) {
