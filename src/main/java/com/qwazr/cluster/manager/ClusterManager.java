@@ -71,8 +71,8 @@ public class ClusterManager {
 
 		final ServerConfiguration serverConfig = builder.getServerConfiguration();
 
-		me = new ClusterNodeAddress(serverConfig.webServicePublicAddress);
-		webApp = new ClusterNodeAddress(serverConfig.webApplicationPublicAddress);
+		me = new ClusterNodeAddress(serverConfig.webServiceConnector.addressPort);
+		webApp = new ClusterNodeAddress(serverConfig.webAppConnector.addressPort);
 
 		if (LOGGER.isInfoEnabled())
 			LOGGER.info("Server: " + me.httpAddressKey + " Groups: " + ArrayUtils.prettyPrint(myGroups));
@@ -86,8 +86,9 @@ public class ClusterManager {
 			for (String master : masters)
 				clusterNodeMap.register(master);
 
-		if (serverConfig.multicastAddress != null && serverConfig.multicastPort != null)
-			protocolListener = new MulticastListener(this, serverConfig.multicastAddress, serverConfig.multicastPort);
+		if (serverConfig.multicastConnector.address != null && serverConfig.multicastConnector.port != -1)
+			protocolListener = new MulticastListener(this, serverConfig.multicastConnector.address,
+					serverConfig.multicastConnector.port);
 		else
 			protocolListener = new DatagramListener(this);
 

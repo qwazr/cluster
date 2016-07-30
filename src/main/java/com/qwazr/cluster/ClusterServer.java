@@ -29,7 +29,7 @@ public class ClusterServer {
 
 	public static GenericServer start(final Collection<String> masters, final Collection<String> groups)
 			throws Exception {
-		final ServerBuilder builder = new ServerBuilder();
+		final ServerBuilder builder = new ServerBuilder(new ServerConfiguration());
 		ClusterManager.load(builder, masters, groups);
 		return builder.build().start(true);
 	}
