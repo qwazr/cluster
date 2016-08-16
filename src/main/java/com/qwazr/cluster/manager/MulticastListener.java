@@ -66,7 +66,7 @@ class MulticastListener extends ProtocolListener {
 			ClusterProtocol.newJoin(manager.me.httpAddressKey, manager.nodeLiveId, manager.myGroups, manager.myServices)
 					.send(multicastSocketAddress);
 		} catch (IOException e) {
-			LOGGER.error(e.getMessage(), e);
+			LOGGER.error("Unable to reach " + multicastSocketAddress, e);
 		}
 	}
 
@@ -74,7 +74,7 @@ class MulticastListener extends ProtocolListener {
 		try {
 			ClusterProtocol.newLeave(manager.me.httpAddressKey, manager.nodeLiveId).send(multicastSocketAddress);
 		} catch (IOException e) {
-			LOGGER.error(e.getMessage(), e);
+			LOGGER.error("Unable to reach " + multicastSocketAddress, e);
 		}
 	}
 
@@ -85,7 +85,7 @@ class MulticastListener extends ProtocolListener {
 					.newForward(manager.me.httpAddressKey, manager.nodeLiveId, manager.myGroups, manager.myServices)
 					.send(multicastSocketAddress);
 		} catch (IOException e) {
-			LOGGER.error(e.getMessage(), e);
+			LOGGER.error("Error while running the multicast listener. The thread is stopped.", e);
 		} finally {
 			super.runner();
 		}
