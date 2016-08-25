@@ -17,5 +17,14 @@ package com.qwazr.cluster.service;
 
 public enum TargetRuleEnum {
 
-	all, one
+	/**
+	 * The script is executed on all nodes
+	 */
+	all,
+
+	/**
+	 * The script is executed on the leader
+	 */
+	one
+
 }
