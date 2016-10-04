@@ -131,7 +131,6 @@ public class ClusterManager {
 					timeToLive = (int) ((clusterNode.expirationTimeMs - currentMs) / 1000);
 				else
 					timeToLive = null;
-				System.out.println(address + " " + currentMs + " " + clusterNode.expirationTimeMs + " " + timeToLive);
 				final ClusterNodeJson clusterNodeJson =
 						new ClusterNodeJson(clusterNode.address.httpAddressKey, clusterNode.nodeLiveId, timeToLive,
 								clusterNode.groups, clusterNode.services);
