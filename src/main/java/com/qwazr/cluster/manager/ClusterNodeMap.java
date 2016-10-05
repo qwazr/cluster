@@ -230,7 +230,8 @@ class ClusterNodeMap {
 	 * @param address the node to unregister
 	 */
 	private void unregisterAll(final String address) {
-		LOGGER.info("Unregister " + address + " from " + myAddress);
+		if (LOGGER.isInfoEnabled())
+			LOGGER.info("Unregister " + address + " from " + myAddress);
 		final ClusterNode node = nodesMap.get(address);
 		final ClusterNodeAddress nodeAddress = node != null ? node.address : new ClusterNodeAddress(address);
 		unregisterSet(groupsMap, nodeAddress.httpAddressKey);

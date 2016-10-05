@@ -114,7 +114,8 @@ public class ClusterManager {
 	public boolean isLeader(final String group, final String service) throws ServerException {
 		SortedSet<String> nodes = clusterNodeMap.getGroupService(group, service);
 		if (nodes == null || nodes.isEmpty()) {
-			LOGGER.warn("No node available for this service/group: " + service + '/' + group);
+			if (LOGGER.isWarnEnabled())
+				LOGGER.warn("No node available for this service/group: " + service + '/' + group);
 			return false;
 		}
 		return me.httpAddressKey.equals(nodes.first());

@@ -16,15 +16,19 @@
 package com.qwazr.cluster.manager;
 
 import com.qwazr.utils.DatagramUtils;
+import com.qwazr.utils.StringUtils;
 import com.qwazr.utils.server.UdpServerThread;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.DatagramPacket;
 import java.net.SocketAddress;
-import java.net.URISyntaxException;
 import java.util.Collection;
 
 class MessageContent implements Externalizable {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(MessageContent.class);
 
 	private ClusterProtocol command;
 	private Externalizable content;
@@ -77,6 +81,8 @@ class MessageContent implements Externalizable {
 	 * @throws IOException
 	 */
 	final MessageContent send(final Collection<SocketAddress> recipients) throws IOException {
+		if (LOGGER.isTraceEnabled())
+			LOGGER.trace("Send " + command.name() + " to " + StringUtils.join(recipients, ","));
 		DatagramUtils.send(this, UdpServerThread.DEFAULT_BUFFER_SIZE, recipients);
 		return this;
 	}
@@ -87,9 +93,10 @@ class MessageContent implements Externalizable {
 	 * @param socketAddress
 	 * @return
 	 * @throws IOException
-	 * @throws URISyntaxException
 	 */
 	final MessageContent send(final SocketAddress socketAddress) throws IOException {
+		if (LOGGER.isTraceEnabled())
+			LOGGER.trace("Send " + command.name() + " to " + socketAddress);
 		DatagramUtils.send(this, UdpServerThread.DEFAULT_BUFFER_SIZE, socketAddress);
 		return this;
 	}
