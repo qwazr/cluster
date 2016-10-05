@@ -30,7 +30,7 @@ class DatagramListener extends ProtocolListener {
 	DatagramListener(final ClusterManager manager) {
 		super(manager);
 		if (LOGGER.isInfoEnabled())
-			LOGGER.info("Start Datagram listener" + manager.me.httpAddressKey);
+			LOGGER.info("Start Datagram listener " + manager.me.httpAddressKey);
 	}
 
 	final void acceptJoin(final FullContent message) throws URISyntaxException, IOException {
@@ -77,24 +77,24 @@ class DatagramListener extends ProtocolListener {
 			LOGGER.trace(manager.me.httpAddressKey + " DATAGRAMPACKET FROM: " + datagramPacket.getAddress() + " "
 					+ message.getCommand() + " " + message.getContent());
 		switch (message.getCommand()) {
-			case join:
-				acceptJoin(message.getContent());
-				break;
-			case notify:
-				acceptNotify(message.getContent());
-				break;
-			case forward:
-				acceptForward(message.getContent());
-				break;
-			case reply:
-				acceptReply(message.getContent());
-				break;
-			case alive:
-				acceptAlive(message.getContent());
-				break;
-			case leave:
-				manager.clusterNodeMap.unregister(message.getContent());
-				break;
+		case join:
+			acceptJoin(message.getContent());
+			break;
+		case notify:
+			acceptNotify(message.getContent());
+			break;
+		case forward:
+			acceptForward(message.getContent());
+			break;
+		case reply:
+			acceptReply(message.getContent());
+			break;
+		case alive:
+			acceptAlive(message.getContent());
+			break;
+		case leave:
+			manager.clusterNodeMap.unregister(message.getContent());
+			break;
 		}
 	}
 
