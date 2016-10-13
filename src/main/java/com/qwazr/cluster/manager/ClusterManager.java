@@ -54,13 +54,16 @@ public class ClusterManager {
 
 	ClusterNodeMap clusterNodeMap;
 
-	public final ClusterNodeAddress me;
-	public final ClusterNodeAddress webApp;
+	final ClusterNodeAddress me;
+
+	final ClusterNodeAddress webApp;
 
 	final Set<String> myServices;
 	final Set<String> myGroups;
 
 	final UUID nodeLiveId;
+
+	private final Set<String> masters;
 
 	private final ProtocolListener protocolListener;
 
@@ -78,13 +81,10 @@ public class ClusterManager {
 			LOGGER.info("Server: " + me.httpAddressKey + " Groups: " + ArrayUtils.prettyPrint(myGroups));
 		this.myGroups = myGroups != null ? new HashSet<>(myGroups) : null;
 		this.myServices = new HashSet<>(); // Will be filled later using server hook
-
+		this.masters = masters != null ? new HashSet<>(masters) : null;
 		clusterNodeMap = new ClusterNodeMap(me.address);
 		clusterNodeMap.register(me.httpAddressKey);
-
-		if (masters != null)
-			for (String master : masters)
-				clusterNodeMap.register(master);
+		clusterNodeMap.register(masters);
 
 		if (serverConfig.multicastConnector.address != null && serverConfig.multicastConnector.port != -1)
 			protocolListener = new MulticastListener(this, serverConfig.multicastConnector.address,
@@ -196,4 +196,23 @@ public class ClusterManager {
 		}
 	}
 
+	public final String getHttpAddressKey() {
+		return me.httpAddressKey;
+	}
+
+	final boolean isMe(final AddressContent message) {
+		if (message == null)
+			return false;
+		if (nodeLiveId.equals(message.getNodeLiveId()))
+			return true;
+		if (me.httpAddressKey.equals(message.getAddress()))
+			return true;
+		return false;
+	}
+
+	final boolean isMaster(final AddressContent message) {
+		if (message == null || masters == null)
+			return false;
+		return masters.contains(message.getAddress());
+	}
 }

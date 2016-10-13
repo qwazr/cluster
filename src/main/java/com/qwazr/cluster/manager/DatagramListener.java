@@ -35,7 +35,7 @@ class DatagramListener extends ProtocolListener {
 
 	final void acceptJoin(final FullContent message) throws URISyntaxException, IOException {
 		// Registering the node
-		final ClusterNode node = manager.clusterNodeMap.register(message);
+		final ClusterNode node = registerNode(message);
 		// Send immediatly a reply
 		ClusterProtocol.newReply(manager.me.httpAddressKey, manager.nodeLiveId, manager.myGroups, manager.myServices)
 				.send(node.address.address);
@@ -59,14 +59,14 @@ class DatagramListener extends ProtocolListener {
 	}
 
 	final void acceptForward(final FullContent message) throws URISyntaxException, IOException {
-		ClusterNode node = manager.clusterNodeMap.register(message);
+		final ClusterNode node = registerNode(message);
 		// Send back myself
 		ClusterProtocol.newReply(manager.me.httpAddressKey, manager.nodeLiveId, manager.myGroups, manager.myServices)
 				.send(node.address.address);
 	}
 
 	final void acceptReply(final FullContent message) throws URISyntaxException, IOException {
-		manager.clusterNodeMap.register(message);
+		registerNode(message);
 	}
 
 	@Override

@@ -46,17 +46,17 @@ class MulticastListener extends ProtocolListener {
 			LOGGER.trace(manager.me.httpAddressKey + " MULTICASTPACKET FROM: " + datagramPacket.getAddress() + " "
 					+ message.getCommand() + " " + message.getContent());
 		switch (message.getCommand()) {
-			case join:
-				manager.clusterNodeMap.register((FullContent) message.getContent());
-				ClusterProtocol.newForward(manager.me.httpAddressKey, manager.nodeLiveId, manager.myGroups,
-						manager.myServices).send(multicastSocketAddress);
-				break;
-			case forward:
-				manager.clusterNodeMap.register((FullContent) message.getContent());
-				break;
-			case leave:
-				manager.clusterNodeMap.unregister(message.getContent());
-				break;
+		case join:
+			registerNode(message.getContent());
+			ClusterProtocol.newForward(manager.me.httpAddressKey, manager.nodeLiveId, manager.myGroups,
+					manager.myServices).send(multicastSocketAddress);
+			break;
+		case forward:
+			registerNode(message.getContent());
+			break;
+		case leave:
+			manager.clusterNodeMap.unregister(message.getContent());
+			break;
 		}
 	}
 
@@ -81,9 +81,8 @@ class MulticastListener extends ProtocolListener {
 	@Override
 	protected void runner() {
 		try {
-			ClusterProtocol
-					.newForward(manager.me.httpAddressKey, manager.nodeLiveId, manager.myGroups, manager.myServices)
-					.send(multicastSocketAddress);
+			ClusterProtocol.newForward(manager.me.httpAddressKey, manager.nodeLiveId, manager.myGroups,
+					manager.myServices).send(multicastSocketAddress);
 		} catch (IOException e) {
 			LOGGER.error("Error while running the multicast listener. The thread is stopped.", e);
 		} finally {

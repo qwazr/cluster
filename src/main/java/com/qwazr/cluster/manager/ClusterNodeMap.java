@@ -203,16 +203,20 @@ class ClusterNodeMap {
 		});
 	}
 
-	final ClusterNode register(final FullContent message) {
+	final void register(final Collection<String> httpAddresses) {
+		if (httpAddresses == null)
+			return;
+		httpAddresses.forEach(address -> register(address));
+	}
+
+	final ClusterNode register(final FullContent message, final Long expirationTimeMs) {
 		if (message == null)
 			return null;
 		final String address = message.getAddress();
 		if (address == null)
 			return null;
 		return readWriteLock.writeEx(() -> {
-			final long expirationTimeMs = System.currentTimeMillis() + ProtocolListener.TWICE_DEFAULT_PERIOD_MS;
-			final ClusterNode clusterNode =
-					registerNode(address, message.getNodeLiveId(), expirationTimeMs);
+			final ClusterNode clusterNode = registerNode(address, message.getNodeLiveId(), expirationTimeMs);
 			unregisterSet(groupsMap, clusterNode.address.httpAddressKey);
 			unregisterSet(servicesMap, clusterNode.address.httpAddressKey);
 			clusterNode.registerGroups(message.groups);
