@@ -81,7 +81,11 @@ public class ClusterManager {
 			LOGGER.info("Server: " + me.httpAddressKey + " Groups: " + ArrayUtils.prettyPrint(myGroups));
 		this.myGroups = myGroups != null ? new HashSet<>(myGroups) : null;
 		this.myServices = new HashSet<>(); // Will be filled later using server hook
-		this.masters = masters != null ? new HashSet<>(masters) : null;
+		if (masters != null && !masters.isEmpty()) {
+			this.masters = new HashSet<>();
+			masters.forEach(master -> this.masters.add(new ClusterNodeAddress(master).httpAddressKey));
+		} else
+			this.masters = null;
 		clusterNodeMap = new ClusterNodeMap(me.address);
 		clusterNodeMap.register(me.httpAddressKey);
 		clusterNodeMap.register(masters);
@@ -210,9 +214,9 @@ public class ClusterManager {
 		return false;
 	}
 
-	final boolean isMaster(final AddressContent message) {
-		if (message == null || masters == null)
+	final boolean isMaster(final ClusterNodeAddress nodeAddress) {
+		if (nodeAddress == null || masters == null)
 			return false;
-		return masters.contains(message.getAddress());
+		return masters.contains(nodeAddress.httpAddressKey);
 	}
 }

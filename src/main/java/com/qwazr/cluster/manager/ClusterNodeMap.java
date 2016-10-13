@@ -236,11 +236,17 @@ class ClusterNodeMap {
 	private void unregisterAll(final String address) {
 		if (LOGGER.isInfoEnabled())
 			LOGGER.info("Unregister " + address + " from " + myAddress);
-		final ClusterNode node = nodesMap.get(address);
-		final ClusterNodeAddress nodeAddress = node != null ? node.address : new ClusterNodeAddress(address);
+		final ClusterNode clusterNode = nodesMap.get(address);
+		final ClusterNodeAddress nodeAddress =
+				clusterNode != null ? clusterNode.address : new ClusterNodeAddress(address);
+		if (clusterNode != null) {
+			clusterNode.registerGroups(Collections.emptyList());
+			clusterNode.registerServices(Collections.emptyList());
+		}
 		unregisterSet(groupsMap, nodeAddress.httpAddressKey);
 		unregisterSet(servicesMap, nodeAddress.httpAddressKey);
-		nodesMap.remove(nodeAddress.httpAddressKey);
+		if (!ClusterManager.INSTANCE.isMaster(nodeAddress))
+			nodesMap.remove(nodeAddress.httpAddressKey);
 	}
 
 	/**
