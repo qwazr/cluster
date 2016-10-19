@@ -16,6 +16,7 @@
 package com.qwazr.cluster.manager;
 
 import com.qwazr.utils.DatagramUtils;
+import com.qwazr.utils.SerializationUtils;
 import com.qwazr.utils.StringUtils;
 import com.qwazr.utils.server.UdpServerThread;
 import org.slf4j.Logger;
