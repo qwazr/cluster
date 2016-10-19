@@ -15,6 +15,7 @@
  */
 package com.qwazr.cluster.manager;
 
+import com.qwazr.utils.SerializationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +42,7 @@ class MulticastListener extends ProtocolListener {
 	@Override
 	final public void acceptPacket(final DatagramPacket datagramPacket)
 			throws IOException, ReflectiveOperationException, URISyntaxException {
-		final MessageContent message = new MessageContent(datagramPacket);
+		final MessageContent message = SerializationUtils.fromCompressedBytes(datagramPacket.getData());
 		if (LOGGER.isTraceEnabled())
 			LOGGER.trace(manager.me.httpAddressKey + " MULTICASTPACKET FROM: " + datagramPacket.getAddress() + " "
 					+ message.getCommand() + " " + message.getContent());
