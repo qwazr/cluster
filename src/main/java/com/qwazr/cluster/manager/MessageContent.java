@@ -17,7 +17,6 @@ package com.qwazr.cluster.manager;
 
 import com.qwazr.utils.DatagramUtils;
 import com.qwazr.utils.StringUtils;
-import com.qwazr.utils.server.UdpServerThread;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,7 +80,7 @@ class MessageContent implements Externalizable {
 	final MessageContent send(final Collection<SocketAddress> recipients) throws IOException {
 		if (LOGGER.isTraceEnabled())
 			LOGGER.trace("Send " + command.name() + " to " + StringUtils.join(recipients, ","));
-		DatagramUtils.send(this, UdpServerThread.DEFAULT_BUFFER_SIZE, recipients);
+		DatagramUtils.send(this, recipients);
 		return this;
 	}
 
@@ -95,7 +94,7 @@ class MessageContent implements Externalizable {
 	final MessageContent send(final SocketAddress socketAddress) throws IOException {
 		if (LOGGER.isTraceEnabled())
 			LOGGER.trace("Send " + command.name() + " to " + socketAddress);
-		DatagramUtils.send(this, UdpServerThread.DEFAULT_BUFFER_SIZE, socketAddress);
+		DatagramUtils.send(this, socketAddress);
 		return this;
 	}
 

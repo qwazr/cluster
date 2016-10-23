@@ -73,7 +73,7 @@ class DatagramListener extends ProtocolListener {
 	@Override
 	final public void acceptPacket(final DatagramPacket datagramPacket)
 			throws IOException, ReflectiveOperationException, URISyntaxException {
-		final MessageContent message = SerializationUtils.fromCompressedBytes(datagramPacket.getData());
+		final MessageContent message = SerializationUtils.fromDefaultCompressedBytes(datagramPacket.getData());
 		if (LOGGER.isTraceEnabled())
 			LOGGER.trace(manager.me.httpAddressKey + " DATAGRAMPACKET FROM: " + datagramPacket.getAddress() + " "
 					+ message.getCommand() + " " + message.getContent());
