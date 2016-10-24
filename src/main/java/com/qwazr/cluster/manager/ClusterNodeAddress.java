@@ -38,10 +38,8 @@ public class ClusterNodeAddress {
 				httpAddress = "http://" + httpAddress;
 			final URI u = new URI(httpAddress);
 			uri = new URI(StringUtils.isEmpty(u.getScheme()) ? "http" : u.getScheme(), null, u.getHost(),
-					u.getPort() == -1 ? defaultPort : u.getPort(),
-					null,
-					null, null);
-			address = new InetSocketAddress(u.getHost(), u.getPort());
+					u.getPort() == -1 ? defaultPort : u.getPort(), null, null, null);
+			address = new InetSocketAddress(uri.getHost(), uri.getPort());
 			httpAddressKey = uri.toString().intern();
 		} catch (URISyntaxException e) {
 			throw new ServerException(Response.Status.NOT_ACCEPTABLE,
