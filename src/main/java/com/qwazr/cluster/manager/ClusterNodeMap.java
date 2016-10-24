@@ -169,7 +169,7 @@ class ClusterNodeMap {
 	}
 
 	private ClusterNode put(final String httpAddress, final UUID nodeLiveId, final Long expirationTimeNs) {
-		final ClusterNodeAddress clusterNodeAddress = new ClusterNodeAddress(httpAddress);
+		final ClusterNodeAddress clusterNodeAddress = new ClusterNodeAddress(httpAddress, 9091);
 		final ClusterNode node = new ClusterNode(clusterNodeAddress, nodeLiveId, expirationTimeNs);
 		nodesMap.put(clusterNodeAddress.httpAddressKey, node);
 		return node;
@@ -238,7 +238,7 @@ class ClusterNodeMap {
 			LOGGER.info("Unregister " + address + " from " + myAddress);
 		final ClusterNode clusterNode = nodesMap.get(address);
 		final ClusterNodeAddress nodeAddress =
-				clusterNode != null ? clusterNode.address : new ClusterNodeAddress(address);
+				clusterNode != null ? clusterNode.address : new ClusterNodeAddress(address, 9091);
 		if (clusterNode != null) {
 			clusterNode.registerGroups(Collections.emptyList());
 			clusterNode.registerServices(Collections.emptyList());

@@ -32,12 +32,13 @@ public class ClusterNodeAddress {
 	/**
 	 * @param httpAddress the address of the node: {scheme}://{host}:{port}
 	 */
-	ClusterNodeAddress(String httpAddress) {
+	ClusterNodeAddress(String httpAddress, int defaultPort) {
 		try {
 			if (!httpAddress.contains("//"))
 				httpAddress = "http://" + httpAddress;
 			final URI u = new URI(httpAddress);
-			uri = new URI(StringUtils.isEmpty(u.getScheme()) ? "http" : u.getScheme(), null, u.getHost(), u.getPort(),
+			uri = new URI(StringUtils.isEmpty(u.getScheme()) ? "http" : u.getScheme(), null, u.getHost(),
+					u.getPort() == -1 ? defaultPort : u.getPort(),
 					null,
 					null, null);
 			address = new InetSocketAddress(u.getHost(), u.getPort());

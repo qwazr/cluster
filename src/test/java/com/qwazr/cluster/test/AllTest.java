@@ -39,7 +39,7 @@ public class AllTest {
 
 	private static final Logger logger = LoggerFactory.getLogger(AllTest.class);
 
-	private final static String[] GROUPS = { "group1", "group2" };
+	private final static String[] GROUPS = {"group1", "group2"};
 
 	private final static String ADDRESS = "http://localhost:9091";
 
@@ -50,6 +50,7 @@ public class AllTest {
 	public void test00_startServer() throws Exception {
 		System.setProperty("LISTEN_ADDR", "localhost");
 		System.setProperty("PUBLIC_ADDR", "localhost");
+		System.setProperty("WEBSERVICE_PORT", "9091");
 		server = ClusterServer.start(Arrays.asList("localhost:9091"), Arrays.asList(GROUPS));
 		client = new ClusterSingleClient(new RemoteService(ADDRESS));
 	}

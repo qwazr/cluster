@@ -74,8 +74,9 @@ public class ClusterManager {
 
 		final ServerConfiguration serverConfig = builder.getServerConfiguration();
 
-		me = new ClusterNodeAddress(serverConfig.webServiceConnector.addressPort);
-		webApp = new ClusterNodeAddress(serverConfig.webAppConnector.addressPort);
+		me = new ClusterNodeAddress(serverConfig.webServiceConnector.addressPort,
+				serverConfig.webServiceConnector.port);
+		webApp = new ClusterNodeAddress(serverConfig.webAppConnector.addressPort, serverConfig.webAppConnector.port);
 
 		if (LOGGER.isInfoEnabled())
 			LOGGER.info("Server: " + me.httpAddressKey + " Groups: " + ArrayUtils.prettyPrint(myGroups));
@@ -83,7 +84,8 @@ public class ClusterManager {
 		this.myServices = new HashSet<>(); // Will be filled later using server hook
 		if (masters != null && !masters.isEmpty()) {
 			this.masters = new HashSet<>();
-			masters.forEach(master -> this.masters.add(new ClusterNodeAddress(master).httpAddressKey));
+			masters.forEach(master -> this.masters
+					.add(new ClusterNodeAddress(master, serverConfig.webServiceConnector.port).httpAddressKey));
 		} else
 			this.masters = null;
 		clusterNodeMap = new ClusterNodeMap(me.address);
