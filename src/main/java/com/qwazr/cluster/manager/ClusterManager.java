@@ -145,7 +145,7 @@ public class ClusterManager {
 			});
 		}
 		return new ClusterStatusJson(me.httpAddressKey, myServices.contains("webapps") ? webApp.httpAddressKey : null,
-				nodesJsonMap, clusterNodeMap.getGroups(), clusterNodeMap.getServices(),
+				nodesJsonMap, clusterNodeMap.getGroups(), clusterNodeMap.getServices(), masters,
 				protocolListener.getLastExecutionDate());
 	}
 

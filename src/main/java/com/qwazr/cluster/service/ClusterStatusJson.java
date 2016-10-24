@@ -21,6 +21,7 @@ import com.qwazr.cluster.service.ClusterServiceStatusJson.StatusEnum;
 import com.qwazr.utils.server.ServerException;
 
 import java.util.Date;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
@@ -33,6 +34,7 @@ public class ClusterStatusJson {
 	public final TreeMap<String, StatusEnum> services;
 	public final Date last_keep_alive_execution;
 	public final TreeMap<String, ClusterNodeJson> active_nodes;
+	public final TreeSet<String> masters;
 
 	public ClusterStatusJson() {
 		me = null;
@@ -41,11 +43,12 @@ public class ClusterStatusJson {
 		services = null;
 		last_keep_alive_execution = null;
 		active_nodes = null;
+		masters = null;
 	}
 
 	public ClusterStatusJson(final String me, final String webapp, final TreeMap<String, ClusterNodeJson> nodesMap,
 			final TreeMap<String, TreeSet<String>> groups, final TreeMap<String, TreeSet<String>> services,
-			final Date lastKeepAliveExecution) throws ServerException {
+			final Set<String> masters, final Date lastKeepAliveExecution) throws ServerException {
 		this.me = me;
 		this.webapp = webapp;
 		this.groups = groups;
@@ -54,6 +57,7 @@ public class ClusterStatusJson {
 			services.forEach((service, nodesSet) -> this.services
 					.put(service, ClusterServiceStatusJson.findStatus(nodesSet.size())));
 		}
+		this.masters = masters == null || masters.isEmpty() ? null : new TreeSet<>(masters);
 		this.last_keep_alive_execution = lastKeepAliveExecution;
 		this.active_nodes = nodesMap;
 	}
