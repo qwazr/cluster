@@ -236,6 +236,7 @@ class ClusterNodeMap {
 			clusterNode.registerServices(message.services);
 			registerSet(message.groups, groupsMap, address);
 			registerSet(message.services, servicesMap, address);
+			clusterNode.hasFullInfo();
 			cache = new Cache();
 			return clusterNode;
 		});

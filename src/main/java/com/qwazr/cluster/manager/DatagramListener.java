@@ -47,7 +47,8 @@ class DatagramListener extends ProtocolListener {
 	final void acceptNotify(final AddressContent message) throws URISyntaxException, IOException {
 		final ClusterNode clusterNode = registerNode(message);
 		// If we already know the node, we can leave
-		if (clusterNode.nodeLiveId != null && message.getNodeLiveId().equals(clusterNode.nodeLiveId))
+		if (clusterNode.nodeLiveId != null && message.getNodeLiveId().equals(clusterNode.nodeLiveId) &&
+				clusterNode.hasFullInfo())
 			return;
 		// Otherwise we forward our configuration
 		ClusterProtocol.newForward(manager.me.httpAddressKey, manager.nodeLiveId, manager.myGroups, manager.myServices)
@@ -56,7 +57,6 @@ class DatagramListener extends ProtocolListener {
 
 	final void acceptAlive(final AddressContent message) throws URISyntaxException, IOException {
 		ClusterProtocol.newNotify(message).send(manager.clusterNodeMap.getFullNodeAddresses());
-		//TODO add TTL
 	}
 
 	final void acceptForward(final FullContent message) throws URISyntaxException, IOException {

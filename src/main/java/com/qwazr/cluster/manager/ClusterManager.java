@@ -134,8 +134,9 @@ public class ClusterManager {
 			final long currentMs = System.currentTimeMillis();
 			nodesMap.forEach((address, clusterNode) -> {
 				final Integer timeToLive;
-				if (clusterNode.expirationTimeMs != null)
-					timeToLive = (int) ((clusterNode.expirationTimeMs - currentMs) / 1000);
+				final Long expirationTimeMs = clusterNode.getExpirationTimeMs();
+				if (expirationTimeMs != null)
+					timeToLive = (int) ((expirationTimeMs - currentMs) / 1000);
 				else
 					timeToLive = null;
 				final ClusterNodeJson clusterNodeJson =

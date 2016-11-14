@@ -26,10 +26,12 @@ final class ClusterNode {
 	final Set<String> groups;
 	final Set<String> services;
 
-	volatile Long expirationTimeMs;
+	private volatile Long expirationTimeMs;
 
 	volatile List<String> groupsCache;
 	volatile List<String> servicesCache;
+
+	private volatile boolean hasFullInfo;
 
 	ClusterNode(final ClusterNodeAddress address, final UUID nodeLiveId, final Long expirationTimeMs) {
 		this.nodeLiveId = nodeLiveId;
@@ -39,10 +41,15 @@ final class ClusterNode {
 		this.services = new HashSet<>();
 		groupsCache = null;
 		servicesCache = null;
+		hasFullInfo = false;
 	}
 
 	final void setExpirationTime(final Long expirationTimeMs) {
 		this.expirationTimeMs = expirationTimeMs;
+	}
+
+	final Long getExpirationTimeMs() {
+		return expirationTimeMs;
 	}
 
 	final boolean isExpired(final long currentTimeMs) {
@@ -64,6 +71,14 @@ final class ClusterNode {
 		services.clear();
 		services.addAll(newServices);
 		servicesCache = new ArrayList<>(services);
+	}
+
+	final boolean hasFullInfo() {
+		return hasFullInfo;
+	}
+
+	final void setFullInfo() {
+		this.hasFullInfo = true;
 	}
 
 	final Collection<String> getGroups() {
