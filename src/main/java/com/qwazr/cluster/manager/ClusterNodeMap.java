@@ -209,7 +209,20 @@ class ClusterNodeMap {
 		httpAddresses.forEach(address -> register(address));
 	}
 
-	final ClusterNode register(final FullContent message, final Long expirationTimeMs) {
+	final ClusterNode registerAddress(final AddressContent message, final Long expirationTimeMs) {
+		if (message == null)
+			return null;
+		final String address = message.getAddress();
+		if (address == null)
+			return null;
+		return readWriteLock.writeEx(() -> {
+			final ClusterNode clusterNode = registerNode(address, message.getNodeLiveId(), expirationTimeMs);
+			cache = new Cache();
+			return clusterNode;
+		});
+	}
+
+	final ClusterNode registerFull(final FullContent message, final Long expirationTimeMs) {
 		if (message == null)
 			return null;
 		final String address = message.getAddress();

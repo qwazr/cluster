@@ -45,7 +45,7 @@ class DatagramListener extends ProtocolListener {
 	}
 
 	final void acceptNotify(final AddressContent message) throws URISyntaxException, IOException {
-		final ClusterNode clusterNode = manager.clusterNodeMap.register(message.getAddress());
+		final ClusterNode clusterNode = registerNode(message);
 		// If we already know the node, we can leave
 		if (clusterNode.nodeLiveId != null && message.getNodeLiveId().equals(clusterNode.nodeLiveId))
 			return;
@@ -78,24 +78,24 @@ class DatagramListener extends ProtocolListener {
 			LOGGER.trace(manager.me.httpAddressKey + " DATAGRAMPACKET FROM: " + datagramPacket.getAddress() + " "
 					+ message.getCommand() + " " + message.getContent());
 		switch (message.getCommand()) {
-		case join:
-			acceptJoin(message.getContent());
-			break;
-		case notify:
-			acceptNotify(message.getContent());
-			break;
-		case forward:
-			acceptForward(message.getContent());
-			break;
-		case reply:
-			acceptReply(message.getContent());
-			break;
-		case alive:
-			acceptAlive(message.getContent());
-			break;
-		case leave:
-			manager.clusterNodeMap.unregister(message.getContent());
-			break;
+			case join:
+				acceptJoin(message.getContent());
+				break;
+			case notify:
+				acceptNotify(message.getContent());
+				break;
+			case forward:
+				acceptForward(message.getContent());
+				break;
+			case reply:
+				acceptReply(message.getContent());
+				break;
+			case alive:
+				acceptAlive(message.getContent());
+				break;
+			case leave:
+				manager.clusterNodeMap.unregister(message.getContent());
+				break;
 		}
 	}
 

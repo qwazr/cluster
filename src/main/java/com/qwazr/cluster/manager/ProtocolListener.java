@@ -25,10 +25,12 @@ abstract class ProtocolListener extends PeriodicThread implements UdpServerThrea
 		}
 	}
 
-	protected ClusterNode registerNode(final FullContent message) {
-		final Long expirationTimeMs =
-				manager.isMe(message) ? null : System.currentTimeMillis() + TWICE_DEFAULT_PERIOD_MS;
-		return manager.clusterNodeMap.register(message, expirationTimeMs);
+	protected ClusterNode registerNode(final AddressContent message) {
+		final Long expirationTime = manager.isMe(message) ? null : System.currentTimeMillis() + TWICE_DEFAULT_PERIOD_MS;
+		if (message instanceof FullContent)
+			return manager.clusterNodeMap.registerFull((FullContent) message, expirationTime);
+		else
+			return manager.clusterNodeMap.registerAddress(message, expirationTime);
 	}
 
 	protected abstract void leaveCluster();
