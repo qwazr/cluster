@@ -22,11 +22,11 @@ public class MulticastTest extends AbstractMultiTests {
 		final String multicastAddress = "224.0.0.1";
 		final Integer multicastPort = 9099;
 		int port = 9092;
-		master1 = new TestServer(null, port++, multicastAddress, multicastPort, GROUP_MASTER);
-		master2 = new TestServer(null, port++, multicastAddress, multicastPort, GROUP_MASTER);
-		front1 = new TestServer(null, port++, multicastAddress, multicastPort, GROUP_FRONT);
-		front2 = new TestServer(null, port++, multicastAddress, multicastPort, GROUP_FRONT);
-		front3 = new TestServer(null, port++, multicastAddress, multicastPort, GROUP_FRONT);
+		master1 = new ClusterTestServer(null, port++, multicastAddress, multicastPort, GROUP_MASTER);
+		master2 = new ClusterTestServer(null, port++, multicastAddress, multicastPort, GROUP_MASTER);
+		front1 = new ClusterTestServer(null, port++, multicastAddress, multicastPort, GROUP_FRONT);
+		front2 = new ClusterTestServer(null, port++, multicastAddress, multicastPort, GROUP_FRONT);
+		front3 = new ClusterTestServer(null, port++, multicastAddress, multicastPort, GROUP_FRONT);
 	}
 
 }

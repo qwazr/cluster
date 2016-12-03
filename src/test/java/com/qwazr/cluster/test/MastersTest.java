@@ -25,11 +25,11 @@ public class MastersTest extends AbstractMultiTests {
 	@Override
 	protected void startServers() throws Exception {
 		int port = 9092;
-		master1 = new TestServer(MASTERS, port++, null, null, GROUP_MASTER);
-		master2 = new TestServer(MASTERS, port++, null, null, GROUP_MASTER);
-		front1 = new TestServer(MASTERS, port++, null, null, GROUP_FRONT);
-		front2 = new TestServer(MASTERS, port++, null, null, GROUP_FRONT);
-		front3 = new TestServer(MASTERS, port++, null, null, GROUP_FRONT);
+		master1 = new ClusterTestServer(MASTERS, port++, null, null, GROUP_MASTER);
+		master2 = new ClusterTestServer(MASTERS, port++, null, null, GROUP_MASTER);
+		front1 = new ClusterTestServer(MASTERS, port++, null, null, GROUP_FRONT);
+		front2 = new ClusterTestServer(MASTERS, port++, null, null, GROUP_FRONT);
+		front3 = new ClusterTestServer(MASTERS, port++, null, null, GROUP_FRONT);
 	}
 
 }

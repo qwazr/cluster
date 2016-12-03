@@ -16,6 +16,7 @@
 package com.qwazr.cluster.service;
 
 import com.qwazr.cluster.manager.ClusterManager;
+import com.qwazr.utils.server.RemoteService;
 import com.qwazr.utils.server.ServiceInterface;
 import com.qwazr.utils.server.ServiceName;
 
@@ -71,4 +72,8 @@ public interface ClusterServiceInterface extends ServiceInterface {
 	String getActiveNodeLeaderByService(@PathParam("service_name") String service_name,
 			@QueryParam("group") String group);
 
+	static ClusterServiceInterface getClient(final RemoteService remote) {
+		return new ClusterSingleClient(remote);
+
+	}
 }

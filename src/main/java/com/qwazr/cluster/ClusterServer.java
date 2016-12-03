@@ -16,36 +16,20 @@
 package com.qwazr.cluster;
 
 import com.qwazr.cluster.manager.ClusterManager;
-import com.qwazr.utils.StringUtils;
 import com.qwazr.utils.server.GenericServer;
-import com.qwazr.utils.server.ServerBuilder;
 import com.qwazr.utils.server.ServerConfiguration;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.io.IOException;
 
-public class ClusterServer {
+public class ClusterServer extends GenericServer {
 
-	public static GenericServer start(final Collection<String> masters, final Collection<String> groups)
-			throws Exception {
-		final ServerBuilder builder =
-				new ServerBuilder(new ServerConfiguration(System.getProperties(), System.getenv()));
-		ClusterManager.load(builder, masters, groups);
-		return builder.build().start(true);
+	private ClusterServer(final ServerConfiguration serverConfiguration) throws IOException {
+		super(serverConfiguration);
+		ClusterManager.load(getBuilder());
 	}
 
-	private static List<String> getList(final String key) {
-		String values = System.getenv().get(key);
-		if (values == null)
-			values = System.getProperty(key);
-		if (values == null)
-			return null;
-		return Arrays.asList(StringUtils.split(values, ", "));
-	}
-
-	public static void main(String[] args) throws Exception {
-		start(getList("QWAZR_MASTERS"), getList("QWAZR_GROUPS"));
+	public static void main(String... args) throws Exception {
+		new ClusterServer(new ServerConfiguration(args)).start(true);
 	}
 
 }

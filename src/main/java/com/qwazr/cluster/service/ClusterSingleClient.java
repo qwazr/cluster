@@ -24,9 +24,9 @@ import com.qwazr.utils.server.RemoteService;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-public class ClusterSingleClient extends JsonClientAbstract implements ClusterServiceInterface {
+class ClusterSingleClient extends JsonClientAbstract implements ClusterServiceInterface {
 
-	public ClusterSingleClient(RemoteService remote) {
+	ClusterSingleClient(RemoteService remote) {
 		super(remote);
 	}
 

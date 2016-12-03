@@ -31,11 +31,11 @@ public abstract class AbstractMultiTests {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(AbstractMultiTests.class);
 
-	static TestServer master1;
-	static TestServer master2;
-	static TestServer front1;
-	static TestServer front2;
-	static TestServer front3;
+	static ClusterTestServer master1;
+	static ClusterTestServer master2;
+	static ClusterTestServer front1;
+	static ClusterTestServer front2;
+	static ClusterTestServer front3;
 
 	final static String GROUP_MASTER = "master";
 	final static String GROUP_FRONT = "front";
@@ -58,14 +58,14 @@ public abstract class AbstractMultiTests {
 		while (System.currentTimeMillis() < end) {
 			int found = 0;
 			try {
-				for (TestServer server : TestServer.servers) {
+				for (ClusterTestServer server : ClusterTestServer.servers) {
 					final SortedSet<String> founds = server.client.getActiveNodesByService("cluster", null);
-					if (founds.containsAll(TestServer.serverAdresses))
+					if (founds.containsAll(ClusterTestServer.serverAdresses))
 						found++;
 					else
 						LOGGER.warn("Failed on " + server.address + " => " + founds.toString());
 				}
-				if (found == TestServer.servers.size())
+				if (found == ClusterTestServer.servers.size())
 					return;
 			} catch (WebApplicationException e) {
 			}
@@ -76,6 +76,6 @@ public abstract class AbstractMultiTests {
 
 	@AfterClass
 	public static void after() {
-		TestServer.closeAll();
+		ClusterTestServer.pool.close();
 	}
 }

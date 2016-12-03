@@ -18,9 +18,8 @@ package com.qwazr.cluster.test;
 import com.google.common.io.Files;
 import com.qwazr.cluster.ClusterServer;
 import com.qwazr.cluster.service.ClusterServiceInterface;
-import com.qwazr.cluster.service.ClusterSingleClient;
 import com.qwazr.utils.StringUtils;
-import com.qwazr.utils.process.ProcessUtils;
+import com.qwazr.utils.server.ExternalServer;
 import com.qwazr.utils.server.RemoteService;
 
 import java.io.File;
@@ -29,17 +28,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class TestServer {
+public class ClusterTestServer {
 
 	final File dataDir;
-	final Process process;
 	final ClusterServiceInterface client;
 	final String address;
 
-	final static List<TestServer> servers = new ArrayList<>();
+	final static List<ClusterTestServer> servers = new ArrayList<>();
 	final static List<String> serverAdresses = new ArrayList<>();
+	final static ExternalServer.Pool pool = new ExternalServer.Pool();
 
-	TestServer(final List<String> masters, final int tcpPort, final String multicastAddress,
+	ClusterTestServer(final List<String> masters, final int tcpPort, final String multicastAddress,
 			final Integer multicastPort, final String... groups) throws Exception {
 
 		dataDir = Files.createTempDir();
@@ -63,30 +62,12 @@ public class TestServer {
 		if (multicastPort != null)
 			env.put("MULTICAST_PORT", Integer.toString(multicastPort));
 
-		client = new ClusterSingleClient(new RemoteService(address));
+		client = ClusterServiceInterface.getClient(new RemoteService(address));
 
-		process = ProcessUtils.java(ClusterServer.class, env);
-		Runtime.getRuntime().addShutdownHook(new Thread() {
-			@Override
-			public void run() {
-				if (process.isAlive())
-					process.destroy();
-			}
-		});
+		pool.add(ClusterServer.class, env);
 
 		servers.add(this);
 		serverAdresses.add(this.address);
-	}
-
-	public void stop() {
-		if (process != null)
-			process.destroy();
-	}
-
-	public static void closeAll() {
-		if (servers != null)
-			servers.forEach(testServer -> testServer.process.destroy());
-		servers.clear();
 	}
 
 }

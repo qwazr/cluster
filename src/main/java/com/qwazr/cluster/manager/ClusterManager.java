@@ -41,12 +41,11 @@ public class ClusterManager {
 
 	public static ClusterManager INSTANCE = null;
 
-	public synchronized static void load(final ServerBuilder builder, final Collection<String> masters,
-			final Collection<String> myGroups) {
+	public synchronized static void load(final ServerBuilder builder) {
 		if (INSTANCE != null)
 			throw new RuntimeException("Already loaded");
 		try {
-			INSTANCE = new ClusterManager(builder, masters, myGroups);
+			INSTANCE = new ClusterManager(builder);
 		} catch (URISyntaxException | UnknownHostException e) {
 			throw new RuntimeException(e);
 		}
@@ -67,8 +66,7 @@ public class ClusterManager {
 
 	private final ProtocolListener protocolListener;
 
-	private ClusterManager(final ServerBuilder builder, final Collection<String> masters,
-			final Collection<String> myGroups) throws URISyntaxException, UnknownHostException {
+	private ClusterManager(final ServerBuilder builder) throws URISyntaxException, UnknownHostException {
 
 		this.nodeLiveId = UUIDs.timeBased();
 
@@ -79,13 +77,13 @@ public class ClusterManager {
 		webApp = new ClusterNodeAddress(serverConfig.webAppConnector.addressPort, serverConfig.webAppConnector.port);
 
 		if (LOGGER.isInfoEnabled())
-			LOGGER.info("Server: " + me.httpAddressKey + " Groups: " + ArrayUtils.prettyPrint(myGroups));
-		this.myGroups = myGroups != null ? new HashSet<>(myGroups) : null;
+			LOGGER.info("Server: " + me.httpAddressKey + " Groups: " + ArrayUtils.prettyPrint(serverConfig.groups));
+		this.myGroups = serverConfig.groups != null ? new HashSet<>(serverConfig.groups) : null;
 		this.myServices = new HashSet<>(); // Will be filled later using server hook
-		if (masters != null && !masters.isEmpty()) {
+		if (serverConfig.masters != null && !serverConfig.masters.isEmpty()) {
 			this.masters = new HashSet<>();
-			masters.forEach(master -> this.masters
-					.add(new ClusterNodeAddress(master, serverConfig.webServiceConnector.port).httpAddressKey));
+			masters.forEach(master -> this.masters.add(
+					new ClusterNodeAddress(master, serverConfig.webServiceConnector.port).httpAddressKey));
 		} else
 			this.masters = null;
 		clusterNodeMap = new ClusterNodeMap(me.address);
@@ -101,7 +99,7 @@ public class ClusterManager {
 		builder.registerWebService(ClusterServiceImpl.class);
 		builder.registerPacketListener(protocolListener);
 		builder.registerStartedListener(server -> {
-			protocolListener.joinCluster(server.getServiceNames());
+			protocolListener.joinCluster(server.getWebServiceNames());
 			protocolListener.start();
 		});
 		builder.registerShutdownListener(server -> protocolListener.leaveCluster());

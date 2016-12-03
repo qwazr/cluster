@@ -17,10 +17,10 @@ package com.qwazr.cluster.test;
 
 import com.qwazr.cluster.ClusterServer;
 import com.qwazr.cluster.service.ClusterServiceStatusJson;
-import com.qwazr.cluster.service.ClusterSingleClient;
+import com.qwazr.cluster.service.ClusterServiceInterface;
 import com.qwazr.cluster.service.ClusterStatusJson;
+import com.qwazr.utils.StringUtils;
 import com.qwazr.utils.http.HttpClients;
-import com.qwazr.utils.server.GenericServer;
 import com.qwazr.utils.server.RemoteService;
 import org.junit.Assert;
 import org.junit.FixMethodOrder;
@@ -30,7 +30,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URISyntaxException;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 
@@ -39,20 +38,17 @@ public class AllTest {
 
 	private static final Logger logger = LoggerFactory.getLogger(AllTest.class);
 
-	private final static String[] GROUPS = {"group1", "group2"};
+	private final static String[] GROUPS = { "group1", "group2" };
 
 	private final static String ADDRESS = "http://localhost:9091";
 
-	private static GenericServer server;
-	private static ClusterSingleClient client;
+	private static ClusterServiceInterface client;
 
 	@Test
 	public void test00_startServer() throws Exception {
-		System.setProperty("LISTEN_ADDR", "localhost");
-		System.setProperty("PUBLIC_ADDR", "localhost");
-		System.setProperty("WEBSERVICE_PORT", "9091");
-		server = ClusterServer.start(Arrays.asList("localhost:9091"), Arrays.asList(GROUPS));
-		client = new ClusterSingleClient(new RemoteService(ADDRESS));
+		ClusterServer.main("--LISTEN_ADDR=localhost", "--PUBLIC_ADDR=localhost", "--WEBSERVICE_PORT:9091",
+				"--QWAZR_GROUPS=" + StringUtils.join(GROUPS, ","));
+		client = ClusterServiceInterface.getClient(new RemoteService(ADDRESS));
 	}
 
 	/**
@@ -162,7 +158,7 @@ public class AllTest {
 		Assert.assertEquals(0, HttpClients.CNX_MANAGER.getTotalStats().getLeased());
 		Assert.assertEquals(0, HttpClients.CNX_MANAGER.getTotalStats().getPending());
 		Assert.assertTrue(HttpClients.CNX_MANAGER.getTotalStats().getAvailable() > 0);
-		server.stopAll();
+		ClusterServer.getInstance().stopAll();
 	}
 
 }
