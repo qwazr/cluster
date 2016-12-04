@@ -36,7 +36,7 @@ public interface ClusterServiceInterface extends ServiceInterface {
 	@GET
 	@Path("/")
 	@Produces(ServiceInterface.APPLICATION_JSON_UTF8)
-	ClusterStatusJson list();
+	ClusterStatusJson getStatus();
 
 	@GET
 	@Path("/nodes")

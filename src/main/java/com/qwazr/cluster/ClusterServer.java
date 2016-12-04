@@ -17,18 +17,25 @@ package com.qwazr.cluster;
 
 import com.qwazr.cluster.manager.ClusterManager;
 import com.qwazr.utils.server.GenericServer;
+import com.qwazr.utils.server.ServerBuilder;
 import com.qwazr.utils.server.ServerConfiguration;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
 
 public class ClusterServer extends GenericServer {
 
 	private ClusterServer(final ServerConfiguration serverConfiguration) throws IOException {
 		super(serverConfiguration);
-		ClusterManager.load(getBuilder());
 	}
 
-	public static void main(String... args) throws Exception {
+	@Override
+	protected void build(final ExecutorService executorService, final ServerBuilder builder,
+			final ServerConfiguration config) {
+		ClusterManager.load(builder, config);
+	}
+
+	public static void main(final String... args) throws Exception {
 		new ClusterServer(new ServerConfiguration(args)).start(true);
 	}
 

@@ -16,8 +16,8 @@
 package com.qwazr.cluster.test;
 
 import com.qwazr.cluster.ClusterServer;
-import com.qwazr.cluster.service.ClusterServiceStatusJson;
 import com.qwazr.cluster.service.ClusterServiceInterface;
+import com.qwazr.cluster.service.ClusterServiceStatusJson;
 import com.qwazr.cluster.service.ClusterStatusJson;
 import com.qwazr.utils.StringUtils;
 import com.qwazr.utils.http.HttpClients;
@@ -47,7 +47,7 @@ public class AllTest {
 	@Test
 	public void test00_startServer() throws Exception {
 		ClusterServer.main("--LISTEN_ADDR=localhost", "--PUBLIC_ADDR=localhost", "--WEBSERVICE_PORT:9091",
-				"--QWAZR_GROUPS=" + StringUtils.join(GROUPS, ","));
+				"--QWAZR_GROUPS=" + StringUtils.join(GROUPS, ","), "--QWAZR_MASTERS=localhost:9091");
 		client = ClusterServiceInterface.getClient(new RemoteService(ADDRESS));
 	}
 
@@ -146,11 +146,13 @@ public class AllTest {
 	}
 
 	@Test
-	public void test40_list() throws URISyntaxException {
-		ClusterStatusJson status = client.list();
+	public void test40_status() throws URISyntaxException {
+		ClusterStatusJson status = client.getStatus();
 		Assert.assertNotNull(status);
 		Assert.assertEquals(1, status.active_nodes.size());
 		Assert.assertEquals(ADDRESS, status.active_nodes.values().iterator().next().address);
+		Assert.assertEquals(1, status.masters.size());
+		Assert.assertEquals("http://localhost:9091", status.masters.first());
 	}
 
 	@Test

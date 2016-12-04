@@ -31,7 +31,7 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 	HttpServletRequest request;
 
 	@Override
-	public ClusterStatusJson list() {
+	public ClusterStatusJson getStatus() {
 		try {
 			return ClusterManager.INSTANCE.getStatus();
 		} catch (ServerException e) {

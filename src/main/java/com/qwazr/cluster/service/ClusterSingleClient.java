@@ -31,7 +31,7 @@ class ClusterSingleClient extends JsonClientAbstract implements ClusterServiceIn
 	}
 
 	@Override
-	public ClusterStatusJson list() {
+	public ClusterStatusJson getStatus() {
 		final UBuilder uriBuilder = RemoteService.getNewUBuilder(remote, "/cluster");
 		final HttpRequest request = HttpRequest.Get(uriBuilder.buildNoEx());
 		return executeJson(request, null, null, ClusterStatusJson.class, valid200);

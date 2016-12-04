@@ -41,11 +41,11 @@ public class ClusterManager {
 
 	public static ClusterManager INSTANCE = null;
 
-	public synchronized static void load(final ServerBuilder builder) {
+	public synchronized static void load(final ServerBuilder builder, final ServerConfiguration configuration) {
 		if (INSTANCE != null)
 			throw new RuntimeException("Already loaded");
 		try {
-			INSTANCE = new ClusterManager(builder);
+			INSTANCE = new ClusterManager(builder, configuration);
 		} catch (URISyntaxException | UnknownHostException e) {
 			throw new RuntimeException(e);
 		}
@@ -66,33 +66,32 @@ public class ClusterManager {
 
 	private final ProtocolListener protocolListener;
 
-	private ClusterManager(final ServerBuilder builder) throws URISyntaxException, UnknownHostException {
+	private ClusterManager(final ServerBuilder builder, final ServerConfiguration configuration)
+			throws URISyntaxException, UnknownHostException {
 
 		this.nodeLiveId = UUIDs.timeBased();
 
-		final ServerConfiguration serverConfig = builder.getServerConfiguration();
-
-		me = new ClusterNodeAddress(serverConfig.webServiceConnector.addressPort,
-				serverConfig.webServiceConnector.port);
-		webApp = new ClusterNodeAddress(serverConfig.webAppConnector.addressPort, serverConfig.webAppConnector.port);
+		me = new ClusterNodeAddress(configuration.webServiceConnector.addressPort,
+				configuration.webServiceConnector.port);
+		webApp = new ClusterNodeAddress(configuration.webAppConnector.addressPort, configuration.webAppConnector.port);
 
 		if (LOGGER.isInfoEnabled())
-			LOGGER.info("Server: " + me.httpAddressKey + " Groups: " + ArrayUtils.prettyPrint(serverConfig.groups));
-		this.myGroups = serverConfig.groups != null ? new HashSet<>(serverConfig.groups) : null;
+			LOGGER.info("Server: " + me.httpAddressKey + " Groups: " + ArrayUtils.prettyPrint(configuration.groups));
+		this.myGroups = configuration.groups != null ? new HashSet<>(configuration.groups) : null;
 		this.myServices = new HashSet<>(); // Will be filled later using server hook
-		if (serverConfig.masters != null && !serverConfig.masters.isEmpty()) {
+		if (configuration.masters != null && !configuration.masters.isEmpty()) {
 			this.masters = new HashSet<>();
-			masters.forEach(master -> this.masters.add(
-					new ClusterNodeAddress(master, serverConfig.webServiceConnector.port).httpAddressKey));
+			configuration.masters.forEach(master -> this.masters.add(
+					new ClusterNodeAddress(master, configuration.webServiceConnector.port).httpAddressKey));
 		} else
 			this.masters = null;
 		clusterNodeMap = new ClusterNodeMap(me.address);
 		clusterNodeMap.register(me.httpAddressKey);
 		clusterNodeMap.register(masters);
 
-		if (serverConfig.multicastConnector.address != null && serverConfig.multicastConnector.port != -1)
-			protocolListener = new MulticastListener(this, serverConfig.multicastConnector.address,
-					serverConfig.multicastConnector.port);
+		if (configuration.multicastConnector.address != null && configuration.multicastConnector.port != -1)
+			protocolListener = new MulticastListener(this, configuration.multicastConnector.address,
+					configuration.multicastConnector.port);
 		else
 			protocolListener = new DatagramListener(this);
 
