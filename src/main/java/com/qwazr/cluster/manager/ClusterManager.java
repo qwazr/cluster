@@ -15,12 +15,12 @@
  */
 package com.qwazr.cluster.manager;
 
-import com.datastax.driver.core.utils.UUIDs;
 import com.qwazr.cluster.service.ClusterNodeJson;
 import com.qwazr.cluster.service.ClusterServiceImpl;
 import com.qwazr.cluster.service.ClusterServiceStatusJson;
 import com.qwazr.cluster.service.ClusterStatusJson;
 import com.qwazr.utils.ArrayUtils;
+import com.qwazr.utils.HashUtils;
 import com.qwazr.utils.StringUtils;
 import com.qwazr.utils.server.ServerBuilder;
 import com.qwazr.utils.server.ServerConfiguration;
@@ -69,7 +69,7 @@ public class ClusterManager {
 	private ClusterManager(final ServerBuilder builder, final ServerConfiguration configuration)
 			throws URISyntaxException, UnknownHostException {
 
-		this.nodeLiveId = UUIDs.timeBased();
+		this.nodeLiveId = HashUtils.newTimeBasedUUID();
 
 		me = new ClusterNodeAddress(configuration.webServiceConnector.addressPort,
 				configuration.webServiceConnector.port);
