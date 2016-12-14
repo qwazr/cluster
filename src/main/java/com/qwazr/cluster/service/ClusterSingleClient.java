@@ -18,8 +18,8 @@ package com.qwazr.cluster.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.qwazr.utils.UBuilder;
 import com.qwazr.utils.http.HttpRequest;
-import com.qwazr.utils.json.client.JsonClientAbstract;
-import com.qwazr.utils.server.RemoteService;
+import com.qwazr.server.client.JsonClientAbstract;
+import com.qwazr.server.RemoteService;
 
 import java.util.TreeMap;
 import java.util.TreeSet;

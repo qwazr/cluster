@@ -21,7 +21,7 @@ import com.qwazr.cluster.service.ClusterServiceStatusJson;
 import com.qwazr.cluster.service.ClusterStatusJson;
 import com.qwazr.utils.StringUtils;
 import com.qwazr.utils.http.HttpClients;
-import com.qwazr.utils.server.RemoteService;
+import com.qwazr.server.RemoteService;
 import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -135,13 +135,13 @@ public class AllTest {
 	public void test35_get_service_map() throws URISyntaxException {
 		Map<String, ClusterServiceStatusJson.StatusEnum> result = client.getServiceMap(null);
 		Assert.assertNotNull(result);
-		Assert.assertEquals(1, result.size());
-		Assert.assertEquals(ClusterServiceStatusJson.StatusEnum.ok, result.values().iterator().next());
+		Assert.assertEquals(2, result.size());
+		Assert.assertEquals(ClusterServiceStatusJson.StatusEnum.ok, result.get("cluster"));
 		for (String group : GROUPS) {
 			result = client.getServiceMap(group);
 			Assert.assertNotNull(result);
-			Assert.assertEquals(1, result.size());
-			Assert.assertEquals(ClusterServiceStatusJson.StatusEnum.ok, result.values().iterator().next());
+			Assert.assertEquals(2, result.size());
+			Assert.assertEquals(ClusterServiceStatusJson.StatusEnum.ok, result.get("cluster"));
 		}
 	}
 

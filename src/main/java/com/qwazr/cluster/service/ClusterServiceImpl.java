@@ -16,7 +16,7 @@
 package com.qwazr.cluster.service;
 
 import com.qwazr.cluster.manager.ClusterManager;
-import com.qwazr.utils.server.ServerException;
+import com.qwazr.server.ServerException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Context;

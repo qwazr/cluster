@@ -16,9 +16,10 @@
 package com.qwazr.cluster;
 
 import com.qwazr.cluster.manager.ClusterManager;
-import com.qwazr.utils.server.GenericServer;
-import com.qwazr.utils.server.ServerBuilder;
-import com.qwazr.utils.server.ServerConfiguration;
+import com.qwazr.server.GenericServer;
+import com.qwazr.server.ServerBuilder;
+import com.qwazr.server.WelcomeShutdownService;
+import com.qwazr.server.configuration.ServerConfiguration;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,6 +36,7 @@ public class ClusterServer extends GenericServer {
 	protected void build(final ExecutorService executorService, final ServerBuilder builder,
 			final ServerConfiguration config, final Collection<File> etcFiles) {
 		ClusterManager.load(builder, config);
+		builder.registerWebService(WelcomeShutdownService.class);
 	}
 
 	public static void main(final String... args) throws Exception {

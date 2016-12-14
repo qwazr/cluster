@@ -19,8 +19,8 @@ import com.google.common.io.Files;
 import com.qwazr.cluster.ClusterServer;
 import com.qwazr.cluster.service.ClusterServiceInterface;
 import com.qwazr.utils.StringUtils;
-import com.qwazr.utils.server.ExternalServer;
-import com.qwazr.utils.server.RemoteService;
+import com.qwazr.server.ExternalServer;
+import com.qwazr.server.RemoteService;
 
 import java.io.File;
 import java.util.ArrayList;

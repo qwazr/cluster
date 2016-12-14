@@ -16,7 +16,7 @@
 package com.qwazr.cluster.manager;
 
 import com.qwazr.utils.StringUtils;
-import com.qwazr.utils.server.ServerException;
+import com.qwazr.server.ServerException;
 
 import javax.ws.rs.core.Response;
 import java.net.InetSocketAddress;

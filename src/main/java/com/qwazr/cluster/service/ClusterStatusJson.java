@@ -18,7 +18,7 @@ package com.qwazr.cluster.service;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.qwazr.cluster.service.ClusterServiceStatusJson.StatusEnum;
-import com.qwazr.utils.server.ServerException;
+import com.qwazr.server.ServerException;
 
 import java.util.Date;
 import java.util.Set;
@@ -54,8 +54,8 @@ public class ClusterStatusJson {
 		this.groups = groups;
 		this.services = new TreeMap<>();
 		if (services != null) {
-			services.forEach((service, nodesSet) -> this.services
-					.put(service, ClusterServiceStatusJson.findStatus(nodesSet.size())));
+			services.forEach((service, nodesSet) -> this.services.put(service,
+					ClusterServiceStatusJson.findStatus(nodesSet.size())));
 		}
 		this.masters = masters == null || masters.isEmpty() ? null : new TreeSet<>(masters);
 		this.last_keep_alive_execution = lastKeepAliveExecution;

@@ -1,7 +1,7 @@
 package com.qwazr.cluster.manager;
 
 import com.qwazr.utils.concurrent.PeriodicThread;
-import com.qwazr.utils.server.UdpServerThread;
+import com.qwazr.server.UdpServerThread;
 
 import java.util.Collection;
 
