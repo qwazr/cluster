@@ -50,23 +50,19 @@ public class ClusterServer implements BaseServer {
 
 	private static volatile ClusterServer INSTANCE;
 
-	public static void main(final String... args)
+	public static synchronized void main(final String... args)
 			throws IOException, ReflectiveOperationException, OperationsException, ServletException, MBeanException,
 			URISyntaxException, InterruptedException {
-		synchronized (ClusterServer.class) {
-			if (INSTANCE != null)
-				shutdown();
-			INSTANCE = new ClusterServer(new ServerConfiguration(args));
-			INSTANCE.start();
-		}
+		if (INSTANCE != null)
+			shutdown();
+		INSTANCE = new ClusterServer(new ServerConfiguration(args));
+		INSTANCE.start();
 	}
 
-	public static void shutdown() {
-		synchronized (ClusterServer.class) {
-			if (INSTANCE != null)
-				INSTANCE.stop();
-			INSTANCE = null;
-		}
+	public static synchronized void shutdown() {
+		if (INSTANCE != null)
+			INSTANCE.stop();
+		INSTANCE = null;
 	}
 
 }
