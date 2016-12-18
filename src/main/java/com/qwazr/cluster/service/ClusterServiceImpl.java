@@ -20,17 +20,12 @@ import com.qwazr.server.AbstractServiceImpl;
 import com.qwazr.server.ServerException;
 
 import javax.annotation.PostConstruct;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response.Status;
 import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
 public class ClusterServiceImpl extends AbstractServiceImpl implements ClusterServiceInterface {
-
-	@Context
-	HttpServletRequest request;
 
 	private ClusterManager manager;
 
@@ -44,7 +39,7 @@ public class ClusterServiceImpl extends AbstractServiceImpl implements ClusterSe
 
 	@PostConstruct
 	public void init() {
-		this.manager = ClusterManager.getInstance(context);
+		this.manager = getContextAttribute(ClusterManager.class);
 	}
 
 	@Override

@@ -29,7 +29,6 @@ import org.apache.commons.lang3.RandomUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.ServletContext;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.Collections;
@@ -99,11 +98,7 @@ public class ClusterManager {
 			protocolListener.start();
 		});
 		builder.shutdownListener(server -> protocolListener.leaveCluster());
-		builder.contextAttribute(SERVICE_NAME_CLUSTER, this);
-	}
-
-	public static ClusterManager getInstance(final ServletContext context) {
-		return context == null ? null : (ClusterManager) context.getAttribute(SERVICE_NAME_CLUSTER);
+		builder.contextAttribute(this);
 	}
 
 	public boolean isGroup(String group) {
