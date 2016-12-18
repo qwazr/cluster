@@ -76,6 +76,6 @@ public abstract class AbstractMultiTests {
 
 	@AfterClass
 	public static void after() {
-		ClusterTestServer.pool.close();
+		ClusterTestServer.stopServers();
 	}
 }

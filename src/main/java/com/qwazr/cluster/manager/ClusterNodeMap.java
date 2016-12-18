@@ -28,6 +28,7 @@ class ClusterNodeMap {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ClusterNodeMap.class);
 
+	private final ClusterManager clusterManager;
 	private final InetSocketAddress myAddress;
 
 	private final ReadWriteLock readWriteLock = new ReadWriteLock();
@@ -63,7 +64,8 @@ class ClusterNodeMap {
 		}
 	}
 
-	ClusterNodeMap(final InetSocketAddress myAddress) {
+	ClusterNodeMap(final ClusterManager clusterManager, final InetSocketAddress myAddress) {
+		this.clusterManager = clusterManager;
 		this.myAddress = myAddress;
 		nodesMap = new HashMap<>();
 		groupsMap = new HashMap<>();
@@ -259,7 +261,7 @@ class ClusterNodeMap {
 		}
 		unregisterSet(groupsMap, nodeAddress.httpAddressKey);
 		unregisterSet(servicesMap, nodeAddress.httpAddressKey);
-		if (!ClusterManager.INSTANCE.isMaster(nodeAddress))
+		if (!clusterManager.isMaster(nodeAddress))
 			nodesMap.remove(nodeAddress.httpAddressKey);
 	}
 

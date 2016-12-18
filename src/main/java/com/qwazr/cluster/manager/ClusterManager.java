@@ -19,19 +19,27 @@ import com.qwazr.cluster.service.ClusterNodeJson;
 import com.qwazr.cluster.service.ClusterServiceImpl;
 import com.qwazr.cluster.service.ClusterServiceStatusJson;
 import com.qwazr.cluster.service.ClusterStatusJson;
+import com.qwazr.server.GenericServer;
+import com.qwazr.server.ServerException;
+import com.qwazr.server.configuration.ServerConfiguration;
 import com.qwazr.utils.ArrayUtils;
 import com.qwazr.utils.HashUtils;
 import com.qwazr.utils.StringUtils;
-import com.qwazr.server.ServerBuilder;
-import com.qwazr.server.configuration.ServerConfiguration;
-import com.qwazr.server.ServerException;
 import org.apache.commons.lang3.RandomUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.ServletContext;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.UUID;
 
 public class ClusterManager {
 
@@ -39,19 +47,7 @@ public class ClusterManager {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ClusterManager.class);
 
-	public static ClusterManager INSTANCE = null;
-
-	public synchronized static void load(final ServerBuilder builder, final ServerConfiguration configuration) {
-		if (INSTANCE != null)
-			throw new RuntimeException("Already loaded");
-		try {
-			INSTANCE = new ClusterManager(builder, configuration);
-		} catch (URISyntaxException | UnknownHostException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	ClusterNodeMap clusterNodeMap;
+	final ClusterNodeMap clusterNodeMap;
 
 	final ClusterNodeAddress me;
 
@@ -66,8 +62,9 @@ public class ClusterManager {
 
 	private final ProtocolListener protocolListener;
 
-	private ClusterManager(final ServerBuilder builder, final ServerConfiguration configuration)
-			throws URISyntaxException, UnknownHostException {
+	public ClusterManager(final GenericServer.Builder builder) throws URISyntaxException, UnknownHostException {
+
+		final ServerConfiguration configuration = builder.getConfiguration();
 
 		this.nodeLiveId = HashUtils.newTimeBasedUUID();
 
@@ -85,7 +82,7 @@ public class ClusterManager {
 					new ClusterNodeAddress(master, configuration.webServiceConnector.port).httpAddressKey));
 		} else
 			this.masters = null;
-		clusterNodeMap = new ClusterNodeMap(me.address);
+		clusterNodeMap = new ClusterNodeMap(this, me.address);
 		clusterNodeMap.register(me.httpAddressKey);
 		clusterNodeMap.register(masters);
 
@@ -95,13 +92,18 @@ public class ClusterManager {
 		else
 			protocolListener = new DatagramListener(this);
 
-		builder.registerWebService(ClusterServiceImpl.class);
-		builder.registerPacketListener(protocolListener);
-		builder.registerStartedListener(server -> {
+		builder.webService(ClusterServiceImpl.class);
+		builder.packetListener(protocolListener);
+		builder.startedListener(server -> {
 			protocolListener.joinCluster(server.getWebServiceNames());
 			protocolListener.start();
 		});
-		builder.registerShutdownListener(server -> protocolListener.leaveCluster());
+		builder.shutdownListener(server -> protocolListener.leaveCluster());
+		builder.contextAttribute(SERVICE_NAME_CLUSTER, this);
+	}
+
+	public static ClusterManager getInstance(final ServletContext context) {
+		return context == null ? null : (ClusterManager) context.getAttribute(SERVICE_NAME_CLUSTER);
 	}
 
 	public boolean isGroup(String group) {

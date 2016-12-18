@@ -156,11 +156,11 @@ public class AllTest {
 	}
 
 	@Test
-	public void testZZZhttpClient() {
+	public void testZZZhttpClient() throws InterruptedException {
 		Assert.assertEquals(0, HttpClients.CNX_MANAGER.getTotalStats().getLeased());
 		Assert.assertEquals(0, HttpClients.CNX_MANAGER.getTotalStats().getPending());
 		Assert.assertTrue(HttpClients.CNX_MANAGER.getTotalStats().getAvailable() > 0);
-		ClusterServer.getInstance().stopAll();
+		ClusterServer.stop();
 	}
 
 }

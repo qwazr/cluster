@@ -16,8 +16,10 @@
 package com.qwazr.cluster.service;
 
 import com.qwazr.cluster.manager.ClusterManager;
+import com.qwazr.server.AbstractServiceImpl;
 import com.qwazr.server.ServerException;
 
+import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response.Status;
@@ -25,15 +27,30 @@ import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-public class ClusterServiceImpl implements ClusterServiceInterface {
+public class ClusterServiceImpl extends AbstractServiceImpl implements ClusterServiceInterface {
 
 	@Context
 	HttpServletRequest request;
 
+	private ClusterManager manager;
+
+	public ClusterServiceImpl(final ClusterManager manager) {
+		this.manager = manager;
+	}
+
+	public ClusterServiceImpl() {
+		this(null);
+	}
+
+	@PostConstruct
+	public void init() {
+		this.manager = ClusterManager.getInstance(context);
+	}
+
 	@Override
 	public ClusterStatusJson getStatus() {
 		try {
-			return ClusterManager.INSTANCE.getStatus();
+			return manager.getStatus();
 		} catch (ServerException e) {
 			throw e.getJsonException();
 		}
@@ -42,7 +59,7 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 	@Override
 	public SortedSet<String> getNodes() {
 		try {
-			return new TreeSet<>(ClusterManager.INSTANCE.getNodes());
+			return new TreeSet<>(manager.getNodes());
 		} catch (ServerException e) {
 			throw e.getJsonException();
 		}
@@ -53,7 +70,7 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 		if (service_name == null)
 			throw new ServerException(Status.NOT_ACCEPTABLE).getJsonException();
 		try {
-			return ClusterManager.INSTANCE.getNodesByGroupByService(group, service_name);
+			return manager.getNodesByGroupByService(group, service_name);
 		} catch (ServerException e) {
 			throw e.getJsonException();
 		}
@@ -64,7 +81,7 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 		if (service_name == null)
 			throw new ServerException(Status.NOT_ACCEPTABLE).getJsonException();
 		try {
-			return ClusterManager.INSTANCE.getRandomNode(group, service_name);
+			return manager.getRandomNode(group, service_name);
 		} catch (ServerException e) {
 			throw e.getJsonException();
 		}
@@ -75,7 +92,7 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 		if (service_name == null)
 			throw new ServerException(Status.NOT_ACCEPTABLE).getJsonException();
 		try {
-			return ClusterManager.INSTANCE.getLeaderNode(group, service_name);
+			return manager.getLeaderNode(group, service_name);
 		} catch (ServerException e) {
 			throw e.getJsonException();
 		}
@@ -84,7 +101,7 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 	@Override
 	public SortedMap<String, ClusterServiceStatusJson.StatusEnum> getServiceMap(String group) {
 		try {
-			return ClusterManager.INSTANCE.getServicesStatus(group);
+			return manager.getServicesStatus(group);
 		} catch (ServerException e) {
 			throw e.getJsonException();
 		}
@@ -93,7 +110,7 @@ public class ClusterServiceImpl implements ClusterServiceInterface {
 	@Override
 	public ClusterServiceStatusJson getServiceStatus(String service_name, String group) {
 		try {
-			return ClusterManager.INSTANCE.getServiceStatus(group, service_name);
+			return manager.getServiceStatus(group, service_name);
 		} catch (ServerException e) {
 			throw e.getJsonException();
 		}

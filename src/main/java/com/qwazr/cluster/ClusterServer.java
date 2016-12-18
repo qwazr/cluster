@@ -17,30 +17,59 @@ package com.qwazr.cluster;
 
 import com.qwazr.cluster.manager.ClusterManager;
 import com.qwazr.server.GenericServer;
-import com.qwazr.server.ServerBuilder;
 import com.qwazr.server.WelcomeShutdownService;
 import com.qwazr.server.configuration.ServerConfiguration;
 
-import java.io.File;
+import javax.management.MBeanException;
+import javax.management.OperationsException;
+import javax.servlet.ServletException;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.concurrent.ExecutorService;
+import java.net.URISyntaxException;
+import java.util.Map;
 
-public class ClusterServer extends GenericServer {
+public class ClusterServer {
 
-	private ClusterServer(final ServerConfiguration serverConfiguration) throws IOException {
-		super(serverConfiguration);
+	private final GenericServer server;
+	private final ClusterManager clusterManager;
+
+	private ClusterServer(final ServerConfiguration serverConfiguration) throws IOException, URISyntaxException {
+		GenericServer.Builder builder = GenericServer.of(serverConfiguration).webService(WelcomeShutdownService.class);
+		clusterManager = new ClusterManager(builder);
+		server = builder.build();
 	}
 
-	@Override
-	protected void build(final ExecutorService executorService, final ServerBuilder builder,
-			final ServerConfiguration config, final Collection<File> etcFiles) {
-		ClusterManager.load(builder, config);
-		builder.registerWebService(WelcomeShutdownService.class);
+	public ClusterServer(final Map<String, String> properties) throws IOException, URISyntaxException {
+		this(ServerConfiguration.of(properties).build());
 	}
 
-	public static void main(final String... args) throws Exception {
-		new ClusterServer(new ServerConfiguration(args)).start(true);
+	public void start()
+			throws ReflectiveOperationException, OperationsException, MBeanException, ServletException, IOException {
+		server.start(true);
+	}
+
+	public void stopAll() {
+		server.stopAll();
+	}
+
+	private static volatile ClusterServer INSTANCE;
+
+	public static void main(final String... args)
+			throws IOException, ReflectiveOperationException, OperationsException, ServletException, MBeanException,
+			URISyntaxException, InterruptedException {
+		synchronized (ClusterServer.class) {
+			if (INSTANCE != null)
+				stop();
+			INSTANCE = new ClusterServer(new ServerConfiguration(args));
+			INSTANCE.start();
+		}
+	}
+
+	public static void stop() throws InterruptedException {
+		synchronized (ClusterServer.class) {
+			if (INSTANCE != null)
+				INSTANCE.stopAll();
+			INSTANCE = null;
+		}
 	}
 
 }

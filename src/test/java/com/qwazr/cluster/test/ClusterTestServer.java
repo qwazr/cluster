@@ -19,7 +19,6 @@ import com.google.common.io.Files;
 import com.qwazr.cluster.ClusterServer;
 import com.qwazr.cluster.service.ClusterServiceInterface;
 import com.qwazr.utils.StringUtils;
-import com.qwazr.server.ExternalServer;
 import com.qwazr.server.RemoteService;
 
 import java.io.File;
@@ -30,13 +29,13 @@ import java.util.Map;
 
 public class ClusterTestServer {
 
+	final ClusterServer server;
 	final File dataDir;
 	final ClusterServiceInterface client;
 	final String address;
 
 	final static List<ClusterTestServer> servers = new ArrayList<>();
 	final static List<String> serverAdresses = new ArrayList<>();
-	final static ExternalServer.Pool pool = new ExternalServer.Pool();
 
 	ClusterTestServer(final List<String> masters, final int tcpPort, final String multicastAddress,
 			final Integer multicastPort, final String... groups) throws Exception {
@@ -64,10 +63,19 @@ public class ClusterTestServer {
 
 		client = ClusterServiceInterface.getClient(new RemoteService(address));
 
-		pool.add(ClusterServer.class, env);
+		server = new ClusterServer(env);
 
 		servers.add(this);
 		serverAdresses.add(this.address);
+
+		server.start();
 	}
 
+	public void stop() {
+		server.stopAll();
+	}
+
+	public static void stopServers() {
+		servers.forEach(ClusterTestServer::stop);
+	}
 }

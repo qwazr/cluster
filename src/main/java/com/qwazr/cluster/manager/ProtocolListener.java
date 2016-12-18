@@ -37,6 +37,6 @@ abstract class ProtocolListener extends PeriodicThread implements UdpServerThrea
 
 	@Override
 	protected void runner() {
-		ClusterManager.INSTANCE.clusterNodeMap.removeExpired();
+		manager.clusterNodeMap.removeExpired();
 	}
 }
