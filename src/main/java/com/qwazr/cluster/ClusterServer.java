@@ -16,6 +16,7 @@
 package com.qwazr.cluster;
 
 import com.qwazr.cluster.manager.ClusterManager;
+import com.qwazr.server.BaseServer;
 import com.qwazr.server.GenericServer;
 import com.qwazr.server.WelcomeShutdownService;
 import com.qwazr.server.configuration.ServerConfiguration;
@@ -27,7 +28,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Map;
 
-public class ClusterServer {
+public class ClusterServer implements BaseServer {
 
 	private final GenericServer server;
 	private final ClusterManager clusterManager;
@@ -42,13 +43,9 @@ public class ClusterServer {
 		this(ServerConfiguration.of(properties).build());
 	}
 
-	public void start()
-			throws ReflectiveOperationException, OperationsException, MBeanException, ServletException, IOException {
-		server.start(true);
-	}
-
-	public void stopAll() {
-		server.stopAll();
+	@Override
+	public GenericServer getServer() {
+		return server;
 	}
 
 	private static volatile ClusterServer INSTANCE;
@@ -58,16 +55,16 @@ public class ClusterServer {
 			URISyntaxException, InterruptedException {
 		synchronized (ClusterServer.class) {
 			if (INSTANCE != null)
-				stop();
+				shutdown();
 			INSTANCE = new ClusterServer(new ServerConfiguration(args));
 			INSTANCE.start();
 		}
 	}
 
-	public static void stop() throws InterruptedException {
+	public static void shutdown() {
 		synchronized (ClusterServer.class) {
 			if (INSTANCE != null)
-				INSTANCE.stopAll();
+				INSTANCE.stop();
 			INSTANCE = null;
 		}
 	}

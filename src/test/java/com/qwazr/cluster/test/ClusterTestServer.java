@@ -72,7 +72,7 @@ public class ClusterTestServer {
 	}
 
 	public void stop() {
-		server.stopAll();
+		server.stop();
 	}
 
 	public static void stopServers() {
