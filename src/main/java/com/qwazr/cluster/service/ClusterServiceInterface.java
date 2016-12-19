@@ -15,23 +15,26 @@
  */
 package com.qwazr.cluster.service;
 
-import com.qwazr.cluster.manager.ClusterManager;
 import com.qwazr.server.RemoteService;
 import com.qwazr.server.ServiceInterface;
 import com.qwazr.server.ServiceName;
 
 import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.*;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import java.util.SortedMap;
 import java.util.SortedSet;
 
-@RolesAllowed(ClusterManager.SERVICE_NAME_CLUSTER)
-@Path("/" + ClusterServiceInterface.PATH)
-@ServiceName("cluster")
+@RolesAllowed(ClusterServiceInterface.SERVICE_NAME)
+@Path("/" + ClusterServiceInterface.SERVICE_NAME)
+@ServiceName(ClusterServiceInterface.SERVICE_NAME)
 public interface ClusterServiceInterface extends ServiceInterface {
 
-	String PATH = "cluster";
+	String SERVICE_NAME = "cluster";
 
 	@GET
 	@Path("/")

@@ -17,6 +17,7 @@ package com.qwazr.cluster.manager;
 
 import com.qwazr.cluster.service.ClusterNodeJson;
 import com.qwazr.cluster.service.ClusterServiceImpl;
+import com.qwazr.cluster.service.ClusterServiceInterface;
 import com.qwazr.cluster.service.ClusterServiceStatusJson;
 import com.qwazr.cluster.service.ClusterStatusJson;
 import com.qwazr.server.GenericServer;
@@ -42,8 +43,6 @@ import java.util.UUID;
 
 public class ClusterManager {
 
-	public final static String SERVICE_NAME_CLUSTER = "cluster";
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(ClusterManager.class);
 
 	final ClusterNodeMap clusterNodeMap;
@@ -60,6 +59,8 @@ public class ClusterManager {
 	private final Set<String> masters;
 
 	private final ProtocolListener protocolListener;
+
+	private final ClusterServiceInterface service;
 
 	public ClusterManager(final GenericServer.Builder builder) throws URISyntaxException, UnknownHostException {
 
@@ -99,6 +100,12 @@ public class ClusterManager {
 		});
 		builder.shutdownListener(server -> protocolListener.leaveCluster());
 		builder.contextAttribute(this);
+
+		service = new ClusterServiceImpl(this);
+	}
+
+	public ClusterServiceInterface getService() {
+		return service;
 	}
 
 	public boolean isGroup(String group) {

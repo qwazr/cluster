@@ -34,7 +34,8 @@ public class ClusterServer implements BaseServer {
 	private final ClusterManager clusterManager;
 
 	private ClusterServer(final ServerConfiguration serverConfiguration) throws IOException, URISyntaxException {
-		GenericServer.Builder builder = GenericServer.of(serverConfiguration).webService(WelcomeShutdownService.class);
+		final GenericServer.Builder builder =
+				GenericServer.of(serverConfiguration, null).webService(WelcomeShutdownService.class);
 		clusterManager = new ClusterManager(builder);
 		server = builder.build();
 	}
@@ -53,15 +54,15 @@ public class ClusterServer implements BaseServer {
 	public static synchronized void main(final String... args)
 			throws IOException, ReflectiveOperationException, OperationsException, ServletException, MBeanException,
 			URISyntaxException, InterruptedException {
-		if (INSTANCE != null)
-			shutdown();
+		shutdown();
 		INSTANCE = new ClusterServer(new ServerConfiguration(args));
 		INSTANCE.start();
 	}
 
 	public static synchronized void shutdown() {
-		if (INSTANCE != null)
-			INSTANCE.stop();
+		if (INSTANCE == null)
+			return;
+		INSTANCE.stop();
 		INSTANCE = null;
 	}
 
