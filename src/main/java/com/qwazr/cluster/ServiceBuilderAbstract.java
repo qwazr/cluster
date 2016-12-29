@@ -22,6 +22,7 @@ import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.SortedSet;
+import java.util.function.Consumer;
 
 public class ServiceBuilderAbstract<T> implements ServiceBuilderInterface<T> {
 
@@ -56,6 +57,17 @@ public class ServiceBuilderAbstract<T> implements ServiceBuilderInterface<T> {
 		if (nodes == null || nodes.isEmpty())
 			return null;
 		return nodes.size() == 1 ? getService(nodes.first()) : getService(nodes);
+	}
+
+	@Override
+	public int active(final String group, final Consumer<T> consumer) throws URISyntaxException {
+		Objects.requireNonNull(serviceName, "The service name is missing");
+		final SortedSet<String> nodes = clusterManager.getNodesByGroupByService(group, serviceName);
+		if (nodes == null || nodes.isEmpty())
+			return 0;
+		for (String node : nodes)
+			consumer.accept(getService(node));
+		return nodes.size();
 	}
 
 	@Override

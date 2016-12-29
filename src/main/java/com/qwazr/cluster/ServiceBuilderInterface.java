@@ -20,6 +20,7 @@ import org.apache.commons.lang3.NotImplementedException;
 
 import java.net.URISyntaxException;
 import java.util.Collection;
+import java.util.function.Consumer;
 
 public interface ServiceBuilderInterface<T> {
 
@@ -28,6 +29,8 @@ public interface ServiceBuilderInterface<T> {
 	T getService(Collection<String> nodes) throws URISyntaxException;
 
 	T getActive(String group) throws URISyntaxException;
+
+	int active(String group, Consumer<T> consumer) throws URISyntaxException;
 
 	T getRandom(String group) throws URISyntaxException;
 
