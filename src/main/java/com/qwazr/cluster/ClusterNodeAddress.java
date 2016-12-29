@@ -23,11 +23,11 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-public class ClusterNodeAddress {
+class ClusterNodeAddress {
 
-	public final URI uri;
-	public final InetSocketAddress address;
-	public final String httpAddressKey;
+	final URI uri;
+	final InetSocketAddress address;
+	final String httpAddressKey;
 
 	/**
 	 * @param httpAddress the address of the node: {scheme}://{host}:{port}
