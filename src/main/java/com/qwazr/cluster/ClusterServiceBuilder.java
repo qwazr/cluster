@@ -19,7 +19,7 @@ import com.qwazr.server.RemoteService;
 
 public class ClusterServiceBuilder implements ServiceBuilderInterface<ClusterServiceInterface> {
 
-	private final ClusterServiceImpl local;
+	final ClusterServiceImpl local;
 
 	ClusterServiceBuilder(final ClusterServiceImpl local) {
 		this.local = local;

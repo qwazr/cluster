@@ -15,14 +15,15 @@
  */
 package com.qwazr.cluster.test;
 
+import com.qwazr.cluster.ClusterManager;
 import com.qwazr.cluster.ClusterServer;
 import com.qwazr.cluster.ClusterServiceBuilder;
 import com.qwazr.cluster.ClusterServiceInterface;
 import com.qwazr.cluster.ClusterServiceStatusJson;
 import com.qwazr.cluster.ClusterStatusJson;
+import com.qwazr.server.RemoteService;
 import com.qwazr.utils.StringUtils;
 import com.qwazr.utils.http.HttpClients;
-import com.qwazr.server.RemoteService;
 import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -50,7 +51,10 @@ public class AllTest {
 	public void test00_startServer() throws Exception {
 		ClusterServer.main("--LISTEN_ADDR=localhost", "--PUBLIC_ADDR=localhost", "--WEBSERVICE_PORT:9091",
 				"--QWAZR_GROUPS=" + StringUtils.join(GROUPS, ","), "--QWAZR_MASTERS=localhost:9091");
-		serviceBuilder = ClusterServer.getInstance().getClusterManager().getServiceBuilder();
+		ClusterManager clusterManager = ClusterServer.getInstance().getClusterManager();
+		Assert.assertNotNull(clusterManager);
+		Assert.assertNotNull(clusterManager.getService());
+		serviceBuilder = clusterManager.getServiceBuilder();
 		client = serviceBuilder.remote(new RemoteService(ADDRESS));
 	}
 

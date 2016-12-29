@@ -102,6 +102,10 @@ public class ClusterManager {
 		serviceBuilder = new ClusterServiceBuilder(new ClusterServiceImpl(this));
 	}
 
+	public ClusterServiceInterface getService() {
+		return serviceBuilder.local;
+	}
+
 	public ClusterServiceBuilder getServiceBuilder() {
 		return serviceBuilder;
 	}
