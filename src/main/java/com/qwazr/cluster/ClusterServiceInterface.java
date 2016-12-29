@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.qwazr.cluster.service;
+package com.qwazr.cluster;
 
-import com.qwazr.server.RemoteService;
 import com.qwazr.server.ServiceInterface;
 import com.qwazr.server.ServiceName;
+import org.apache.commons.lang3.NotImplementedException;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.GET;
@@ -26,6 +26,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import java.net.URISyntaxException;
+import java.util.Collection;
 import java.util.SortedMap;
 import java.util.SortedSet;
 
@@ -75,8 +77,30 @@ public interface ClusterServiceInterface extends ServiceInterface {
 	String getActiveNodeLeaderByService(@PathParam("service_name") String service_name,
 			@QueryParam("group") String group);
 
-	static ClusterServiceInterface getClient(final RemoteService remote) {
-		return new ClusterSingleClient(remote);
-
+	/**
+	 * Return a service client
+	 *
+	 * @param nodeAddress the address of the node.
+	 * @param builder     the builder interface for the given service
+	 * @return a script service client
+	 * @throws URISyntaxException
+	 */
+	default <T> T getService(final String nodeAddress, final ServiceBuilderInterface<T> builder)
+			throws URISyntaxException {
+		throw new NotImplementedException("GetService is not implemented");
 	}
+
+	/**
+	 * Return a service client
+	 *
+	 * @param nodeAddresses the adress list of the nodes
+	 * @param builder       the builder interface for the given service
+	 * @return a script service client
+	 * @throws URISyntaxException
+	 */
+	default <T> T getService(final Collection<String> nodeAddresses, final ServiceBuilderInterface<T> builder)
+			throws URISyntaxException {
+		throw new NotImplementedException("GetService is not implemented");
+	}
+
 }

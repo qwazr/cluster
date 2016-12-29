@@ -1,4 +1,4 @@
-package com.qwazr.cluster.manager;
+package com.qwazr.cluster;
 
 import com.qwazr.utils.concurrent.PeriodicThread;
 import com.qwazr.server.UdpServerThread;

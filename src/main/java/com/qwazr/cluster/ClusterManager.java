@@ -13,14 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.qwazr.cluster.manager;
+package com.qwazr.cluster;
 
-import com.qwazr.cluster.service.ClusterNodeJson;
-import com.qwazr.cluster.service.ClusterServiceImpl;
-import com.qwazr.cluster.service.ClusterServiceInterface;
-import com.qwazr.cluster.service.ClusterServiceStatusJson;
-import com.qwazr.cluster.service.ClusterStatusJson;
 import com.qwazr.server.GenericServer;
+import com.qwazr.server.RemoteService;
 import com.qwazr.server.ServerException;
 import com.qwazr.server.configuration.ServerConfiguration;
 import com.qwazr.utils.ArrayUtils;
@@ -32,10 +28,12 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
@@ -60,7 +58,7 @@ public class ClusterManager {
 
 	private final ProtocolListener protocolListener;
 
-	private final ClusterServiceInterface service;
+	private final ClusterServiceBuilder serviceBuilder;
 
 	public ClusterManager(final GenericServer.Builder builder) throws URISyntaxException, UnknownHostException {
 
@@ -101,14 +99,14 @@ public class ClusterManager {
 		builder.shutdownListener(server -> protocolListener.leaveCluster());
 		builder.contextAttribute(this);
 
-		service = new ClusterServiceImpl(this);
+		serviceBuilder = new ClusterServiceBuilder(new ClusterServiceImpl(this));
 	}
 
-	public ClusterServiceInterface getService() {
-		return service;
+	public ClusterServiceBuilder getServiceBuilder() {
+		return serviceBuilder;
 	}
 
-	public boolean isGroup(String group) {
+	boolean isGroup(String group) {
 		if (group == null)
 			return true;
 		if (myGroups == null)
@@ -118,7 +116,7 @@ public class ClusterManager {
 		return myGroups.contains(group);
 	}
 
-	public boolean isLeader(final String group, final String service) throws ServerException {
+	boolean isLeader(final String group, final String service) throws ServerException {
 		SortedSet<String> nodes = clusterNodeMap.getGroupService(group, service);
 		if (nodes == null || nodes.isEmpty()) {
 			if (LOGGER.isWarnEnabled())
@@ -128,7 +126,7 @@ public class ClusterManager {
 		return me.httpAddressKey.equals(nodes.first());
 	}
 
-	final public ClusterStatusJson getStatus() {
+	final ClusterStatusJson getStatus() {
 		final Map<String, ClusterNode> nodesMap = clusterNodeMap.getNodesMap();
 		final TreeMap<String, ClusterNodeJson> nodesJsonMap = new TreeMap<>();
 		if (nodesMap != null) {
@@ -151,12 +149,12 @@ public class ClusterManager {
 				protocolListener.getLastExecutionDate());
 	}
 
-	final public Set<String> getNodes() {
+	final Set<String> getNodes() {
 		final Map<String, ClusterNode> nodesMap = clusterNodeMap.getNodesMap();
 		return nodesMap == null ? Collections.emptySet() : nodesMap.keySet();
 	}
 
-	final public TreeMap<String, ClusterServiceStatusJson.StatusEnum> getServicesStatus(final String group) {
+	final TreeMap<String, ClusterServiceStatusJson.StatusEnum> getServicesStatus(final String group) {
 		final TreeMap<String, ClusterServiceStatusJson.StatusEnum> servicesStatus = new TreeMap();
 		final Set<String> services = clusterNodeMap.getServices().keySet();
 		if (services == null || services.isEmpty())
@@ -169,12 +167,12 @@ public class ClusterManager {
 		return servicesStatus;
 	}
 
-	final public ClusterServiceStatusJson getServiceStatus(final String group, final String service) {
+	final ClusterServiceStatusJson getServiceStatus(final String group, final String service) {
 		final SortedSet<String> nodes = getNodesByGroupByService(group, service);
 		return nodes == null || nodes.isEmpty() ? new ClusterServiceStatusJson() : new ClusterServiceStatusJson(nodes);
 	}
 
-	final public SortedSet<String> getNodesByGroupByService(final String group, final String service) {
+	final SortedSet<String> getNodesByGroupByService(final String group, final String service) {
 		if (StringUtils.isEmpty(group))
 			return clusterNodeMap.getByService(service);
 		else if (StringUtils.isEmpty(service))
@@ -183,14 +181,14 @@ public class ClusterManager {
 			return clusterNodeMap.getGroupService(group, service);
 	}
 
-	final public String getLeaderNode(final String group, final String service) {
+	final String getLeaderNode(final String group, final String service) {
 		final SortedSet<String> nodes = getNodesByGroupByService(group, service);
 		if (nodes == null || nodes.isEmpty())
 			return null;
 		return nodes.first();
 	}
 
-	final public String getRandomNode(final String group, final String service) {
+	final String getRandomNode(final String group, final String service) {
 		final SortedSet<String> nodes = getNodesByGroupByService(group, service);
 		if (nodes == null || nodes.isEmpty())
 			return null;
@@ -204,7 +202,25 @@ public class ClusterManager {
 		}
 	}
 
-	public final String getHttpAddressKey() {
+	<T> T getService(final Collection<String> nodes, final ServiceBuilderInterface<T> builder)
+			throws URISyntaxException {
+		Objects.requireNonNull(builder, "No builder given");
+		Objects.requireNonNull(nodes, "No nodes given");
+		if (nodes.size() == 0)
+			throw new NullPointerException("No nodes given");
+		if (nodes.size() == 1)
+			return getService(nodes.iterator().next(), builder);
+		else
+			return builder.remotes(RemoteService.build(nodes));
+	}
+
+	<T> T getService(final String node, final ServiceBuilderInterface<T> builder) throws URISyntaxException {
+		Objects.requireNonNull(builder, "No builder given");
+		Objects.requireNonNull(node, "No node given");
+		return me.httpAddressKey.equals(node) ? builder.local() : builder.remote(new RemoteService(node));
+	}
+
+	final String getHttpAddressKey() {
 		return me.httpAddressKey;
 	}
 

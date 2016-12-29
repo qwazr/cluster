@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.qwazr.cluster.manager;
+package com.qwazr.cluster;
 
 import com.qwazr.utils.DatagramUtils;
 import com.qwazr.utils.StringUtils;

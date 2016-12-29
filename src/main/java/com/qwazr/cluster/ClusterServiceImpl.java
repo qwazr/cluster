@@ -13,23 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.qwazr.cluster.service;
+package com.qwazr.cluster;
 
-import com.qwazr.cluster.manager.ClusterManager;
 import com.qwazr.server.AbstractServiceImpl;
 import com.qwazr.server.ServerException;
 
 import javax.annotation.PostConstruct;
 import javax.ws.rs.core.Response.Status;
+import java.net.URISyntaxException;
+import java.util.Collection;
 import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-public class ClusterServiceImpl extends AbstractServiceImpl implements ClusterServiceInterface {
+class ClusterServiceImpl extends AbstractServiceImpl implements ClusterServiceInterface {
 
 	private ClusterManager manager;
 
-	public ClusterServiceImpl(final ClusterManager manager) {
+	ClusterServiceImpl(final ClusterManager manager) {
 		this.manager = manager;
 	}
 
@@ -61,40 +62,40 @@ public class ClusterServiceImpl extends AbstractServiceImpl implements ClusterSe
 	}
 
 	@Override
-	public SortedSet<String> getActiveNodesByService(String service_name, String group) {
-		if (service_name == null)
+	public SortedSet<String> getActiveNodesByService(final String serviceName, final String group) {
+		if (serviceName == null)
 			throw new ServerException(Status.NOT_ACCEPTABLE).getJsonException();
 		try {
-			return manager.getNodesByGroupByService(group, service_name);
+			return manager.getNodesByGroupByService(group, serviceName);
 		} catch (ServerException e) {
 			throw e.getJsonException();
 		}
 	}
 
 	@Override
-	public String getActiveNodeRandomByService(String service_name, String group) {
-		if (service_name == null)
+	public String getActiveNodeRandomByService(final String serviceName, final String group) {
+		if (serviceName == null)
 			throw new ServerException(Status.NOT_ACCEPTABLE).getJsonException();
 		try {
-			return manager.getRandomNode(group, service_name);
+			return manager.getRandomNode(group, serviceName);
 		} catch (ServerException e) {
 			throw e.getJsonException();
 		}
 	}
 
 	@Override
-	public String getActiveNodeLeaderByService(String service_name, String group) {
-		if (service_name == null)
+	public String getActiveNodeLeaderByService(final String serviceName, final String group) {
+		if (serviceName == null)
 			throw new ServerException(Status.NOT_ACCEPTABLE).getJsonException();
 		try {
-			return manager.getLeaderNode(group, service_name);
+			return manager.getLeaderNode(group, serviceName);
 		} catch (ServerException e) {
 			throw e.getJsonException();
 		}
 	}
 
 	@Override
-	public SortedMap<String, ClusterServiceStatusJson.StatusEnum> getServiceMap(String group) {
+	public SortedMap<String, ClusterServiceStatusJson.StatusEnum> getServiceMap(final String group) {
 		try {
 			return manager.getServicesStatus(group);
 		} catch (ServerException e) {
@@ -103,9 +104,29 @@ public class ClusterServiceImpl extends AbstractServiceImpl implements ClusterSe
 	}
 
 	@Override
-	public ClusterServiceStatusJson getServiceStatus(String service_name, String group) {
+	public ClusterServiceStatusJson getServiceStatus(final String serviceName, final String group) {
 		try {
-			return manager.getServiceStatus(group, service_name);
+			return manager.getServiceStatus(group, serviceName);
+		} catch (ServerException e) {
+			throw e.getJsonException();
+		}
+	}
+
+	@Override
+	public <T> T getService(final String nodeAddress, final ServiceBuilderInterface<T> builder)
+			throws URISyntaxException {
+		try {
+			return manager.getService(nodeAddress, builder);
+		} catch (ServerException e) {
+			throw e.getJsonException();
+		}
+	}
+
+	@Override
+	public <T> T getService(final Collection<String> nodeAddresses, final ServiceBuilderInterface<T> builder)
+			throws URISyntaxException {
+		try {
+			return manager.getService(nodeAddresses, builder);
 		} catch (ServerException e) {
 			throw e.getJsonException();
 		}

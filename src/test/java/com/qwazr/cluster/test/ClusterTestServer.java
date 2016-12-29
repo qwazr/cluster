@@ -17,7 +17,7 @@ package com.qwazr.cluster.test;
 
 import com.google.common.io.Files;
 import com.qwazr.cluster.ClusterServer;
-import com.qwazr.cluster.service.ClusterServiceInterface;
+import com.qwazr.cluster.ClusterServiceInterface;
 import com.qwazr.utils.StringUtils;
 import com.qwazr.server.RemoteService;
 
@@ -61,9 +61,9 @@ public class ClusterTestServer {
 		if (multicastPort != null)
 			env.put("MULTICAST_PORT", Integer.toString(multicastPort));
 
-		client = ClusterServiceInterface.getClient(new RemoteService(address));
-
 		server = new ClusterServer(env);
+
+		client = server.getClusterManager().getServiceBuilder().remote(new RemoteService(this.address));
 
 		servers.add(this);
 		serverAdresses.add(this.address);

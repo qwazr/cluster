@@ -15,7 +15,6 @@
  */
 package com.qwazr.cluster;
 
-import com.qwazr.cluster.manager.ClusterManager;
 import com.qwazr.server.BaseServer;
 import com.qwazr.server.GenericServer;
 import com.qwazr.server.WelcomeShutdownService;
@@ -44,12 +43,20 @@ public class ClusterServer implements BaseServer {
 		this(ServerConfiguration.of(properties).build());
 	}
 
+	public ClusterManager getClusterManager() {
+		return clusterManager;
+	}
+
 	@Override
 	public GenericServer getServer() {
 		return server;
 	}
 
 	private static volatile ClusterServer INSTANCE;
+
+	public static ClusterServer getInstance() {
+		return INSTANCE;
+	}
 
 	public static synchronized void main(final String... args)
 			throws IOException, ReflectiveOperationException, OperationsException, ServletException, MBeanException,

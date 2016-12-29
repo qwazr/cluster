@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.qwazr.cluster.service;
+package com.qwazr.cluster;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.qwazr.cluster.service.ClusterServiceStatusJson.StatusEnum;
 import com.qwazr.server.ServerException;
 
 import java.util.Date;
@@ -31,7 +30,7 @@ public class ClusterStatusJson {
 	public final String me;
 	public final String webapp;
 	public final TreeMap<String, TreeSet<String>> groups;
-	public final TreeMap<String, StatusEnum> services;
+	public final TreeMap<String, ClusterServiceStatusJson.StatusEnum> services;
 	public final Date last_keep_alive_execution;
 	public final TreeMap<String, ClusterNodeJson> active_nodes;
 	public final TreeSet<String> masters;

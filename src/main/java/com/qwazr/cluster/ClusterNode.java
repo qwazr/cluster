@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.qwazr.cluster.manager;
+package com.qwazr.cluster;
 
 import java.util.*;
 

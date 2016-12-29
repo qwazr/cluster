@@ -16,9 +16,10 @@
 package com.qwazr.cluster.test;
 
 import com.qwazr.cluster.ClusterServer;
-import com.qwazr.cluster.service.ClusterServiceInterface;
-import com.qwazr.cluster.service.ClusterServiceStatusJson;
-import com.qwazr.cluster.service.ClusterStatusJson;
+import com.qwazr.cluster.ClusterServiceBuilder;
+import com.qwazr.cluster.ClusterServiceInterface;
+import com.qwazr.cluster.ClusterServiceStatusJson;
+import com.qwazr.cluster.ClusterStatusJson;
 import com.qwazr.utils.StringUtils;
 import com.qwazr.utils.http.HttpClients;
 import com.qwazr.server.RemoteService;
@@ -43,12 +44,14 @@ public class AllTest {
 	private final static String ADDRESS = "http://localhost:9091";
 
 	private static ClusterServiceInterface client;
+	private static ClusterServiceBuilder serviceBuilder;
 
 	@Test
 	public void test00_startServer() throws Exception {
 		ClusterServer.main("--LISTEN_ADDR=localhost", "--PUBLIC_ADDR=localhost", "--WEBSERVICE_PORT:9091",
 				"--QWAZR_GROUPS=" + StringUtils.join(GROUPS, ","), "--QWAZR_MASTERS=localhost:9091");
-		client = ClusterServiceInterface.getClient(new RemoteService(ADDRESS));
+		serviceBuilder = ClusterServer.getInstance().getClusterManager().getServiceBuilder();
+		client = serviceBuilder.remote(new RemoteService(ADDRESS));
 	}
 
 	/**
@@ -153,6 +156,26 @@ public class AllTest {
 		Assert.assertEquals(ADDRESS, status.active_nodes.values().iterator().next().address);
 		Assert.assertEquals(1, status.masters.size());
 		Assert.assertEquals("http://localhost:9091", status.masters.first());
+	}
+
+	@Test
+	public void test50_getService() throws URISyntaxException {
+		ClusterServiceInterface local = serviceBuilder.local();
+		ClusterServiceInterface service =
+				local.getService(local.getActiveNodeLeaderByService(ClusterServiceInterface.SERVICE_NAME, null),
+						serviceBuilder);
+		Assert.assertNotNull(local);
+		Assert.assertEquals(local, service);
+	}
+
+	@Test
+	public void test51_getService() throws URISyntaxException {
+		ClusterServiceInterface local = serviceBuilder.local();
+		ClusterServiceInterface service =
+				local.getService(local.getActiveNodesByService(ClusterServiceInterface.SERVICE_NAME, null),
+						serviceBuilder);
+		Assert.assertNotNull(local);
+		Assert.assertEquals(local, service);
 	}
 
 	@Test
