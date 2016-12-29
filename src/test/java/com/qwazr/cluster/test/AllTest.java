@@ -166,7 +166,7 @@ public class AllTest {
 	public void test50_getService() throws URISyntaxException {
 		ClusterServiceInterface local = serviceBuilder.local();
 		ClusterServiceInterface service =
-				local.getService(local.getActiveNodeLeaderByService(ClusterServiceInterface.SERVICE_NAME, null),
+				local.getService(local.getActiveNodeLeaderByService(ClusterServiceInterface.SERVICE_NAME, GROUPS[0]),
 						serviceBuilder);
 		Assert.assertNotNull(local);
 		Assert.assertEquals(local, service);
@@ -176,10 +176,15 @@ public class AllTest {
 	public void test51_getService() throws URISyntaxException {
 		ClusterServiceInterface local = serviceBuilder.local();
 		ClusterServiceInterface service =
-				local.getService(local.getActiveNodesByService(ClusterServiceInterface.SERVICE_NAME, null),
+				local.getService(local.getActiveNodesByService(ClusterServiceInterface.SERVICE_NAME, GROUPS[0]),
 						serviceBuilder);
 		Assert.assertNotNull(local);
 		Assert.assertEquals(local, service);
+	}
+
+	@Test
+	public void test60_isLeader() {
+		Assert.assertTrue(serviceBuilder.local().isLeader(ClusterServiceInterface.SERVICE_NAME, GROUPS[0]));
 	}
 
 	@Test

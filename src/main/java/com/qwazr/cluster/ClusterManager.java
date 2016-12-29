@@ -120,7 +120,7 @@ public class ClusterManager {
 		return myGroups.contains(group);
 	}
 
-	boolean isLeader(final String group, final String service) throws ServerException {
+	boolean isLeader(final String service, final String group) throws ServerException {
 		SortedSet<String> nodes = clusterNodeMap.getGroupService(group, service);
 		if (nodes == null || nodes.isEmpty()) {
 			if (LOGGER.isWarnEnabled())
@@ -222,10 +222,6 @@ public class ClusterManager {
 		Objects.requireNonNull(builder, "No builder given");
 		Objects.requireNonNull(node, "No node given");
 		return me.httpAddressKey.equals(node) ? builder.local() : builder.remote(new RemoteService(node));
-	}
-
-	final String getHttpAddressKey() {
-		return me.httpAddressKey;
 	}
 
 	final boolean isMe(final AddressContent message) {
