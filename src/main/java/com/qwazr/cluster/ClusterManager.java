@@ -99,18 +99,14 @@ public class ClusterManager {
 		builder.shutdownListener(server -> protocolListener.leaveCluster());
 		builder.contextAttribute(this);
 
-		serviceBuilder = new ClusterServiceBuilder(new ClusterServiceImpl(this));
-	}
-
-	public ClusterServiceInterface getService() {
-		return serviceBuilder.local;
+		serviceBuilder = new ClusterServiceBuilder(this, new ClusterServiceImpl(this));
 	}
 
 	public ClusterServiceBuilder getServiceBuilder() {
 		return serviceBuilder;
 	}
 
-	boolean isGroup(String group) {
+	public boolean isGroup(String group) {
 		if (group == null)
 			return true;
 		if (myGroups == null)
@@ -120,7 +116,7 @@ public class ClusterManager {
 		return myGroups.contains(group);
 	}
 
-	boolean isLeader(final String service, final String group) throws ServerException {
+	public boolean isLeader(final String service, final String group) throws ServerException {
 		SortedSet<String> nodes = clusterNodeMap.getGroupService(group, service);
 		if (nodes == null || nodes.isEmpty()) {
 			if (LOGGER.isWarnEnabled())
@@ -206,6 +202,14 @@ public class ClusterManager {
 		}
 	}
 
+	/**
+	 * Return a service client
+	 *
+	 * @param nodes   the address list of the nodes
+	 * @param builder the builder interface for the given service
+	 * @return a script service client
+	 * @throws URISyntaxException
+	 */
 	<T> T getService(final Collection<String> nodes, final ServiceBuilderInterface<T> builder)
 			throws URISyntaxException {
 		Objects.requireNonNull(builder, "No builder given");
@@ -218,6 +222,14 @@ public class ClusterManager {
 			return builder.remotes(RemoteService.build(nodes));
 	}
 
+	/**
+	 * Return a service client
+	 *
+	 * @param node    the address of the node.
+	 * @param builder the builder interface for the given service
+	 * @return a script service client
+	 * @throws URISyntaxException
+	 */
 	<T> T getService(final String node, final ServiceBuilderInterface<T> builder) throws URISyntaxException {
 		Objects.requireNonNull(builder, "No builder given");
 		Objects.requireNonNull(node, "No node given");

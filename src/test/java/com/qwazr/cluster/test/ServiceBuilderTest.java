@@ -15,40 +15,32 @@
  */
 package com.qwazr.cluster.test;
 
-import com.qwazr.cluster.ServiceBuilderInterface;
+import com.qwazr.cluster.ClusterServiceBuilder;
+import com.qwazr.server.RemoteService;
 import org.apache.commons.lang3.NotImplementedException;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.net.URISyntaxException;
+
 public class ServiceBuilderTest {
 
-	static ServiceBuilderInterface<Object> builder;
+	static ClusterServiceBuilder builder;
 
 	@BeforeClass
 	public static void before() {
-		builder = new ServiceBuilderInterface<Object>() {
-		};
+		builder = new ClusterServiceBuilder();
 	}
 
 	@Test
 	public void local() {
-		try {
-			builder.local();
-			Assert.fail("NotImplementedException not thrown");
-		} catch (NotImplementedException e) {
-			//OK
-		}
+		Assert.assertNull(builder.local());
 	}
 
 	@Test
-	public void remote() {
-		try {
-			builder.remote(null);
-			Assert.fail("NotImplementedException not thrown");
-		} catch (NotImplementedException e) {
-			//OK
-		}
+	public void remote() throws URISyntaxException {
+		Assert.assertNotNull(builder.remote(new RemoteService("http://localhost:9091")));
 	}
 
 	@Test

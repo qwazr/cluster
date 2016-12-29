@@ -20,8 +20,6 @@ import com.qwazr.server.ServerException;
 
 import javax.annotation.PostConstruct;
 import javax.ws.rs.core.Response.Status;
-import java.net.URISyntaxException;
-import java.util.Collection;
 import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -110,36 +108,6 @@ class ClusterServiceImpl extends AbstractServiceImpl implements ClusterServiceIn
 		} catch (ServerException e) {
 			throw e.getJsonException();
 		}
-	}
-
-	@Override
-	public <T> T getService(final String nodeAddress, final ServiceBuilderInterface<T> builder)
-			throws URISyntaxException {
-		try {
-			return manager.getService(nodeAddress, builder);
-		} catch (ServerException e) {
-			throw e.getJsonException();
-		}
-	}
-
-	@Override
-	public <T> T getService(final Collection<String> nodeAddresses, final ServiceBuilderInterface<T> builder)
-			throws URISyntaxException {
-		try {
-			return manager.getService(nodeAddresses, builder);
-		} catch (ServerException e) {
-			throw e.getJsonException();
-		}
-	}
-
-	@Override
-	public boolean isLeader(final String serviceName, final String group) {
-		return manager.isLeader(serviceName, group);
-	}
-
-	@Override
-	public boolean isGroup(final String group) {
-		return manager.isGroup(group);
 	}
 
 }

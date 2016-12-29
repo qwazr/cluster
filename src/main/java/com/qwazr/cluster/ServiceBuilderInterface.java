@@ -18,7 +18,20 @@ package com.qwazr.cluster;
 import com.qwazr.server.RemoteService;
 import org.apache.commons.lang3.NotImplementedException;
 
+import java.net.URISyntaxException;
+import java.util.Collection;
+
 public interface ServiceBuilderInterface<T> {
+
+	T getService(String node) throws URISyntaxException;
+
+	T getService(Collection<String> nodes) throws URISyntaxException;
+
+	T getActive(String group) throws URISyntaxException;
+
+	T getRandom(String group) throws URISyntaxException;
+
+	T getLeader(String group) throws URISyntaxException;
 
 	default T local() {
 		throw new NotImplementedException("No local service");

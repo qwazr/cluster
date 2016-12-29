@@ -46,15 +46,16 @@ public class AllTest {
 
 	private static ClusterServiceInterface client;
 	private static ClusterServiceBuilder serviceBuilder;
+	private static ClusterManager clusterManager;
 
 	@Test
 	public void test00_startServer() throws Exception {
 		ClusterServer.main("--LISTEN_ADDR=localhost", "--PUBLIC_ADDR=localhost", "--WEBSERVICE_PORT:9091",
 				"--QWAZR_GROUPS=" + StringUtils.join(GROUPS, ","), "--QWAZR_MASTERS=localhost:9091");
-		ClusterManager clusterManager = ClusterServer.getInstance().getClusterManager();
+		clusterManager = ClusterServer.getInstance().getClusterManager();
 		Assert.assertNotNull(clusterManager);
-		Assert.assertNotNull(clusterManager.getService());
 		serviceBuilder = clusterManager.getServiceBuilder();
+		Assert.assertNotNull(serviceBuilder);
 		client = serviceBuilder.remote(new RemoteService(ADDRESS));
 	}
 
@@ -163,34 +164,38 @@ public class AllTest {
 	}
 
 	@Test
-	public void test50_getService() throws URISyntaxException {
+	public void test50_getActive() throws URISyntaxException {
 		ClusterServiceInterface local = serviceBuilder.local();
-		ClusterServiceInterface service =
-				local.getService(local.getActiveNodeLeaderByService(ClusterServiceInterface.SERVICE_NAME, GROUPS[0]),
-						serviceBuilder);
+		ClusterServiceInterface service = serviceBuilder.getActive(GROUPS[0]);
 		Assert.assertNotNull(local);
 		Assert.assertEquals(local, service);
 	}
 
 	@Test
-	public void test51_getService() throws URISyntaxException {
+	public void test51_getRandom() throws URISyntaxException {
 		ClusterServiceInterface local = serviceBuilder.local();
-		ClusterServiceInterface service =
-				local.getService(local.getActiveNodesByService(ClusterServiceInterface.SERVICE_NAME, GROUPS[0]),
-						serviceBuilder);
+		ClusterServiceInterface service = serviceBuilder.getRandom(GROUPS[0]);
+		Assert.assertNotNull(local);
+		Assert.assertEquals(local, service);
+	}
+
+	@Test
+	public void test52_getLeader() throws URISyntaxException {
+		ClusterServiceInterface local = serviceBuilder.local();
+		ClusterServiceInterface service = serviceBuilder.getLeader(GROUPS[0]);
 		Assert.assertNotNull(local);
 		Assert.assertEquals(local, service);
 	}
 
 	@Test
 	public void test60_isLeader() {
-		Assert.assertTrue(serviceBuilder.local().isLeader(ClusterServiceInterface.SERVICE_NAME, GROUPS[0]));
+		Assert.assertTrue(clusterManager.isLeader(ClusterServiceInterface.SERVICE_NAME, GROUPS[0]));
 	}
 
 	@Test
-	public void test62_isLeader() {
-		Assert.assertTrue(serviceBuilder.local().isGroup(GROUPS[0]));
-		Assert.assertTrue(serviceBuilder.local().isGroup(GROUPS[1]));
+	public void test62_isGroup() {
+		Assert.assertTrue(clusterManager.isGroup(GROUPS[0]));
+		Assert.assertTrue(clusterManager.isGroup(GROUPS[1]));
 	}
 
 	@Test

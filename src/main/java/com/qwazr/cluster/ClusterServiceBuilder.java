@@ -17,21 +17,18 @@ package com.qwazr.cluster;
 
 import com.qwazr.server.RemoteService;
 
-public class ClusterServiceBuilder implements ServiceBuilderInterface<ClusterServiceInterface> {
+public class ClusterServiceBuilder extends ServiceBuilderAbstract<ClusterServiceInterface> {
 
-	final ClusterServiceImpl local;
+	ClusterServiceBuilder(final ClusterManager clusterManager, final ClusterServiceImpl local) {
+		super(clusterManager, ClusterServiceInterface.SERVICE_NAME, clusterManager == null ? null : local);
+	}
 
-	ClusterServiceBuilder(final ClusterServiceImpl local) {
-		this.local = local;
+	public ClusterServiceBuilder() {
+		this(null, null);
 	}
 
 	@Override
-	public ClusterServiceInterface local() {
-		return local;
-	}
-
-	@Override
-	public ClusterServiceInterface remote(final RemoteService remote) {
+	final public ClusterServiceInterface remote(final RemoteService remote) {
 		return new ClusterSingleClient(remote);
 	}
 
