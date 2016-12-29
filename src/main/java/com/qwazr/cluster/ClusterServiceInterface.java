@@ -104,7 +104,11 @@ public interface ClusterServiceInterface extends ServiceInterface {
 	}
 
 	default boolean isLeader(final String serviceName, final String group) {
-		throw new NotImplementedException("GetService is not implemented");
+		throw new NotImplementedException("isLeader is not implemented");
+	}
+
+	default boolean isGroup(final String group) {
+		throw new NotImplementedException("isGroup is not implemented");
 	}
 
 }

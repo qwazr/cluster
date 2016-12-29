@@ -137,4 +137,9 @@ class ClusterServiceImpl extends AbstractServiceImpl implements ClusterServiceIn
 		return manager.isLeader(serviceName, group);
 	}
 
+	@Override
+	public boolean isGroup(final String group) {
+		return manager.isGroup(group);
+	}
+
 }

@@ -188,6 +188,12 @@ public class AllTest {
 	}
 
 	@Test
+	public void test62_isLeader() {
+		Assert.assertTrue(serviceBuilder.local().isGroup(GROUPS[0]));
+		Assert.assertTrue(serviceBuilder.local().isGroup(GROUPS[1]));
+	}
+
+	@Test
 	public void testZZZhttpClient() {
 		Assert.assertEquals(0, HttpClients.CNX_MANAGER.getTotalStats().getLeased());
 		Assert.assertEquals(0, HttpClients.CNX_MANAGER.getTotalStats().getPending());
