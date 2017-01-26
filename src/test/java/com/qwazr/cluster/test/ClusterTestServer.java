@@ -63,7 +63,7 @@ public class ClusterTestServer {
 
 		server = new ClusterServer(env);
 
-		client = server.getClusterManager().getServiceBuilder().remote(new RemoteService(this.address));
+		client = server.getClusterManager().getServiceBuilder().remote(RemoteService.of(this.address).build());
 
 		servers.add(this);
 		serverAdresses.add(this.address);

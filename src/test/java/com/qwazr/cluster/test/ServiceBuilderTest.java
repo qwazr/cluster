@@ -40,7 +40,7 @@ public class ServiceBuilderTest {
 
 	@Test
 	public void remote() throws URISyntaxException {
-		Assert.assertNotNull(builder.remote(new RemoteService("http://localhost:9091")));
+		Assert.assertNotNull(builder.remote(RemoteService.of("http://localhost:9091").build()));
 	}
 
 	@Test

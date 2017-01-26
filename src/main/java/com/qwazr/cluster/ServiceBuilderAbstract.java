@@ -42,7 +42,7 @@ public class ServiceBuilderAbstract<T> implements ServiceBuilderInterface<T> {
 			return null;
 		if (local != null && clusterManager != null && node.equals(clusterManager.me.httpAddressKey))
 			return local;
-		return remote(new RemoteService(node));
+		return remote(RemoteService.of(node).build());
 	}
 
 	@Override

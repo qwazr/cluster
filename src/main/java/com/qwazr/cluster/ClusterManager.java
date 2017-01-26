@@ -233,7 +233,7 @@ public class ClusterManager {
 	<T> T getService(final String node, final ServiceBuilderInterface<T> builder) throws URISyntaxException {
 		Objects.requireNonNull(builder, "No builder given");
 		Objects.requireNonNull(node, "No node given");
-		return me.httpAddressKey.equals(node) ? builder.local() : builder.remote(new RemoteService(node));
+		return me.httpAddressKey.equals(node) ? builder.local() : builder.remote(RemoteService.of(node).build());
 	}
 
 	final boolean isMe(final AddressContent message) {

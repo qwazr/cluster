@@ -56,7 +56,7 @@ public class AllTest {
 		Assert.assertNotNull(clusterManager);
 		serviceBuilder = clusterManager.getServiceBuilder();
 		Assert.assertNotNull(serviceBuilder);
-		client = serviceBuilder.remote(new RemoteService(ADDRESS));
+		client = serviceBuilder.remote(RemoteService.of(ADDRESS).build());
 	}
 
 	/**
