@@ -22,6 +22,7 @@ import com.qwazr.server.configuration.ServerConfiguration;
 import com.qwazr.utils.ArrayUtils;
 import com.qwazr.utils.HashUtils;
 import com.qwazr.utils.StringUtils;
+import com.qwazr.utils.http.HttpClients;
 import org.apache.commons.lang3.RandomUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +39,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
 
 public class ClusterManager {
 
@@ -60,7 +62,12 @@ public class ClusterManager {
 
 	private final ClusterServiceBuilder serviceBuilder;
 
-	public ClusterManager(final GenericServer.Builder builder) throws URISyntaxException, UnknownHostException {
+	public ClusterManager(final GenericServer.Builder builder, final ExecutorService executorService)
+			throws URISyntaxException, UnknownHostException {
+
+		final HttpClients.IdleConnectionMonitorThread monitorThread = HttpClients.getNewMonitorThread(5000, 120000);
+		builder.shutdownListener(server -> monitorThread.shutdown());
+		executorService.submit(monitorThread);
 
 		final ServerConfiguration configuration = builder.getConfiguration();
 
@@ -90,13 +97,16 @@ public class ClusterManager {
 		else
 			protocolListener = new DatagramListener(this);
 
+		//builder.shutdownListener(server -> protocolListener.shutdown());
+
 		builder.webService(ClusterServiceImpl.class);
 		builder.packetListener(protocolListener);
 		builder.startedListener(server -> {
 			protocolListener.joinCluster(server.getWebServiceNames());
-			protocolListener.start();
 		});
 		builder.shutdownListener(server -> protocolListener.leaveCluster());
+		builder.shutdownListener(server -> protocolListener.shutdown());
+		executorService.submit(protocolListener);
 		builder.contextAttribute(this);
 
 		serviceBuilder = new ClusterServiceBuilder(this, new ClusterServiceImpl(this));

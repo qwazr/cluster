@@ -26,6 +26,8 @@ import javax.servlet.ServletException;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ClusterServer implements BaseServer {
 
@@ -33,9 +35,10 @@ public class ClusterServer implements BaseServer {
 	private final ClusterManager clusterManager;
 
 	private ClusterServer(final ServerConfiguration serverConfiguration) throws IOException, URISyntaxException {
+		final ExecutorService executorService = Executors.newCachedThreadPool();
 		final GenericServer.Builder builder =
-				GenericServer.of(serverConfiguration, null).webService(WelcomeShutdownService.class);
-		clusterManager = new ClusterManager(builder);
+				GenericServer.of(serverConfiguration, executorService).webService(WelcomeShutdownService.class);
+		clusterManager = new ClusterManager(builder, executorService);
 		server = builder.build();
 	}
 
