@@ -62,15 +62,12 @@ public class ClusterManager {
 
 	private final ClusterServiceBuilder serviceBuilder;
 
-	public ClusterManager(final GenericServer.Builder builder, final ExecutorService executorService)
+	private final ExecutorService executorService;
+
+	public ClusterManager(final ExecutorService executorService, final ServerConfiguration configuration)
 			throws URISyntaxException, UnknownHostException {
 
-		final HttpClients.IdleConnectionMonitorThread monitorThread = HttpClients.getNewMonitorThread(5000, 120000);
-		builder.shutdownListener(server -> monitorThread.shutdown());
-		executorService.submit(monitorThread);
-
-		final ServerConfiguration configuration = builder.getConfiguration();
-
+		this.executorService = executorService;
 		this.nodeLiveId = HashUtils.newTimeBasedUUID();
 
 		me = new ClusterNodeAddress(configuration.webServiceConnector.addressPort,
@@ -97,9 +94,10 @@ public class ClusterManager {
 		else
 			protocolListener = new DatagramListener(this);
 
-		//builder.shutdownListener(server -> protocolListener.shutdown());
+		serviceBuilder = new ClusterServiceBuilder(this, new ClusterServiceImpl(this));
+	}
 
-		builder.webService(ClusterServiceImpl.class);
+	public ClusterManager registerProtocolListener(final GenericServer.Builder builder) {
 		builder.packetListener(protocolListener);
 		builder.startedListener(server -> {
 			protocolListener.joinCluster(server.getWebServiceNames());
@@ -107,9 +105,25 @@ public class ClusterManager {
 		builder.shutdownListener(server -> protocolListener.leaveCluster());
 		builder.shutdownListener(server -> protocolListener.shutdown());
 		executorService.submit(protocolListener);
-		builder.contextAttribute(this);
+		return this;
+	}
 
-		serviceBuilder = new ClusterServiceBuilder(this, new ClusterServiceImpl(this));
+	public ClusterManager registerWebService(final GenericServer.Builder builder) {
+		registerContextAttribute(builder);
+		builder.webService(ClusterServiceImpl.class);
+		return this;
+	}
+
+	public ClusterManager registerHttpClientMonitoringThread(final GenericServer.Builder builder) {
+		final HttpClients.IdleConnectionMonitorThread monitorThread = HttpClients.getNewMonitorThread(5000, 120000);
+		builder.shutdownListener(server -> monitorThread.shutdown());
+		executorService.submit(monitorThread);
+		return this;
+	}
+
+	public ClusterManager registerContextAttribute(final GenericServer.Builder builder) {
+		builder.contextAttribute(this);
+		return this;
 	}
 
 	public ClusterServiceBuilder getServiceBuilder() {

@@ -38,7 +38,10 @@ public class ClusterServer implements BaseServer {
 		final ExecutorService executorService = Executors.newCachedThreadPool();
 		final GenericServer.Builder builder =
 				GenericServer.of(serverConfiguration, executorService).webService(WelcomeShutdownService.class);
-		clusterManager = new ClusterManager(builder, executorService);
+		clusterManager =
+				new ClusterManager(executorService, serverConfiguration).registerHttpClientMonitoringThread(builder)
+						.registerProtocolListener(builder)
+						.registerWebService(builder);
 		server = builder.build();
 	}
 
