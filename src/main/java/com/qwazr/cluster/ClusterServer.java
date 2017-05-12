@@ -20,8 +20,7 @@ import com.qwazr.server.GenericServer;
 import com.qwazr.server.WelcomeShutdownService;
 import com.qwazr.server.configuration.ServerConfiguration;
 
-import javax.management.MBeanException;
-import javax.management.OperationsException;
+import javax.management.JMException;
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -37,7 +36,7 @@ public class ClusterServer implements BaseServer {
 	private ClusterServer(final ServerConfiguration serverConfiguration) throws IOException, URISyntaxException {
 		final ExecutorService executorService = Executors.newCachedThreadPool();
 		final GenericServer.Builder builder =
-				GenericServer.of(serverConfiguration, executorService).webService(WelcomeShutdownService.class);
+				GenericServer.of(serverConfiguration, executorService).singletons(new WelcomeShutdownService());
 		clusterManager =
 				new ClusterManager(executorService, serverConfiguration).registerHttpClientMonitoringThread(builder)
 						.registerProtocolListener(builder)
@@ -65,8 +64,8 @@ public class ClusterServer implements BaseServer {
 	}
 
 	public static synchronized void main(final String... args)
-			throws IOException, ReflectiveOperationException, OperationsException, ServletException, MBeanException,
-			URISyntaxException, InterruptedException {
+			throws IOException, ReflectiveOperationException, ServletException, JMException, URISyntaxException,
+			InterruptedException {
 		shutdown();
 		INSTANCE = new ClusterServer(new ServerConfiguration(args));
 		INSTANCE.start();

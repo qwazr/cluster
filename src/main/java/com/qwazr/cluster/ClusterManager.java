@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 Emmanuel Keller / QWAZR
+ * Copyright 2015-2017 Emmanuel Keller / QWAZR
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,6 +64,8 @@ public class ClusterManager {
 
 	private final ExecutorService executorService;
 
+	private final ClusterServiceImpl service;
+
 	public ClusterManager(final ExecutorService executorService, final ServerConfiguration configuration)
 			throws URISyntaxException, UnknownHostException {
 
@@ -94,13 +96,14 @@ public class ClusterManager {
 		else
 			protocolListener = new DatagramListener(this);
 
-		serviceBuilder = new ClusterServiceBuilder(this, new ClusterServiceImpl(this));
+		service = new ClusterServiceImpl(this);
+		serviceBuilder = new ClusterServiceBuilder(this, service);
 	}
 
 	public ClusterManager registerProtocolListener(final GenericServer.Builder builder) {
 		builder.packetListener(protocolListener);
 		builder.startedListener(server -> {
-			protocolListener.joinCluster(server.getWebServiceNames());
+			protocolListener.joinCluster(server.getSingletonsMap().keySet());
 		});
 		builder.shutdownListener(server -> protocolListener.leaveCluster());
 		builder.shutdownListener(server -> protocolListener.shutdown());
@@ -110,7 +113,7 @@ public class ClusterManager {
 
 	public ClusterManager registerWebService(final GenericServer.Builder builder) {
 		registerContextAttribute(builder);
-		builder.webService(ClusterServiceImpl.class);
+		builder.singletons(service);
 		return this;
 	}
 
