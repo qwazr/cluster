@@ -143,12 +143,12 @@ public class AllTest {
 	public void test35_get_service_map() throws URISyntaxException {
 		Map<String, ClusterServiceStatusJson.StatusEnum> result = client.getServiceMap(null);
 		Assert.assertNotNull(result);
-		Assert.assertEquals(2, result.size());
+		Assert.assertEquals(1, result.size());
 		Assert.assertEquals(ClusterServiceStatusJson.StatusEnum.ok, result.get("cluster"));
 		for (String group : GROUPS) {
 			result = client.getServiceMap(group);
 			Assert.assertNotNull(result);
-			Assert.assertEquals(2, result.size());
+			Assert.assertEquals(1, result.size());
 			Assert.assertEquals(ClusterServiceStatusJson.StatusEnum.ok, result.get("cluster"));
 		}
 	}

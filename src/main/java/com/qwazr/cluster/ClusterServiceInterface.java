@@ -16,7 +16,6 @@
 package com.qwazr.cluster;
 
 import com.qwazr.server.ServiceInterface;
-import com.qwazr.server.ServiceName;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.GET;
@@ -30,7 +29,6 @@ import java.util.SortedSet;
 
 @RolesAllowed(ClusterServiceInterface.SERVICE_NAME)
 @Path("/" + ClusterServiceInterface.SERVICE_NAME)
-@ServiceName(ClusterServiceInterface.SERVICE_NAME)
 public interface ClusterServiceInterface extends ServiceInterface {
 
 	String SERVICE_NAME = "cluster";

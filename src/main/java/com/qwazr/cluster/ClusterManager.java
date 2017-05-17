@@ -15,6 +15,7 @@
  */
 package com.qwazr.cluster;
 
+import com.qwazr.server.ApplicationBuilder;
 import com.qwazr.server.GenericServer;
 import com.qwazr.server.RemoteService;
 import com.qwazr.server.ServerException;
@@ -79,7 +80,7 @@ public class ClusterManager {
 		if (LOGGER.isInfoEnabled())
 			LOGGER.info("Server: " + me.httpAddressKey + " Groups: " + ArrayUtils.prettyPrint(configuration.groups));
 		this.myGroups = configuration.groups != null ? new HashSet<>(configuration.groups) : null;
-		this.myServices = new HashSet<>(); // Will be filled later using server hook
+		this.myServices = new HashSet<>();
 		if (configuration.masters != null && !configuration.masters.isEmpty()) {
 			this.masters = new HashSet<>();
 			configuration.masters.forEach(master -> this.masters.add(
@@ -100,20 +101,14 @@ public class ClusterManager {
 		serviceBuilder = new ClusterServiceBuilder(this, service);
 	}
 
-	public ClusterManager registerProtocolListener(final GenericServer.Builder builder) {
+	public ClusterManager registerProtocolListener(final GenericServer.Builder builder, final Set<String> services) {
 		builder.packetListener(protocolListener);
 		builder.startedListener(server -> {
-			protocolListener.joinCluster(server.getSingletonsMap().keySet());
+			protocolListener.joinCluster(services);
 		});
 		builder.shutdownListener(server -> protocolListener.leaveCluster());
 		builder.shutdownListener(server -> protocolListener.shutdown());
 		executorService.submit(protocolListener);
-		return this;
-	}
-
-	public ClusterManager registerWebService(final GenericServer.Builder builder) {
-		registerContextAttribute(builder);
-		builder.singletons(service);
 		return this;
 	}
 
@@ -126,6 +121,11 @@ public class ClusterManager {
 
 	public ClusterManager registerContextAttribute(final GenericServer.Builder builder) {
 		builder.contextAttribute(this);
+		return this;
+	}
+
+	public ClusterManager registerWebService(final ApplicationBuilder builder) {
+		builder.singletons(service);
 		return this;
 	}
 
@@ -182,7 +182,7 @@ public class ClusterManager {
 	}
 
 	final TreeMap<String, ClusterServiceStatusJson.StatusEnum> getServicesStatus(final String group) {
-		final TreeMap<String, ClusterServiceStatusJson.StatusEnum> servicesStatus = new TreeMap();
+		final TreeMap<String, ClusterServiceStatusJson.StatusEnum> servicesStatus = new TreeMap<>();
 		final Set<String> services = clusterNodeMap.getServices().keySet();
 		if (services == null || services.isEmpty())
 			return servicesStatus;
