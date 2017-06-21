@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2015-2017 Emmanuel Keller / QWAZR
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,11 +22,10 @@ import com.qwazr.server.ServerException;
 import com.qwazr.server.configuration.ServerConfiguration;
 import com.qwazr.utils.ArrayUtils;
 import com.qwazr.utils.HashUtils;
+import com.qwazr.utils.LoggerUtils;
 import com.qwazr.utils.StringUtils;
 import com.qwazr.utils.http.HttpClients;
 import org.apache.commons.lang3.RandomUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
@@ -41,10 +40,11 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
+import java.util.logging.Logger;
 
 public class ClusterManager {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(ClusterManager.class);
+	private static final Logger LOGGER = LoggerUtils.getLogger(ClusterManager.class);
 
 	final ClusterNodeMap clusterNodeMap;
 
@@ -77,8 +77,7 @@ public class ClusterManager {
 				configuration.webServiceConnector.port);
 		webApp = new ClusterNodeAddress(configuration.webAppConnector.addressPort, configuration.webAppConnector.port);
 
-		if (LOGGER.isInfoEnabled())
-			LOGGER.info("Server: " + me.httpAddressKey + " Groups: " + ArrayUtils.prettyPrint(configuration.groups));
+		LOGGER.info(() -> "Server: " + me.httpAddressKey + " Groups: " + ArrayUtils.prettyPrint(configuration.groups));
 		this.myGroups = configuration.groups != null ? new HashSet<>(configuration.groups) : null;
 		this.myServices = new HashSet<>();
 		if (configuration.masters != null && !configuration.masters.isEmpty()) {
@@ -146,8 +145,7 @@ public class ClusterManager {
 	public boolean isLeader(final String service, final String group) throws ServerException {
 		SortedSet<String> nodes = clusterNodeMap.getGroupService(group, service);
 		if (nodes == null || nodes.isEmpty()) {
-			if (LOGGER.isWarnEnabled())
-				LOGGER.warn("No node available for this service/group: " + service + '/' + group);
+			LOGGER.warning(() -> "No node available for this service/group: " + service + '/' + group);
 			return false;
 		}
 		return me.httpAddressKey.equals(nodes.first());
@@ -165,9 +163,8 @@ public class ClusterManager {
 					timeToLive = (int) ((expirationTimeMs - currentMs) / 1000);
 				else
 					timeToLive = null;
-				final ClusterNodeJson clusterNodeJson =
-						new ClusterNodeJson(clusterNode.address.httpAddressKey, clusterNode.nodeLiveId, timeToLive,
-								clusterNode.groups, clusterNode.services);
+				final ClusterNodeJson clusterNodeJson = new ClusterNodeJson(clusterNode.address.httpAddressKey,
+						clusterNode.nodeLiveId, timeToLive, clusterNode.groups, clusterNode.services);
 				nodesJsonMap.put(address, clusterNodeJson);
 			});
 		}

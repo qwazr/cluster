@@ -22,23 +22,23 @@ import com.qwazr.cluster.ClusterServiceInterface;
 import com.qwazr.cluster.ClusterServiceStatusJson;
 import com.qwazr.cluster.ClusterStatusJson;
 import com.qwazr.server.RemoteService;
+import com.qwazr.utils.LoggerUtils;
 import com.qwazr.utils.StringUtils;
 import com.qwazr.utils.http.HttpClients;
 import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AllTest {
 
-	private static final Logger logger = LoggerFactory.getLogger(AllTest.class);
+	private static final Logger logger = LoggerUtils.getLogger(AllTest.class);
 
 	private final static String[] GROUPS = { "group1", "group2" };
 

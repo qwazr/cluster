@@ -1,5 +1,5 @@
-/**
- * Copyright 2014-2016 Emmanuel Keller / QWAZR
+/*
+ * Copyright 2015-2017 Emmanuel Keller / QWAZR
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,11 +48,11 @@ public class ClusterServer implements BaseServer {
 		final Set<String> services = new HashSet<>();
 		services.add(ClusterServiceInterface.SERVICE_NAME);
 
-		clusterManager =
-				new ClusterManager(executorService, serverConfiguration).registerHttpClientMonitoringThread(builder)
-						.registerProtocolListener(builder, services)
-						.registerContextAttribute(builder)
-						.registerWebService(webServices);
+		clusterManager = new ClusterManager(executorService, serverConfiguration).registerHttpClientMonitoringThread(
+				builder)
+				.registerProtocolListener(builder, services)
+				.registerContextAttribute(builder)
+				.registerWebService(webServices);
 
 		builder.getWebServiceContext().jaxrs(webServices);
 		server = builder.build();

@@ -1,5 +1,5 @@
-/**
- * Copyright 2014-2016 Emmanuel Keller / QWAZR
+/*
+ * Copyright 2015-2017 Emmanuel Keller / QWAZR
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,23 +15,34 @@
  */
 package com.qwazr.cluster;
 
-import com.qwazr.utils.LockUtils.ReadWriteLock;
+import com.qwazr.utils.LoggerUtils;
 import com.qwazr.utils.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.qwazr.utils.concurrent.ReadWriteLock;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.UUID;
+import java.util.logging.Logger;
 
 class ClusterNodeMap {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(ClusterNodeMap.class);
+	private static final Logger LOGGER = LoggerUtils.getLogger(ClusterNodeMap.class);
 
 	private final ClusterManager clusterManager;
 	private final InetSocketAddress myAddress;
 
-	private final ReadWriteLock readWriteLock = new ReadWriteLock();
+	private final ReadWriteLock readWriteLock = ReadWriteLock.stamped();
 
 	private final HashMap<String, ClusterNode> nodesMap;
 	private final HashMap<String, HashSet<String>> groupsMap;
@@ -250,11 +261,10 @@ class ClusterNodeMap {
 	 * @param address the node to unregister
 	 */
 	private void unregisterAll(final String address) {
-		if (LOGGER.isInfoEnabled())
-			LOGGER.info("Unregister " + address + " from " + myAddress);
+		LOGGER.info(() -> "Unregister " + address + " from " + myAddress);
 		final ClusterNode clusterNode = nodesMap.get(address);
-		final ClusterNodeAddress nodeAddress =
-				clusterNode != null ? clusterNode.address : new ClusterNodeAddress(address, 9091);
+		final ClusterNodeAddress nodeAddress = clusterNode != null ? clusterNode.address : new ClusterNodeAddress(
+				address, 9091);
 		if (clusterNode != null) {
 			clusterNode.registerGroups(Collections.emptyList());
 			clusterNode.registerServices(Collections.emptyList());

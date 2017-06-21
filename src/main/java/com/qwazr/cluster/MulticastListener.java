@@ -1,5 +1,5 @@
-/**
- * Copyright 2015-2016 Emmanuel Keller / QWAZR
+/*
+ * Copyright 2015-2017 Emmanuel Keller / QWAZR
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,8 @@
  */
 package com.qwazr.cluster;
 
+import com.qwazr.utils.LoggerUtils;
 import com.qwazr.utils.SerializationUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -25,27 +24,27 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.URISyntaxException;
 import java.util.Collection;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 class MulticastListener extends ProtocolListener {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(MulticastListener.class);
+	private static final Logger LOGGER = LoggerUtils.getLogger(MulticastListener.class);
 
 	private final SocketAddress multicastSocketAddress;
 
 	MulticastListener(final ClusterManager manager, final String multicastAddress, final Integer multicastPort) {
 		super(manager);
 		multicastSocketAddress = new InetSocketAddress(multicastAddress, multicastPort);
-		if (LOGGER.isInfoEnabled())
-			LOGGER.info("Start multicast listener: " + multicastSocketAddress);
+		LOGGER.info(() -> "Start multicast listener: " + multicastSocketAddress);
 	}
 
 	@Override
 	final public void acceptPacket(final DatagramPacket datagramPacket)
 			throws IOException, ReflectiveOperationException, URISyntaxException {
 		final MessageContent message = SerializationUtils.fromDefaultCompressedBytes(datagramPacket.getData());
-		if (LOGGER.isTraceEnabled())
-			LOGGER.trace(manager.me.httpAddressKey + " MULTICASTPACKET FROM: " + datagramPacket.getAddress() + " "
-					+ message.getCommand() + " " + message.getContent());
+		LOGGER.finest(() -> manager.me.httpAddressKey + " MULTICASTPACKET FROM: " + datagramPacket.getAddress() + " " +
+				message.getCommand() + " " + message.getContent());
 		switch (message.getCommand()) {
 		case join:
 			registerNode(message.getContent());
@@ -67,7 +66,7 @@ class MulticastListener extends ProtocolListener {
 			ClusterProtocol.newJoin(manager.me.httpAddressKey, manager.nodeLiveId, manager.myGroups, manager.myServices)
 					.send(multicastSocketAddress);
 		} catch (IOException e) {
-			LOGGER.error("Unable to reach " + multicastSocketAddress, e);
+			LOGGER.log(Level.SEVERE, e, () -> "Unable to reach " + multicastSocketAddress);
 		}
 	}
 
@@ -75,7 +74,7 @@ class MulticastListener extends ProtocolListener {
 		try {
 			ClusterProtocol.newLeave(manager.me.httpAddressKey, manager.nodeLiveId).send(multicastSocketAddress);
 		} catch (IOException e) {
-			LOGGER.error("Unable to reach " + multicastSocketAddress, e);
+			LOGGER.log(Level.SEVERE, e, () -> "Unable to reach " + multicastSocketAddress);
 		}
 	}
 
@@ -85,7 +84,7 @@ class MulticastListener extends ProtocolListener {
 			ClusterProtocol.newForward(manager.me.httpAddressKey, manager.nodeLiveId, manager.myGroups,
 					manager.myServices).send(multicastSocketAddress);
 		} catch (IOException e) {
-			LOGGER.error("Error while running the multicast listener. The thread is stopped.", e);
+			LOGGER.log(Level.SEVERE, e, () -> "Error while running the multicast listener. The thread is stopped.");
 		} finally {
 			super.runner();
 		}

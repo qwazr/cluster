@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2015-2016 Emmanuel Keller / QWAZR
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,9 +16,8 @@
 package com.qwazr.cluster;
 
 import com.qwazr.utils.DatagramUtils;
+import com.qwazr.utils.LoggerUtils;
 import com.qwazr.utils.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -26,10 +25,13 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.net.SocketAddress;
 import java.util.Collection;
+import java.util.logging.Logger;
+
+;
 
 class MessageContent implements Externalizable {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(MessageContent.class);
+	private static final Logger LOGGER = LoggerUtils.getLogger(MessageContent.class);
 
 	private ClusterProtocol command;
 	private Externalizable content;
@@ -78,8 +80,7 @@ class MessageContent implements Externalizable {
 	 * @throws IOException
 	 */
 	final MessageContent send(final Collection<SocketAddress> recipients) throws IOException {
-		if (LOGGER.isTraceEnabled())
-			LOGGER.trace("Send " + command.name() + " to " + StringUtils.join(recipients, ","));
+		LOGGER.finest(() -> "Send " + command.name() + " to " + StringUtils.join(recipients, ","));
 		DatagramUtils.send(this, recipients);
 		return this;
 	}
@@ -92,8 +93,7 @@ class MessageContent implements Externalizable {
 	 * @throws IOException
 	 */
 	final MessageContent send(final SocketAddress socketAddress) throws IOException {
-		if (LOGGER.isTraceEnabled())
-			LOGGER.trace("Send " + command.name() + " to " + socketAddress);
+		LOGGER.finest(() -> "Send " + command.name() + " to " + socketAddress);
 		DatagramUtils.send(this, socketAddress);
 		return this;
 	}

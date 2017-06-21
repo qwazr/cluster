@@ -15,21 +15,21 @@
  */
 package com.qwazr.cluster.test;
 
+import com.qwazr.utils.LoggerUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.WebApplicationException;
 import java.util.SortedSet;
+import java.util.logging.Logger;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public abstract class AbstractMultiTests {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(AbstractMultiTests.class);
+	private static final Logger LOGGER = LoggerUtils.getLogger(AbstractMultiTests.class);
 
 	static ClusterTestServer master1;
 	static ClusterTestServer master2;
@@ -63,7 +63,7 @@ public abstract class AbstractMultiTests {
 					if (founds.containsAll(ClusterTestServer.serverAdresses))
 						found++;
 					else
-						LOGGER.warn("Failed on " + server.address + " => " + founds.toString());
+						LOGGER.warning(() -> "Failed on " + server.address + " => " + founds.toString());
 				}
 				if (found == ClusterTestServer.servers.size())
 					return;
