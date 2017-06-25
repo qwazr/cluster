@@ -2,7 +2,7 @@ FROM openjdk:8-jdk-alpine
 
 MAINTAINER Emmanuel Keller
 
-ADD target/qwazr-cluster-1.2.0-SNAPSHOT-exec.jar /usr/share/qwazr/qwazr-cluster.jar
+ADD target/qwazr-cluster-*-exec.jar /usr/share/qwazr/qwazr-cluster.jar
 
 VOLUME /var/lib/qwazr
 
