@@ -1,5 +1,5 @@
-/**
- * Copyright 2014-2016 Emmanuel Keller / QWAZR
+/*
+ * Copyright 2015-2017 Emmanuel Keller / QWAZR
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ public class AllTest {
 				"--QWAZR_GROUPS=" + StringUtils.join(GROUPS, ","), "--QWAZR_MASTERS=localhost:9091");
 		clusterManager = ClusterServer.getInstance().getClusterManager();
 		Assert.assertNotNull(clusterManager);
-		serviceBuilder = clusterManager.getServiceBuilder();
+		serviceBuilder = ClusterServer.getInstance().getServiceBuilder();
 		Assert.assertNotNull(serviceBuilder);
 		client = serviceBuilder.remote(RemoteService.of(ADDRESS).build());
 	}
@@ -103,7 +103,7 @@ public class AllTest {
 
 	@Test
 	public void test22_get_active_list_by_service() throws URISyntaxException {
-		Set<String> result = client.getActiveNodesByService("cluster", null);
+		final Set<String> result = client.getActiveNodesByService("cluster", null);
 		Assert.assertNotNull(result);
 		Assert.assertEquals(1, result.size());
 		Assert.assertEquals(ADDRESS, result.iterator().next());
@@ -117,7 +117,7 @@ public class AllTest {
 
 	@Test
 	public void test25_active_random_service() throws URISyntaxException {
-		String result = client.getActiveNodeRandomByService("cluster", null);
+		final String result = client.getActiveNodeRandomByService("cluster", null);
 		Assert.assertNotNull(result);
 		Assert.assertEquals(ADDRESS, result);
 		for (String group : GROUPS) {
@@ -157,8 +157,8 @@ public class AllTest {
 	public void test40_status() throws URISyntaxException {
 		ClusterStatusJson status = client.getStatus();
 		Assert.assertNotNull(status);
-		Assert.assertEquals(1, status.active_nodes.size());
-		Assert.assertEquals(ADDRESS, status.active_nodes.values().iterator().next().address);
+		Assert.assertEquals(1, status.activeNodes.size());
+		Assert.assertEquals(ADDRESS, status.activeNodes.values().iterator().next().address);
 		Assert.assertEquals(1, status.masters.size());
 		Assert.assertEquals("http://localhost:9091", status.masters.first());
 	}
@@ -196,6 +196,16 @@ public class AllTest {
 	public void test62_isGroup() {
 		Assert.assertTrue(clusterManager.isGroup(GROUPS[0]));
 		Assert.assertTrue(clusterManager.isGroup(GROUPS[1]));
+	}
+
+	@Test
+	public void test70_serviceBuilder() throws URISyntaxException {
+		Assert.assertNotNull(serviceBuilder.local());
+		ClusterServiceInterface clusterService;
+		clusterService = serviceBuilder.getActive(GROUPS[0]);
+		Assert.assertEquals(serviceBuilder.local(), clusterService);
+		clusterService = serviceBuilder.getActive(GROUPS[1]);
+		Assert.assertEquals(serviceBuilder.local(), clusterService);
 	}
 
 	@Test

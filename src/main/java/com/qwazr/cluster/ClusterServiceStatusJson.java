@@ -1,5 +1,5 @@
-/**
- * Copyright 2015-2016 Emmanuel Keller / QWAZR
+/*
+ * Copyright 2015-2017 Emmanuel Keller / QWAZR
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,41 +15,44 @@
  */
 package com.qwazr.cluster;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.qwazr.utils.StringUtils;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Collection;
 import java.util.SortedSet;
 
 @JsonInclude(Include.NON_NULL)
 public class ClusterServiceStatusJson {
 
 	public enum StatusEnum {
-		ok, failure
+		ok, failure;
+
+		static StatusEnum of(Collection<String> nodesSet) {
+			return nodesSet == null || nodesSet.isEmpty() ? failure : ok;
+		}
 	}
 
 	public final String leader;
 	public final StatusEnum status;
-	public final int active_count;
+	@JsonProperty("active_count")
+	public final int activeCount;
 	public final SortedSet<String> active;
 
-	public ClusterServiceStatusJson() {
-		leader = StringUtils.EMPTY;
-		status = null;
-		active_count = 0;
-		active = null;
+	@JsonCreator
+	private ClusterServiceStatusJson(@JsonProperty("leader") String leader, @JsonProperty("status") StatusEnum status,
+			@JsonProperty("active_count") int activeCount, @JsonProperty("active") SortedSet<String> active) {
+		this.leader = leader;
+		this.status = status;
+		this.activeCount = activeCount;
+		this.active = active;
 	}
 
-	public ClusterServiceStatusJson(final SortedSet<String> nodes) {
-		this.active = nodes;
-		this.leader = nodes != null ? !nodes.isEmpty() ? nodes.first() : null : null;
-		this.active_count = active == null ? 0 : active.size();
-		status = findStatus(active_count);
-	}
-
-	public static StatusEnum findStatus(int active_count) {
-		if (active_count == 0)
-			return StatusEnum.failure;
-		return StatusEnum.ok;
+	static ClusterServiceStatusJson of(SortedSet<String> nodes) {
+		if (nodes == null || nodes.isEmpty())
+			return new ClusterServiceStatusJson(null, StatusEnum.failure, 0, null);
+		else
+			return new ClusterServiceStatusJson(nodes.first(), StatusEnum.ok, nodes.size(), nodes);
 	}
 }

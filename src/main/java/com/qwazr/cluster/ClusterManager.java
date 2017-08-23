@@ -17,7 +17,6 @@ package com.qwazr.cluster;
 
 import com.qwazr.server.ApplicationBuilder;
 import com.qwazr.server.GenericServer;
-import com.qwazr.server.RemoteService;
 import com.qwazr.server.ServerException;
 import com.qwazr.server.configuration.ServerConfiguration;
 import com.qwazr.utils.ArrayUtils;
@@ -29,12 +28,10 @@ import org.apache.commons.lang3.RandomUtils;
 
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
@@ -60,8 +57,6 @@ public class ClusterManager {
 	private final Set<String> masters;
 
 	private final ProtocolListener protocolListener;
-
-	private final ClusterServiceBuilder serviceBuilder;
 
 	private final ExecutorService executorService;
 
@@ -97,7 +92,10 @@ public class ClusterManager {
 			protocolListener = new DatagramListener(this);
 
 		service = new ClusterServiceImpl(this);
-		serviceBuilder = new ClusterServiceBuilder(this, service);
+	}
+
+	public ClusterServiceInterface getService() {
+		return service;
 	}
 
 	public ClusterManager registerProtocolListener(final GenericServer.Builder builder, final Set<String> services) {
@@ -128,10 +126,6 @@ public class ClusterManager {
 		return this;
 	}
 
-	public ClusterServiceBuilder getServiceBuilder() {
-		return serviceBuilder;
-	}
-
 	public boolean isGroup(String group) {
 		if (group == null)
 			return true;
@@ -143,7 +137,7 @@ public class ClusterManager {
 	}
 
 	public boolean isLeader(final String service, final String group) throws ServerException {
-		SortedSet<String> nodes = clusterNodeMap.getGroupService(group, service);
+		final SortedSet<String> nodes = clusterNodeMap.getGroupService(group, service);
 		if (nodes == null || nodes.isEmpty()) {
 			LOGGER.warning(() -> "No node available for this service/group: " + service + '/' + group);
 			return false;
@@ -163,14 +157,13 @@ public class ClusterManager {
 					timeToLive = (int) ((expirationTimeMs - currentMs) / 1000);
 				else
 					timeToLive = null;
-				final ClusterNodeJson clusterNodeJson = new ClusterNodeJson(clusterNode.address.httpAddressKey,
-						clusterNode.nodeLiveId, timeToLive, clusterNode.groups, clusterNode.services);
+				final ClusterNodeJson clusterNodeJson = new ClusterNodeJson(clusterNode, timeToLive);
 				nodesJsonMap.put(address, clusterNodeJson);
 			});
 		}
-		return new ClusterStatusJson(me.httpAddressKey, myServices.contains("webapps") ? webApp.httpAddressKey : null,
-				nodesJsonMap, clusterNodeMap.getGroups(), clusterNodeMap.getServices(), masters,
-				protocolListener.getLastExecutionDate());
+		return new ClusterStatusJson(me.httpAddressKey, nodeLiveId,
+				myServices.contains("webapps") ? webApp.httpAddressKey : null, nodesJsonMap, clusterNodeMap.getGroups(),
+				clusterNodeMap.getServices(), masters, protocolListener.getLastExecutionDate());
 	}
 
 	final Set<String> getNodes() {
@@ -186,14 +179,14 @@ public class ClusterManager {
 		services.forEach(service -> {
 			final SortedSet<String> nodes = getNodesByGroupByService(group, service);
 			if (nodes != null && !nodes.isEmpty())
-				servicesStatus.put(service, ClusterServiceStatusJson.findStatus(nodes.size()));
+				servicesStatus.put(service, ClusterServiceStatusJson.StatusEnum.of(nodes));
 		});
 		return servicesStatus;
 	}
 
 	final ClusterServiceStatusJson getServiceStatus(final String group, final String service) {
 		final SortedSet<String> nodes = getNodesByGroupByService(group, service);
-		return nodes == null || nodes.isEmpty() ? new ClusterServiceStatusJson() : new ClusterServiceStatusJson(nodes);
+		return ClusterServiceStatusJson.of(nodes);
 	}
 
 	final SortedSet<String> getNodesByGroupByService(final String group, final String service) {
@@ -224,40 +217,6 @@ public class ClusterManager {
 				return node;
 			rand--;
 		}
-	}
-
-	/**
-	 * Return a service client
-	 *
-	 * @param nodes   the address list of the nodes
-	 * @param builder the builder interface for the given service
-	 * @return a script service client
-	 * @throws URISyntaxException
-	 */
-	<T> T getService(final Collection<String> nodes, final ServiceBuilderInterface<T> builder)
-			throws URISyntaxException {
-		Objects.requireNonNull(builder, "No builder given");
-		Objects.requireNonNull(nodes, "No nodes given");
-		if (nodes.size() == 0)
-			throw new NullPointerException("No nodes given");
-		if (nodes.size() == 1)
-			return getService(nodes.iterator().next(), builder);
-		else
-			return builder.remotes(RemoteService.build(nodes));
-	}
-
-	/**
-	 * Return a service client
-	 *
-	 * @param node    the address of the node.
-	 * @param builder the builder interface for the given service
-	 * @return a script service client
-	 * @throws URISyntaxException
-	 */
-	<T> T getService(final String node, final ServiceBuilderInterface<T> builder) throws URISyntaxException {
-		Objects.requireNonNull(builder, "No builder given");
-		Objects.requireNonNull(node, "No node given");
-		return me.httpAddressKey.equals(node) ? builder.local() : builder.remote(RemoteService.of(node).build());
 	}
 
 	final boolean isMe(final AddressContent message) {

@@ -36,6 +36,7 @@ public class ClusterServer implements BaseServer {
 
 	private final GenericServer server;
 	private final ClusterManager clusterManager;
+	private final ClusterServiceBuilder serviceBuilder;
 
 	private ClusterServer(final ServerConfiguration serverConfiguration) throws IOException, URISyntaxException {
 		final ExecutorService executorService = Executors.newCachedThreadPool();
@@ -48,14 +49,15 @@ public class ClusterServer implements BaseServer {
 		final Set<String> services = new HashSet<>();
 		services.add(ClusterServiceInterface.SERVICE_NAME);
 
-		clusterManager = new ClusterManager(executorService, serverConfiguration).registerHttpClientMonitoringThread(
-				builder)
-				.registerProtocolListener(builder, services)
-				.registerContextAttribute(builder)
-				.registerWebService(webServices);
+		clusterManager =
+				new ClusterManager(executorService, serverConfiguration).registerHttpClientMonitoringThread(builder)
+						.registerProtocolListener(builder, services)
+						.registerContextAttribute(builder)
+						.registerWebService(webServices);
 
 		builder.getWebServiceContext().jaxrs(webServices);
 		server = builder.build();
+		serviceBuilder = new ClusterServiceBuilder(clusterManager);
 	}
 
 	public ClusterServer(final Map<String, String> properties) throws IOException, URISyntaxException {
@@ -64,6 +66,10 @@ public class ClusterServer implements BaseServer {
 
 	public ClusterManager getClusterManager() {
 		return clusterManager;
+	}
+
+	public ClusterServiceBuilder getServiceBuilder() {
+		return serviceBuilder;
 	}
 
 	@Override

@@ -1,5 +1,5 @@
-/**
- * Copyright 2015-2016 Emmanuel Keller / QWAZR
+/*
+ * Copyright 2015-2017 Emmanuel Keller / QWAZR
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.qwazr.cluster;
 import com.qwazr.server.AbstractServiceImpl;
 import com.qwazr.server.ServerException;
 
-import javax.annotation.PostConstruct;
 import javax.ws.rs.core.Response.Status;
 import java.util.SortedMap;
 import java.util.SortedSet;
@@ -26,19 +25,10 @@ import java.util.TreeSet;
 
 class ClusterServiceImpl extends AbstractServiceImpl implements ClusterServiceInterface {
 
-	private ClusterManager manager;
+	final ClusterManager manager;
 
-	ClusterServiceImpl(final ClusterManager manager) {
+	public ClusterServiceImpl(final ClusterManager manager) {
 		this.manager = manager;
-	}
-
-	public ClusterServiceImpl() {
-		this(null);
-	}
-
-	@PostConstruct
-	public void init() {
-		this.manager = getContextAttribute(ClusterManager.class);
 	}
 
 	@Override
@@ -108,6 +98,19 @@ class ClusterServiceImpl extends AbstractServiceImpl implements ClusterServiceIn
 		} catch (ServerException e) {
 			throw e.getJsonException();
 		}
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (o == null)
+			return false;
+		if (o == this)
+			return true;
+		if (o instanceof ClusterServiceImpl)
+			return manager.nodeLiveId.equals(((ClusterServiceImpl) o).manager.nodeLiveId);
+		if (o instanceof ClusterSingleClient)
+			return manager.me.httpAddressKey.equals(((ClusterSingleClient) o).serverAddress);
+		return false;
 	}
 
 }

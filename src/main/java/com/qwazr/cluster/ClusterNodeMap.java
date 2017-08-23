@@ -249,7 +249,6 @@ class ClusterNodeMap {
 			clusterNode.registerServices(message.services);
 			registerSet(message.groups, groupsMap, address);
 			registerSet(message.services, servicesMap, address);
-			clusterNode.hasFullInfo();
 			cache = new Cache();
 			return clusterNode;
 		});
@@ -263,8 +262,8 @@ class ClusterNodeMap {
 	private void unregisterAll(final String address) {
 		LOGGER.info(() -> "Unregister " + address + " from " + myAddress);
 		final ClusterNode clusterNode = nodesMap.get(address);
-		final ClusterNodeAddress nodeAddress = clusterNode != null ? clusterNode.address : new ClusterNodeAddress(
-				address, 9091);
+		final ClusterNodeAddress nodeAddress =
+				clusterNode != null ? clusterNode.address : new ClusterNodeAddress(address, 9091);
 		if (clusterNode != null) {
 			clusterNode.registerGroups(Collections.emptyList());
 			clusterNode.registerServices(Collections.emptyList());

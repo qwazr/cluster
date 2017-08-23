@@ -15,7 +15,9 @@
  */
 package com.qwazr.cluster.test;
 
+import com.qwazr.cluster.ClusterServiceInterface;
 import com.qwazr.utils.LoggerUtils;
+import org.apache.commons.lang3.NotImplementedException;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.FixMethodOrder;
@@ -23,6 +25,7 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import javax.ws.rs.WebApplicationException;
+import java.net.URISyntaxException;
 import java.util.SortedSet;
 import java.util.logging.Logger;
 
@@ -72,6 +75,43 @@ public abstract class AbstractMultiTests {
 			Thread.sleep(10000);
 		}
 		Assert.fail();
+	}
+
+	@Test
+	public void test70_serviceBuilder() throws URISyntaxException {
+		ClusterServiceInterface leader;
+		ClusterServiceInterface master;
+		ClusterServiceInterface front;
+		ClusterServiceInterface dummy;
+		ClusterServiceInterface random;
+		for (ClusterTestServer server : ClusterTestServer.servers) {
+
+			leader = server.serviceBuilder.getLeader(null);
+			Assert.assertNotNull(leader);
+
+			master = server.serviceBuilder.getLeader("master");
+			Assert.assertNotNull(master);
+			front = server.serviceBuilder.getLeader("front");
+			Assert.assertNotNull(front);
+			Assert.assertNotEquals(master, front);
+
+			dummy = server.serviceBuilder.getLeader("dummy");
+			Assert.assertNull(dummy);
+
+			random = server.serviceBuilder.getRandom(null);
+			Assert.assertNotNull(random);
+			random = server.serviceBuilder.getRandom("master");
+			Assert.assertNotNull(random);
+			random = server.serviceBuilder.getRandom("front");
+			Assert.assertNotNull(random);
+			dummy = server.serviceBuilder.getRandom("dummy");
+			Assert.assertNull(dummy);
+		}
+	}
+
+	@Test(expected = NotImplementedException.class)
+	public void test71_ServiceBuilderNotImplemented() throws URISyntaxException {
+		ClusterTestServer.servers.get(0).serviceBuilder.getActive(null);
 	}
 
 	@AfterClass

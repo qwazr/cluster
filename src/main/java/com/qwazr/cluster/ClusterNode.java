@@ -1,5 +1,5 @@
-/**
- * Copyright 2014-2016 Emmanuel Keller / QWAZR
+/*
+ * Copyright 2015-2017 Emmanuel Keller / QWAZR
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,25 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.qwazr.cluster;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 final class ClusterNode {
 
 	final ClusterNodeAddress address;
 	final UUID nodeLiveId;
 
-	final Set<String> groups;
-	final Set<String> services;
+	private final Set<String> groups;
+	private final Set<String> services;
 
 	private volatile Long expirationTimeMs;
 
-	volatile List<String> groupsCache;
-	volatile List<String> servicesCache;
-
-	private volatile boolean hasFullInfo;
+	private volatile List<String> groupsCache;
+	private volatile List<String> servicesCache;
 
 	ClusterNode(final ClusterNodeAddress address, final UUID nodeLiveId, final Long expirationTimeMs) {
 		this.nodeLiveId = nodeLiveId;
@@ -41,7 +43,6 @@ final class ClusterNode {
 		this.services = new HashSet<>();
 		groupsCache = null;
 		servicesCache = null;
-		hasFullInfo = false;
 	}
 
 	final void setExpirationTime(final Long expirationTimeMs) {
@@ -54,7 +55,7 @@ final class ClusterNode {
 
 	final boolean isExpired(final long currentTimeMs) {
 		final Long ns = expirationTimeMs;
-		return ns == null ? false : currentTimeMs > expirationTimeMs;
+		return ns != null && currentTimeMs > expirationTimeMs;
 	}
 
 	final void registerGroups(final Collection<String> newGroups) {
@@ -71,14 +72,6 @@ final class ClusterNode {
 		services.clear();
 		services.addAll(newServices);
 		servicesCache = new ArrayList<>(services);
-	}
-
-	final boolean hasFullInfo() {
-		return hasFullInfo;
-	}
-
-	final void setFullInfo() {
-		this.hasFullInfo = true;
 	}
 
 	final Collection<String> getGroups() {

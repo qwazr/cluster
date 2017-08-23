@@ -1,5 +1,5 @@
-/**
- * Copyright 2016 Emmanuel Keller / QWAZR
+/*
+ * Copyright 2016-2017 Emmanuel Keller / QWAZR
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import org.apache.commons.lang3.NotImplementedException;
 
 import java.net.URISyntaxException;
 import java.util.Collection;
-import java.util.function.Consumer;
 
 public interface ServiceBuilderInterface<T> {
 
@@ -29,8 +28,6 @@ public interface ServiceBuilderInterface<T> {
 	T getService(Collection<String> nodes) throws URISyntaxException;
 
 	T getActive(String group) throws URISyntaxException;
-
-	int active(String group, Consumer<T> consumer) throws URISyntaxException;
 
 	T getRandom(String group) throws URISyntaxException;
 
@@ -44,7 +41,7 @@ public interface ServiceBuilderInterface<T> {
 		throw new NotImplementedException("No single-node remote service");
 	}
 
-	default T remotes(RemoteService[] remotes) {
+	default T remotes(RemoteService... remotes) {
 		throw new NotImplementedException("No multi-node remote service");
 	}
 }

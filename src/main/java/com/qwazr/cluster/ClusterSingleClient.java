@@ -1,5 +1,5 @@
-/**
- * Copyright 2015-2016 Emmanuel Keller / QWAZR
+/*
+ * Copyright 2015-2017 Emmanuel Keller / QWAZR
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,10 +24,26 @@ import com.qwazr.server.RemoteService;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-class ClusterSingleClient extends JsonClientAbstract implements ClusterServiceInterface {
+public class ClusterSingleClient extends JsonClientAbstract implements ClusterServiceInterface {
+
+	final String serverAddress;
 
 	ClusterSingleClient(RemoteService remote) {
 		super(remote);
+		this.serverAddress = remote.serverAddress;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (o == null)
+			return false;
+		if (o == this)
+			return true;
+		if (o instanceof ClusterServiceImpl)
+			return serverAddress.equals(((ClusterServiceImpl) o).manager.me.httpAddressKey);
+		if (o instanceof ClusterSingleClient)
+			return serverAddress.equals(((ClusterSingleClient) o).serverAddress);
+		return false;
 	}
 
 	@Override

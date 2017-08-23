@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2015-2016 Emmanuel Keller / QWAZR
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,7 +32,7 @@ class ClusterNodeAddress {
 	/**
 	 * @param httpAddress the address of the node: {scheme}://{host}:{port}
 	 */
-	ClusterNodeAddress(String httpAddress, int defaultPort) {
+	ClusterNodeAddress(String httpAddress, final int defaultPort) {
 		try {
 			if (!httpAddress.contains("//"))
 				httpAddress = "http://" + httpAddress;

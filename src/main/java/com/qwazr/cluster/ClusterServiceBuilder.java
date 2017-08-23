@@ -1,5 +1,5 @@
-/**
- * Copyright 2016 Emmanuel Keller / QWAZR
+/*
+ * Copyright 2016-2017 Emmanuel Keller / QWAZR
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,11 @@ import com.qwazr.server.RemoteService;
 
 public class ClusterServiceBuilder extends ServiceBuilderAbstract<ClusterServiceInterface> {
 
-	ClusterServiceBuilder(final ClusterManager clusterManager, final ClusterServiceImpl local) {
-		super(clusterManager, ClusterServiceInterface.SERVICE_NAME, clusterManager == null ? null : local);
+	public ClusterServiceBuilder(final ClusterManager clusterManager) {
+		super(clusterManager, ClusterServiceInterface.SERVICE_NAME,
+				clusterManager == null ? null : clusterManager.getService());
 	}
-
-	public ClusterServiceBuilder() {
-		this(null, null);
-	}
-
+	
 	@Override
 	final public ClusterServiceInterface remote(final RemoteService remote) {
 		return new ClusterSingleClient(remote);

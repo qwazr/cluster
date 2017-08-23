@@ -46,11 +46,6 @@ class DatagramListener extends ProtocolListener {
 
 	final void acceptNotify(final AddressContent message) throws URISyntaxException, IOException {
 		final ClusterNode clusterNode = registerNode(message);
-		// If we already know the node, we can leave
-		if (clusterNode.nodeLiveId != null && message.getNodeLiveId().equals(clusterNode.nodeLiveId) &&
-				clusterNode.hasFullInfo())
-			return;
-		// Otherwise we forward our configuration
 		ClusterProtocol.newForward(manager.me.httpAddressKey, manager.nodeLiveId, manager.myGroups, manager.myServices)
 				.send(clusterNode.address.address);
 	}
@@ -110,8 +105,8 @@ class DatagramListener extends ProtocolListener {
 
 	protected synchronized void leaveCluster() {
 		try {
-			ClusterProtocol.newLeave(manager.me.httpAddressKey, manager.nodeLiveId).send(
-					manager.clusterNodeMap.getExternalNodeAddresses());
+			ClusterProtocol.newLeave(manager.me.httpAddressKey, manager.nodeLiveId)
+					.send(manager.clusterNodeMap.getExternalNodeAddresses());
 		} catch (IOException e) {
 			LOGGER.log(Level.SEVERE, e, e::getMessage);
 		}
@@ -120,8 +115,8 @@ class DatagramListener extends ProtocolListener {
 	@Override
 	protected void runner() {
 		try {
-			ClusterProtocol.newAlive(manager.me.httpAddressKey, manager.nodeLiveId).send(
-					manager.clusterNodeMap.getExternalNodeAddresses());
+			ClusterProtocol.newAlive(manager.me.httpAddressKey, manager.nodeLiveId)
+					.send(manager.clusterNodeMap.getExternalNodeAddresses());
 		} catch (IOException e) {
 			LOGGER.log(Level.SEVERE, e, e::getMessage);
 		} finally {
