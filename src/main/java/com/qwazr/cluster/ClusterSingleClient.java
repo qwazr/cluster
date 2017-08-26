@@ -16,6 +16,7 @@
 package com.qwazr.cluster;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.qwazr.utils.LoggerUtils;
 import com.qwazr.utils.UBuilder;
 import com.qwazr.utils.http.HttpRequest;
 import com.qwazr.server.client.JsonClientAbstract;
@@ -23,13 +24,16 @@ import com.qwazr.server.RemoteService;
 
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.logging.Logger;
 
 public class ClusterSingleClient extends JsonClientAbstract implements ClusterServiceInterface {
+
+	private final static Logger LOGGER = LoggerUtils.getLogger(ClusterSingleClient.class);
 
 	final String serverAddress;
 
 	ClusterSingleClient(RemoteService remote) {
-		super(remote);
+		super(remote, LOGGER);
 		this.serverAddress = remote.serverAddress;
 	}
 
