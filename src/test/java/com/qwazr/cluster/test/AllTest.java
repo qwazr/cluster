@@ -24,7 +24,7 @@ import com.qwazr.cluster.ClusterStatusJson;
 import com.qwazr.server.RemoteService;
 import com.qwazr.utils.LoggerUtils;
 import com.qwazr.utils.StringUtils;
-import com.qwazr.utils.http.HttpClients;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -208,11 +208,8 @@ public class AllTest {
 		Assert.assertEquals(serviceBuilder.local(), clusterService);
 	}
 
-	@Test
-	public void testZZZhttpClient() {
-		Assert.assertEquals(0, HttpClients.CNX_MANAGER.getTotalStats().getLeased());
-		Assert.assertEquals(0, HttpClients.CNX_MANAGER.getTotalStats().getPending());
-		Assert.assertTrue(HttpClients.CNX_MANAGER.getTotalStats().getAvailable() > 0);
+	@AfterClass
+	public static void cleanup() {
 		ClusterServer.shutdown();
 	}
 

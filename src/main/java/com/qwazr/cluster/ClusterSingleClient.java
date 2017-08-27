@@ -15,26 +15,29 @@
  */
 package com.qwazr.cluster;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.qwazr.utils.LoggerUtils;
-import com.qwazr.utils.UBuilder;
-import com.qwazr.utils.http.HttpRequest;
-import com.qwazr.server.client.JsonClientAbstract;
 import com.qwazr.server.RemoteService;
+import com.qwazr.server.client.JsonClient;
 
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.GenericType;
+import javax.ws.rs.core.MediaType;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.logging.Logger;
 
-public class ClusterSingleClient extends JsonClientAbstract implements ClusterServiceInterface {
-
-	private final static Logger LOGGER = LoggerUtils.getLogger(ClusterSingleClient.class);
+public class ClusterSingleClient extends JsonClient implements ClusterServiceInterface {
 
 	final String serverAddress;
+	final WebTarget clusterTarget;
+	final WebTarget nodesTarget;
+	final WebTarget servicesTarget;
 
 	ClusterSingleClient(RemoteService remote) {
-		super(remote, LOGGER);
+		super(remote);
 		this.serverAddress = remote.serverAddress;
+		final WebTarget rootTarget = client.target(remote.serviceAddress);
+		clusterTarget = rootTarget.path("cluster");
+		nodesTarget = clusterTarget.path("nodes");
+		servicesTarget = clusterTarget.path("services");
 	}
 
 	@Override
@@ -52,66 +55,53 @@ public class ClusterSingleClient extends JsonClientAbstract implements ClusterSe
 
 	@Override
 	public ClusterStatusJson getStatus() {
-		final UBuilder uriBuilder = RemoteService.getNewUBuilder(remote, "/cluster");
-		final HttpRequest request = HttpRequest.Get(uriBuilder.buildNoEx());
-		return executeJson(request, null, null, ClusterStatusJson.class, valid200);
+		return clusterTarget.request().get(ClusterStatusJson.class);
 	}
 
-	public final static TypeReference<TreeSet<String>> TreeSetStringClusterNodeJsonTypeRef =
-			new TypeReference<TreeSet<String>>() {
-			};
+	private final static GenericType<TreeSet<String>> treeSetStringType = new GenericType<TreeSet<String>>() {
+	};
 
 	@Override
 	public TreeSet<String> getNodes() {
-		final UBuilder uriBuilder = RemoteService.getNewUBuilder(remote, "/cluster/nodes");
-		final HttpRequest request = HttpRequest.Get(uriBuilder.buildNoEx());
-		return executeJson(request, null, null, TreeSetStringClusterNodeJsonTypeRef, valid200);
+		return nodesTarget.request(MediaType.APPLICATION_JSON).get(treeSetStringType);
 	}
 
-	public final static TypeReference<TreeMap<String, ClusterServiceStatusJson.StatusEnum>> MapStringStatusEnumTypeRef =
-			new TypeReference<TreeMap<String, ClusterServiceStatusJson.StatusEnum>>() {
+	private final static GenericType<TreeMap<String, ClusterServiceStatusJson.StatusEnum>> mapStringStatusEnumType =
+			new GenericType<TreeMap<String, ClusterServiceStatusJson.StatusEnum>>() {
 			};
 
 	@Override
 	public TreeMap<String, ClusterServiceStatusJson.StatusEnum> getServiceMap(String group) {
-		final UBuilder uriBuilder =
-				RemoteService.getNewUBuilder(remote, "/cluster/services").setParameter("group", group);
-		final HttpRequest request = HttpRequest.Get(uriBuilder.buildNoEx());
-		return executeJson(request, null, null, MapStringStatusEnumTypeRef, valid200);
+		return (group == null ? servicesTarget : servicesTarget.queryParam("group", group)).request(
+				MediaType.APPLICATION_JSON).get(mapStringStatusEnumType);
 	}
 
 	@Override
-	public ClusterServiceStatusJson getServiceStatus(final String service_name, final String group) {
-		final UBuilder uriBuilder =
-				RemoteService.getNewUBuilder(remote, "/cluster/services/", service_name).setParameter("group", group);
-		final HttpRequest request = HttpRequest.Get(uriBuilder.buildNoEx());
-		return executeJson(request, null, null, ClusterServiceStatusJson.class, valid200);
+	public ClusterServiceStatusJson getServiceStatus(final String serviceName, final String group) {
+		final WebTarget target = servicesTarget.path(serviceName);
+		return (group == null ? target : target.queryParam("group", group)).request(MediaType.APPLICATION_JSON)
+				.get(ClusterServiceStatusJson.class);
 	}
 
 	@Override
-	public TreeSet<String> getActiveNodesByService(final String service_name, final String group) {
-		final UBuilder uriBuilder = RemoteService.getNewUBuilder(remote, "/cluster/services/", service_name, "/active")
-				.setParameter("group", group);
-		final HttpRequest request = HttpRequest.Get(uriBuilder.buildNoEx());
-		return executeJson(request, null, null, TreeSetStringClusterNodeJsonTypeRef, valid200);
+	public TreeSet<String> getActiveNodesByService(final String serviceName, final String group) {
+		final WebTarget target = servicesTarget.path(serviceName).path("active");
+		return (group == null ? target : target.queryParam("group", group)).request(MediaType.APPLICATION_JSON)
+				.get(treeSetStringType);
 	}
 
 	@Override
-	public String getActiveNodeRandomByService(final String service_name, final String group) {
-		final UBuilder uriBuilder =
-				RemoteService.getNewUBuilder(remote, "/cluster/services/" + service_name + "/active/random")
-						.setParameter("group", group);
-		final HttpRequest request = HttpRequest.Get(uriBuilder.buildNoEx());
-		return executeString(request, null, null, valid200TextPlain);
+	public String getActiveNodeRandomByService(final String serviceName, final String group) {
+		final WebTarget target = servicesTarget.path(serviceName).path("active").path("random");
+		return (group == null ? target : target.queryParam("group", group)).request(MediaType.TEXT_PLAIN)
+				.get(String.class);
 	}
 
 	@Override
-	public String getActiveNodeLeaderByService(final String service_name, final String group) {
-		final UBuilder uriBuilder =
-				RemoteService.getNewUBuilder(remote, "/cluster/services/" + service_name + "/active/leader")
-						.setParameter("group", group);
-		final HttpRequest request = HttpRequest.Get(uriBuilder.buildNoEx());
-		return executeString(request, null, null, valid200TextPlain);
+	public String getActiveNodeLeaderByService(final String serviceName, final String group) {
+		final WebTarget target = servicesTarget.path(serviceName).path("active").path("leader");
+		return (group == null ? target : target.queryParam("group", group)).request(MediaType.TEXT_PLAIN)
+				.get(String.class);
 	}
 
 }
