@@ -34,7 +34,7 @@ public class ClusterSingleClient extends JsonClient implements ClusterServiceInt
 	ClusterSingleClient(RemoteService remote) {
 		super(remote);
 		this.serverAddress = remote.serverAddress;
-		final WebTarget rootTarget = client.target(remote.serviceAddress);
+		final WebTarget rootTarget = client.target(remote.serverAddress);
 		clusterTarget = rootTarget.path("cluster");
 		nodesTarget = clusterTarget.path("nodes");
 		servicesTarget = clusterTarget.path("services");
