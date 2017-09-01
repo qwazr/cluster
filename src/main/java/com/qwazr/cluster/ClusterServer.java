@@ -50,8 +50,7 @@ public class ClusterServer implements BaseServer {
 		services.add(ClusterServiceInterface.SERVICE_NAME);
 
 		clusterManager =
-				new ClusterManager(executorService, serverConfiguration).registerHttpClientMonitoringThread(builder)
-						.registerProtocolListener(builder, services)
+				new ClusterManager(executorService, serverConfiguration).registerProtocolListener(builder, services)
 						.registerContextAttribute(builder)
 						.registerWebService(webServices);
 

@@ -23,7 +23,6 @@ import com.qwazr.utils.ArrayUtils;
 import com.qwazr.utils.HashUtils;
 import com.qwazr.utils.LoggerUtils;
 import com.qwazr.utils.StringUtils;
-import com.qwazr.utils.http.HttpClients;
 import org.apache.commons.lang3.RandomUtils;
 
 import java.net.URISyntaxException;
@@ -106,13 +105,6 @@ public class ClusterManager {
 		builder.shutdownListener(server -> protocolListener.leaveCluster());
 		builder.shutdownListener(server -> protocolListener.shutdown());
 		executorService.submit(protocolListener);
-		return this;
-	}
-
-	public ClusterManager registerHttpClientMonitoringThread(final GenericServer.Builder builder) {
-		final HttpClients.IdleConnectionMonitorThread monitorThread = HttpClients.getNewMonitorThread(5000, 120000);
-		builder.shutdownListener(server -> monitorThread.shutdown());
-		executorService.submit(monitorThread);
 		return this;
 	}
 
