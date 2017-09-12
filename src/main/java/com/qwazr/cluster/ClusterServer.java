@@ -18,6 +18,7 @@ package com.qwazr.cluster;
 import com.qwazr.server.ApplicationBuilder;
 import com.qwazr.server.BaseServer;
 import com.qwazr.server.GenericServer;
+import com.qwazr.server.GenericServerBuilder;
 import com.qwazr.server.RestApplication;
 import com.qwazr.server.WelcomeShutdownService;
 import com.qwazr.server.configuration.ServerConfiguration;
@@ -40,7 +41,7 @@ public class ClusterServer implements BaseServer {
 
 	private ClusterServer(final ServerConfiguration serverConfiguration) throws IOException, URISyntaxException {
 		final ExecutorService executorService = Executors.newCachedThreadPool();
-		final GenericServer.Builder builder = GenericServer.of(serverConfiguration, executorService);
+		final GenericServerBuilder builder = GenericServer.of(serverConfiguration, executorService);
 
 		final ApplicationBuilder webServices = ApplicationBuilder.of("/*")
 				.classes(RestApplication.JSON_CLASSES)

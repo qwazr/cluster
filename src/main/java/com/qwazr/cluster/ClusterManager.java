@@ -16,7 +16,7 @@
 package com.qwazr.cluster;
 
 import com.qwazr.server.ApplicationBuilder;
-import com.qwazr.server.GenericServer;
+import com.qwazr.server.GenericServerBuilder;
 import com.qwazr.server.ServerException;
 import com.qwazr.server.configuration.ServerConfiguration;
 import com.qwazr.utils.ArrayUtils;
@@ -97,7 +97,7 @@ public class ClusterManager {
 		return service;
 	}
 
-	public ClusterManager registerProtocolListener(final GenericServer.Builder builder, final Set<String> services) {
+	public ClusterManager registerProtocolListener(final GenericServerBuilder builder, final Set<String> services) {
 		builder.packetListener(protocolListener);
 		builder.startedListener(server -> {
 			protocolListener.joinCluster(services);
@@ -108,7 +108,7 @@ public class ClusterManager {
 		return this;
 	}
 
-	public ClusterManager registerContextAttribute(final GenericServer.Builder builder) {
+	public ClusterManager registerContextAttribute(final GenericServerBuilder builder) {
 		builder.contextAttribute(this);
 		return this;
 	}
