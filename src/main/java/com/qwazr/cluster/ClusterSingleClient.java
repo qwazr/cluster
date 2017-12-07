@@ -16,8 +16,10 @@
 package com.qwazr.cluster;
 
 import com.qwazr.server.RemoteService;
+import com.qwazr.server.ServerException;
 import com.qwazr.server.client.JsonClient;
 
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
@@ -63,7 +65,11 @@ public class ClusterSingleClient extends JsonClient implements ClusterServiceInt
 
 	@Override
 	public TreeSet<String> getNodes() {
-		return nodesTarget.request(MediaType.APPLICATION_JSON).get(treeSetStringType);
+		try {
+			return nodesTarget.request(MediaType.APPLICATION_JSON).get(treeSetStringType);
+		} catch (WebApplicationException e) {
+			throw ServerException.from(e);
+		}
 	}
 
 	private final static GenericType<TreeMap<String, ClusterServiceStatusJson.StatusEnum>> mapStringStatusEnumType =
@@ -72,36 +78,56 @@ public class ClusterSingleClient extends JsonClient implements ClusterServiceInt
 
 	@Override
 	public TreeMap<String, ClusterServiceStatusJson.StatusEnum> getServiceMap(String group) {
-		return (group == null ? servicesTarget : servicesTarget.queryParam("group", group)).request(
-				MediaType.APPLICATION_JSON).get(mapStringStatusEnumType);
+		try {
+			return (group == null ? servicesTarget : servicesTarget.queryParam("group", group)).request(
+					MediaType.APPLICATION_JSON).get(mapStringStatusEnumType);
+		} catch (WebApplicationException e) {
+			throw ServerException.from(e);
+		}
 	}
 
 	@Override
 	public ClusterServiceStatusJson getServiceStatus(final String serviceName, final String group) {
-		final WebTarget target = servicesTarget.path(serviceName);
-		return (group == null ? target : target.queryParam("group", group)).request(MediaType.APPLICATION_JSON)
-				.get(ClusterServiceStatusJson.class);
+		try {
+			final WebTarget target = servicesTarget.path(serviceName);
+			return (group == null ? target : target.queryParam("group", group)).request(MediaType.APPLICATION_JSON)
+					.get(ClusterServiceStatusJson.class);
+		} catch (WebApplicationException e) {
+			throw ServerException.from(e);
+		}
 	}
 
 	@Override
 	public TreeSet<String> getActiveNodesByService(final String serviceName, final String group) {
-		final WebTarget target = servicesTarget.path(serviceName).path("active");
-		return (group == null ? target : target.queryParam("group", group)).request(MediaType.APPLICATION_JSON)
-				.get(treeSetStringType);
+		try {
+			final WebTarget target = servicesTarget.path(serviceName).path("active");
+			return (group == null ? target : target.queryParam("group", group)).request(MediaType.APPLICATION_JSON)
+					.get(treeSetStringType);
+		} catch (WebApplicationException e) {
+			throw ServerException.from(e);
+		}
 	}
 
 	@Override
 	public String getActiveNodeRandomByService(final String serviceName, final String group) {
-		final WebTarget target = servicesTarget.path(serviceName).path("active").path("random");
-		return (group == null ? target : target.queryParam("group", group)).request(MediaType.TEXT_PLAIN)
-				.get(String.class);
+		try {
+			final WebTarget target = servicesTarget.path(serviceName).path("active").path("random");
+			return (group == null ? target : target.queryParam("group", group)).request(MediaType.TEXT_PLAIN)
+					.get(String.class);
+		} catch (WebApplicationException e) {
+			throw ServerException.from(e);
+		}
 	}
 
 	@Override
 	public String getActiveNodeLeaderByService(final String serviceName, final String group) {
-		final WebTarget target = servicesTarget.path(serviceName).path("active").path("leader");
-		return (group == null ? target : target.queryParam("group", group)).request(MediaType.TEXT_PLAIN)
-				.get(String.class);
+		try {
+			final WebTarget target = servicesTarget.path(serviceName).path("active").path("leader");
+			return (group == null ? target : target.queryParam("group", group)).request(MediaType.TEXT_PLAIN)
+					.get(String.class);
+		} catch (WebApplicationException e) {
+			throw ServerException.from(e);
+		}
 	}
 
 }
