@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 Emmanuel Keller / QWAZR
+ * Copyright 2015-2018 Emmanuel Keller / QWAZR
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package com.qwazr.cluster;
 
-import com.qwazr.server.ApplicationBuilder;
 import com.qwazr.server.GenericServerBuilder;
 import com.qwazr.server.ServerException;
 import com.qwazr.server.configuration.ServerConfiguration;
@@ -25,8 +24,6 @@ import com.qwazr.utils.LoggerUtils;
 import com.qwazr.utils.StringUtils;
 import org.apache.commons.lang3.RandomUtils;
 
-import java.net.URISyntaxException;
-import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -61,8 +58,7 @@ public class ClusterManager {
 
 	private final ClusterServiceImpl service;
 
-	public ClusterManager(final ExecutorService executorService, final ServerConfiguration configuration)
-			throws URISyntaxException, UnknownHostException {
+	public ClusterManager(final ExecutorService executorService, final ServerConfiguration configuration) {
 
 		this.executorService = executorService;
 		this.nodeLiveId = HashUtils.newTimeBasedUUID();
@@ -105,16 +101,6 @@ public class ClusterManager {
 		builder.shutdownListener(server -> protocolListener.leaveCluster());
 		builder.shutdownListener(server -> protocolListener.shutdown());
 		executorService.submit(protocolListener);
-		return this;
-	}
-
-	public ClusterManager registerContextAttribute(final GenericServerBuilder builder) {
-		builder.contextAttribute(this);
-		return this;
-	}
-
-	public ClusterManager registerWebService(final ApplicationBuilder builder) {
-		builder.singletons(service);
 		return this;
 	}
 

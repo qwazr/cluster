@@ -26,7 +26,6 @@ import com.qwazr.server.configuration.ServerConfiguration;
 import javax.management.JMException;
 import javax.servlet.ServletException;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -39,7 +38,7 @@ public class ClusterServer implements BaseServer {
 	private final ClusterManager clusterManager;
 	private final ClusterServiceBuilder serviceBuilder;
 
-	private ClusterServer(final ServerConfiguration serverConfiguration) throws IOException, URISyntaxException {
+	private ClusterServer(final ServerConfiguration serverConfiguration) throws IOException {
 		final ExecutorService executorService = Executors.newCachedThreadPool();
 		final GenericServerBuilder builder = GenericServer.of(serverConfiguration, executorService);
 
@@ -51,16 +50,15 @@ public class ClusterServer implements BaseServer {
 		services.add(ClusterServiceInterface.SERVICE_NAME);
 
 		clusterManager =
-				new ClusterManager(executorService, serverConfiguration).registerProtocolListener(builder, services)
-						.registerContextAttribute(builder)
-						.registerWebService(webServices);
+				new ClusterManager(executorService, serverConfiguration).registerProtocolListener(builder, services);
+		webServices.singletons(clusterManager.getService());
 
 		builder.getWebServiceContext().jaxrs(webServices);
 		server = builder.build();
 		serviceBuilder = new ClusterServiceBuilder(clusterManager);
 	}
 
-	public ClusterServer(final Map<String, String> properties) throws IOException, URISyntaxException {
+	public ClusterServer(final Map<String, String> properties) throws IOException {
 		this(ServerConfiguration.of(properties).build());
 	}
 
@@ -84,8 +82,7 @@ public class ClusterServer implements BaseServer {
 	}
 
 	public static synchronized void main(final String... args)
-			throws IOException, ReflectiveOperationException, ServletException, JMException, URISyntaxException,
-			InterruptedException {
+			throws IOException, ReflectiveOperationException, ServletException, JMException {
 		shutdown();
 		INSTANCE = new ClusterServer(new ServerConfiguration(args));
 		INSTANCE.start();
