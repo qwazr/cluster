@@ -27,94 +27,99 @@ import java.util.logging.Logger;
 
 class ClusterServiceImpl extends AbstractServiceImpl implements ClusterServiceInterface {
 
-	private final static Logger LOGGER = LoggerUtils.getLogger(ClusterServiceImpl.class);
+    private final static Logger LOGGER = LoggerUtils.getLogger(ClusterServiceImpl.class);
 
-	final ClusterManager manager;
+    final ClusterManager manager;
 
-	public ClusterServiceImpl(final ClusterManager manager) {
-		this.manager = manager;
-	}
+    public ClusterServiceImpl(final ClusterManager manager) {
+        this.manager = manager;
+    }
 
-	@Override
-	public ClusterStatusJson getStatus() {
-		try {
-			return manager.getStatus();
-		} catch (ServerException e) {
-			throw e.warnIfCause(LOGGER).getJsonException(false);
-		}
-	}
+    @Override
+    public ClusterStatusJson getStatus() {
+        try {
+            return manager.getStatus();
+        } catch (ServerException e) {
+            throw e.warnIfCause(LOGGER).getJsonException(false);
+        }
+    }
 
-	@Override
-	public SortedSet<String> getNodes() {
-		try {
-			return new TreeSet<>(manager.getNodes());
-		} catch (ServerException e) {
-			throw e.warnIfCause(LOGGER).getJsonException(false);
-		}
-	}
+    @Override
+    public SortedSet<String> getNodes() {
+        try {
+            return new TreeSet<>(manager.getNodes());
+        } catch (ServerException e) {
+            throw e.warnIfCause(LOGGER).getJsonException(false);
+        }
+    }
 
-	@Override
-	public SortedSet<String> getActiveNodesByService(final String serviceName, final String group) {
-		try {
-			if (serviceName == null)
-				throw new NotAcceptableException();
-			return manager.getNodesByGroupByService(group, serviceName);
-		} catch (Exception e) {
-			throw ServerException.getJsonException(LOGGER, e);
-		}
-	}
+    @Override
+    public SortedSet<String> getActiveNodesByService(final String serviceName, final String group) {
+        try {
+            if (serviceName == null)
+                throw new NotAcceptableException();
+            return manager.getNodesByGroupByService(group, serviceName);
+        } catch (Exception e) {
+            throw ServerException.getJsonException(LOGGER, e);
+        }
+    }
 
-	@Override
-	public String getActiveNodeRandomByService(final String serviceName, final String group) {
-		try {
-			if (serviceName == null)
-				throw new NotAcceptableException();
-			return manager.getRandomNode(group, serviceName);
-		} catch (Exception e) {
-			throw ServerException.getTextException(LOGGER, e);
-		}
-	}
+    @Override
+    public String getActiveNodeRandomByService(final String serviceName, final String group) {
+        try {
+            if (serviceName == null)
+                throw new NotAcceptableException();
+            return manager.getRandomNode(group, serviceName);
+        } catch (Exception e) {
+            throw ServerException.getTextException(LOGGER, e);
+        }
+    }
 
-	@Override
-	public String getActiveNodeLeaderByService(final String serviceName, final String group) {
-		try {
-			if (serviceName == null)
-				throw new NotAcceptableException();
-			return manager.getLeaderNode(group, serviceName);
-		} catch (ServerException e) {
-			throw ServerException.getTextException(LOGGER, e);
-		}
-	}
+    @Override
+    public String getActiveNodeLeaderByService(final String serviceName, final String group) {
+        try {
+            if (serviceName == null)
+                throw new NotAcceptableException();
+            return manager.getLeaderNode(group, serviceName);
+        } catch (ServerException e) {
+            throw ServerException.getTextException(LOGGER, e);
+        }
+    }
 
-	@Override
-	public SortedMap<String, ClusterServiceStatusJson.StatusEnum> getServiceMap(final String group) {
-		try {
-			return manager.getServicesStatus(group);
-		} catch (ServerException e) {
-			throw ServerException.getTextException(LOGGER, e);
-		}
-	}
+    @Override
+    public SortedMap<String, ClusterServiceStatusJson.StatusEnum> getServiceMap(final String group) {
+        try {
+            return manager.getServicesStatus(group);
+        } catch (ServerException e) {
+            throw ServerException.getTextException(LOGGER, e);
+        }
+    }
 
-	@Override
-	public ClusterServiceStatusJson getServiceStatus(final String serviceName, final String group) {
-		try {
-			return manager.getServiceStatus(group, serviceName);
-		} catch (ServerException e) {
-			throw ServerException.getTextException(LOGGER, e);
-		}
-	}
+    @Override
+    public ClusterServiceStatusJson getServiceStatus(final String serviceName, final String group) {
+        try {
+            return manager.getServiceStatus(group, serviceName);
+        } catch (ServerException e) {
+            throw ServerException.getTextException(LOGGER, e);
+        }
+    }
 
-	@Override
-	public boolean equals(Object o) {
-		if (o == null)
-			return false;
-		if (o == this)
-			return true;
-		if (o instanceof ClusterServiceImpl)
-			return manager.nodeLiveId.equals(((ClusterServiceImpl) o).manager.nodeLiveId);
-		if (o instanceof ClusterSingleClient)
-			return manager.me.httpAddressKey.equals(((ClusterSingleClient) o).serverAddress);
-		return false;
-	}
+    @Override
+    public int hashCode() {
+        return manager.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null)
+            return false;
+        if (o == this)
+            return true;
+        if (o instanceof ClusterServiceImpl)
+            return manager.nodeLiveId.equals(((ClusterServiceImpl) o).manager.nodeLiveId);
+        if (o instanceof ClusterSingleClient)
+            return manager.me.httpAddressKey.equals(((ClusterSingleClient) o).serverAddress);
+        return false;
+    }
 
 }

@@ -29,64 +29,66 @@ import java.util.logging.Logger;
 
 class MulticastListener extends ProtocolListener {
 
-	private static final Logger LOGGER = LoggerUtils.getLogger(MulticastListener.class);
+    private static final Logger LOGGER = LoggerUtils.getLogger(MulticastListener.class);
 
-	private final SocketAddress multicastSocketAddress;
+    private final SocketAddress multicastSocketAddress;
 
-	MulticastListener(final ClusterManager manager, final String multicastAddress, final Integer multicastPort) {
-		super(manager);
-		multicastSocketAddress = new InetSocketAddress(multicastAddress, multicastPort);
-		LOGGER.info(() -> "Start multicast listener: " + multicastSocketAddress);
-	}
+    MulticastListener(final ClusterManager manager, final String multicastAddress, final Integer multicastPort) {
+        super(manager);
+        multicastSocketAddress = new InetSocketAddress(multicastAddress, multicastPort);
+        LOGGER.info(() -> "Start multicast listener: " + multicastSocketAddress);
+    }
 
-	@Override
-	final public void acceptPacket(final DatagramPacket datagramPacket)
-			throws IOException, ReflectiveOperationException, URISyntaxException {
-		final MessageContent message = SerializationUtils.fromDefaultCompressedBytes(datagramPacket.getData());
-		LOGGER.finest(() -> manager.me.httpAddressKey + " MULTICASTPACKET FROM: " + datagramPacket.getAddress() + " " +
-				message.getCommand() + " " + message.getContent());
-		switch (message.getCommand()) {
-		case join:
-			registerNode(message.getContent());
-			ClusterProtocol.newForward(manager.me.httpAddressKey, manager.nodeLiveId, manager.myGroups,
-					manager.myServices).send(multicastSocketAddress);
-			break;
-		case forward:
-			registerNode(message.getContent());
-			break;
-		case leave:
-			manager.clusterNodeMap.unregister(message.getContent());
-			break;
-		}
-	}
+    @Override
+    final public void acceptPacket(final DatagramPacket datagramPacket)
+            throws IOException, ReflectiveOperationException {
+        final MessageContent message = SerializationUtils.fromDefaultCompressedBytes(datagramPacket.getData());
+        LOGGER.finest(() -> manager.me.httpAddressKey + " MULTICASTPACKET FROM: " + datagramPacket.getAddress() + " " +
+                message.getCommand() + " " + message.getContent());
+        switch (message.getCommand()) {
+            case join:
+                registerNode(message.getContent());
+                ClusterProtocol.newForward(manager.me.httpAddressKey, manager.nodeLiveId, manager.myGroups,
+                        manager.myServices).send(multicastSocketAddress);
+                break;
+            case forward:
+                registerNode(message.getContent());
+                break;
+            case leave:
+                manager.clusterNodeMap.unregister(message.getContent());
+                break;
+            default:
+                break;
+        }
+    }
 
-	protected synchronized void joinCluster(final Collection<String> services) {
-		super.joinCluster(services);
-		try {
-			ClusterProtocol.newJoin(manager.me.httpAddressKey, manager.nodeLiveId, manager.myGroups, manager.myServices)
-					.send(multicastSocketAddress);
-		} catch (IOException e) {
-			LOGGER.log(Level.SEVERE, e, () -> "Unable to reach " + multicastSocketAddress);
-		}
-	}
+    protected synchronized void joinCluster(final Collection<String> services) {
+        super.joinCluster(services);
+        try {
+            ClusterProtocol.newJoin(manager.me.httpAddressKey, manager.nodeLiveId, manager.myGroups, manager.myServices)
+                    .send(multicastSocketAddress);
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE, e, () -> "Unable to reach " + multicastSocketAddress);
+        }
+    }
 
-	protected synchronized void leaveCluster() {
-		try {
-			ClusterProtocol.newLeave(manager.me.httpAddressKey, manager.nodeLiveId).send(multicastSocketAddress);
-		} catch (IOException e) {
-			LOGGER.log(Level.SEVERE, e, () -> "Unable to reach " + multicastSocketAddress);
-		}
-	}
+    protected synchronized void leaveCluster() {
+        try {
+            ClusterProtocol.newLeave(manager.me.httpAddressKey, manager.nodeLiveId).send(multicastSocketAddress);
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE, e, () -> "Unable to reach " + multicastSocketAddress);
+        }
+    }
 
-	@Override
-	protected void runner() {
-		try {
-			ClusterProtocol.newForward(manager.me.httpAddressKey, manager.nodeLiveId, manager.myGroups,
-					manager.myServices).send(multicastSocketAddress);
-		} catch (IOException e) {
-			LOGGER.log(Level.SEVERE, e, () -> "Error while running the multicast listener. The thread is stopped.");
-		} finally {
-			super.runner();
-		}
-	}
+    @Override
+    protected void runner() {
+        try {
+            ClusterProtocol.newForward(manager.me.httpAddressKey, manager.nodeLiveId, manager.myGroups,
+                    manager.myServices).send(multicastSocketAddress);
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE, e, () -> "Error while running the multicast listener. The thread is stopped.");
+        } finally {
+            super.runner();
+        }
+    }
 }

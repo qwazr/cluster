@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
@@ -37,179 +38,184 @@ import java.util.logging.Logger;
 
 public class ClusterManager {
 
-	private static final Logger LOGGER = LoggerUtils.getLogger(ClusterManager.class);
+    private static final Logger LOGGER = LoggerUtils.getLogger(ClusterManager.class);
 
-	final ClusterNodeMap clusterNodeMap;
+    final ClusterNodeMap clusterNodeMap;
 
-	final ClusterNodeAddress me;
+    final ClusterNodeAddress me;
 
-	final ClusterNodeAddress webApp;
+    final ClusterNodeAddress webApp;
 
-	final Set<String> myServices;
-	final Set<String> myGroups;
+    final Set<String> myServices;
+    final Set<String> myGroups;
 
-	final UUID nodeLiveId;
+    final UUID nodeLiveId;
 
-	private final Set<String> masters;
+    private final Set<String> masters;
 
-	private final ProtocolListener protocolListener;
+    private final ProtocolListener protocolListener;
 
-	private final ExecutorService executorService;
+    private final ExecutorService executorService;
 
-	private final ClusterServiceImpl service;
+    private final ClusterServiceImpl service;
 
-	public ClusterManager(final ExecutorService executorService, final ServerConfiguration configuration) {
+    public ClusterManager(final ExecutorService executorService, final ServerConfiguration configuration) {
 
-		this.executorService = executorService;
-		this.nodeLiveId = HashUtils.newTimeBasedUUID();
+        this.executorService = executorService;
+        this.nodeLiveId = HashUtils.newTimeBasedUUID();
 
-		me = new ClusterNodeAddress(configuration.webServiceConnector.addressPort,
-				configuration.webServiceConnector.port);
-		webApp = new ClusterNodeAddress(configuration.webAppConnector.addressPort, configuration.webAppConnector.port);
+        me = new ClusterNodeAddress(configuration.webServiceConnector.addressPort,
+                configuration.webServiceConnector.port);
+        webApp = new ClusterNodeAddress(configuration.webAppConnector.addressPort, configuration.webAppConnector.port);
 
-		LOGGER.info(() -> "Server: " + me.httpAddressKey + " Groups: " + ArrayUtils.prettyPrint(configuration.groups));
-		this.myGroups = configuration.groups != null ? new HashSet<>(configuration.groups) : null;
-		this.myServices = new HashSet<>();
-		if (configuration.masters != null && !configuration.masters.isEmpty()) {
-			this.masters = new HashSet<>();
-			configuration.masters.forEach(master -> this.masters.add(
-					new ClusterNodeAddress(master, configuration.webServiceConnector.port).httpAddressKey));
-		} else
-			this.masters = null;
-		clusterNodeMap = new ClusterNodeMap(this, me.address);
-		clusterNodeMap.register(me.httpAddressKey);
-		clusterNodeMap.register(masters);
+        LOGGER.info(() -> "Server: " + me.httpAddressKey + " Groups: " + ArrayUtils.prettyPrint(configuration.groups));
+        this.myGroups = configuration.groups != null ? new HashSet<>(configuration.groups) : null;
+        this.myServices = new HashSet<>();
+        if (configuration.masters != null && !configuration.masters.isEmpty()) {
+            this.masters = new HashSet<>();
+            configuration.masters.forEach(master -> this.masters.add(
+                    new ClusterNodeAddress(master, configuration.webServiceConnector.port).httpAddressKey));
+        } else
+            this.masters = null;
+        clusterNodeMap = new ClusterNodeMap(this, me.address);
+        clusterNodeMap.register(me.httpAddressKey);
+        clusterNodeMap.register(masters);
 
-		if (configuration.multicastConnector.address != null && configuration.multicastConnector.port != -1)
-			protocolListener = new MulticastListener(this, configuration.multicastConnector.address,
-					configuration.multicastConnector.port);
-		else
-			protocolListener = new DatagramListener(this);
+        if (configuration.multicastConnector.address != null && configuration.multicastConnector.port != -1)
+            protocolListener = new MulticastListener(this, configuration.multicastConnector.address,
+                    configuration.multicastConnector.port);
+        else
+            protocolListener = new DatagramListener(this);
 
-		service = new ClusterServiceImpl(this);
-	}
+        service = new ClusterServiceImpl(this);
+    }
 
-	public ClusterServiceInterface getService() {
-		return service;
-	}
+    public ClusterServiceInterface getService() {
+        return service;
+    }
 
-	public ClusterManager registerProtocolListener(final GenericServerBuilder builder, final Set<String> services) {
-		builder.packetListener(protocolListener);
-		builder.startedListener(server -> {
-			protocolListener.joinCluster(services);
-		});
-		builder.shutdownListener(server -> protocolListener.leaveCluster());
-		builder.shutdownListener(server -> protocolListener.shutdown());
-		executorService.submit(protocolListener);
-		return this;
-	}
+    public ClusterManager registerProtocolListener(final GenericServerBuilder builder, final Set<String> services) {
+        builder.packetListener(protocolListener);
+        builder.startedListener(server -> {
+            protocolListener.joinCluster(services);
+        });
+        builder.shutdownListener(server -> protocolListener.leaveCluster());
+        builder.shutdownListener(server -> protocolListener.shutdown());
+        executorService.submit(protocolListener);
+        return this;
+    }
 
-	public boolean isGroup(String group) {
-		if (group == null)
-			return true;
-		if (myGroups == null)
-			return true;
-		if (group.isEmpty())
-			return true;
-		return myGroups.contains(group);
-	}
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(nodeLiveId);
+    }
 
-	public boolean isLeader(final String service, final String group) throws ServerException {
-		final SortedSet<String> nodes = clusterNodeMap.getGroupService(group, service);
-		if (nodes == null || nodes.isEmpty()) {
-			LOGGER.warning(() -> "No node available for this service/group: " + service + '/' + group);
-			return false;
-		}
-		return me.httpAddressKey.equals(nodes.first());
-	}
+    public boolean isGroup(String group) {
+        if (group == null)
+            return true;
+        if (myGroups == null)
+            return true;
+        if (group.isEmpty())
+            return true;
+        return myGroups.contains(group);
+    }
 
-	final ClusterStatusJson getStatus() {
-		final Map<String, ClusterNode> nodesMap = clusterNodeMap.getNodesMap();
-		final TreeMap<String, ClusterNodeJson> nodesJsonMap = new TreeMap<>();
-		if (nodesMap != null) {
-			final long currentMs = System.currentTimeMillis();
-			nodesMap.forEach((address, clusterNode) -> {
-				final Integer timeToLive;
-				final Long expirationTimeMs = clusterNode.getExpirationTimeMs();
-				if (expirationTimeMs != null)
-					timeToLive = (int) ((expirationTimeMs - currentMs) / 1000);
-				else
-					timeToLive = null;
-				final ClusterNodeJson clusterNodeJson = new ClusterNodeJson(clusterNode, timeToLive);
-				nodesJsonMap.put(address, clusterNodeJson);
-			});
-		}
-		return new ClusterStatusJson(me.httpAddressKey, nodeLiveId,
-				myServices.contains("webapps") ? webApp.httpAddressKey : null, nodesJsonMap, clusterNodeMap.getGroups(),
-				clusterNodeMap.getServices(), masters, protocolListener.getLastExecutionDate());
-	}
+    public boolean isLeader(final String service, final String group) throws ServerException {
+        final SortedSet<String> nodes = clusterNodeMap.getGroupService(group, service);
+        if (nodes == null || nodes.isEmpty()) {
+            LOGGER.warning(() -> "No node available for this service/group: " + service + '/' + group);
+            return false;
+        }
+        return me.httpAddressKey.equals(nodes.first());
+    }
 
-	final Set<String> getNodes() {
-		final Map<String, ClusterNode> nodesMap = clusterNodeMap.getNodesMap();
-		return nodesMap == null ? Collections.emptySet() : nodesMap.keySet();
-	}
+    final ClusterStatusJson getStatus() {
+        final Map<String, ClusterNode> nodesMap = clusterNodeMap.getNodesMap();
+        final TreeMap<String, ClusterNodeJson> nodesJsonMap = new TreeMap<>();
+        if (nodesMap != null) {
+            final long currentMs = System.currentTimeMillis();
+            nodesMap.forEach((address, clusterNode) -> {
+                final Integer timeToLive;
+                final Long expirationTimeMs = clusterNode.getExpirationTimeMs();
+                if (expirationTimeMs != null)
+                    timeToLive = (int) ((expirationTimeMs - currentMs) / 1000);
+                else
+                    timeToLive = null;
+                final ClusterNodeJson clusterNodeJson = new ClusterNodeJson(clusterNode, timeToLive);
+                nodesJsonMap.put(address, clusterNodeJson);
+            });
+        }
+        return new ClusterStatusJson(me.httpAddressKey, nodeLiveId,
+                myServices.contains("webapps") ? webApp.httpAddressKey : null, nodesJsonMap, clusterNodeMap.getGroups(),
+                clusterNodeMap.getServices(), masters, protocolListener.getLastExecutionDate());
+    }
 
-	final TreeMap<String, ClusterServiceStatusJson.StatusEnum> getServicesStatus(final String group) {
-		final TreeMap<String, ClusterServiceStatusJson.StatusEnum> servicesStatus = new TreeMap<>();
-		final Set<String> services = clusterNodeMap.getServices().keySet();
-		if (services == null || services.isEmpty())
-			return servicesStatus;
-		services.forEach(service -> {
-			final SortedSet<String> nodes = getNodesByGroupByService(group, service);
-			if (nodes != null && !nodes.isEmpty())
-				servicesStatus.put(service, ClusterServiceStatusJson.StatusEnum.of(nodes));
-		});
-		return servicesStatus;
-	}
+    final Set<String> getNodes() {
+        final Map<String, ClusterNode> nodesMap = clusterNodeMap.getNodesMap();
+        return nodesMap == null ? Collections.emptySet() : nodesMap.keySet();
+    }
 
-	final ClusterServiceStatusJson getServiceStatus(final String group, final String service) {
-		final SortedSet<String> nodes = getNodesByGroupByService(group, service);
-		return ClusterServiceStatusJson.of(nodes);
-	}
+    final TreeMap<String, ClusterServiceStatusJson.StatusEnum> getServicesStatus(final String group) {
+        final TreeMap<String, ClusterServiceStatusJson.StatusEnum> servicesStatus = new TreeMap<>();
+        final Set<String> services = clusterNodeMap.getServices().keySet();
+        if (services == null || services.isEmpty())
+            return servicesStatus;
+        services.forEach(service -> {
+            final SortedSet<String> nodes = getNodesByGroupByService(group, service);
+            if (nodes != null && !nodes.isEmpty())
+                servicesStatus.put(service, ClusterServiceStatusJson.StatusEnum.of(nodes));
+        });
+        return servicesStatus;
+    }
 
-	final SortedSet<String> getNodesByGroupByService(final String group, final String service) {
-		if (StringUtils.isEmpty(group))
-			return clusterNodeMap.getByService(service);
-		else if (StringUtils.isEmpty(service))
-			return clusterNodeMap.getByGroup(group);
-		else
-			return clusterNodeMap.getGroupService(group, service);
-	}
+    final ClusterServiceStatusJson getServiceStatus(final String group, final String service) {
+        final SortedSet<String> nodes = getNodesByGroupByService(group, service);
+        return ClusterServiceStatusJson.of(nodes);
+    }
 
-	final String getLeaderNode(final String group, final String service) {
-		final SortedSet<String> nodes = getNodesByGroupByService(group, service);
-		if (nodes == null || nodes.isEmpty())
-			return null;
-		return nodes.first();
-	}
+    final SortedSet<String> getNodesByGroupByService(final String group, final String service) {
+        if (StringUtils.isEmpty(group))
+            return clusterNodeMap.getByService(service);
+        else if (StringUtils.isEmpty(service))
+            return clusterNodeMap.getByGroup(group);
+        else
+            return clusterNodeMap.getGroupService(group, service);
+    }
 
-	final String getRandomNode(final String group, final String service) {
-		final SortedSet<String> nodes = getNodesByGroupByService(group, service);
-		if (nodes == null || nodes.isEmpty())
-			return null;
-		int rand = RandomUtils.nextInt(0, nodes.size());
-		Iterator<String> it = nodes.iterator();
-		for (; ; ) {
-			final String node = it.next();
-			if (rand == 0)
-				return node;
-			rand--;
-		}
-	}
+    final String getLeaderNode(final String group, final String service) {
+        final SortedSet<String> nodes = getNodesByGroupByService(group, service);
+        if (nodes == null || nodes.isEmpty())
+            return null;
+        return nodes.first();
+    }
 
-	final boolean isMe(final AddressContent message) {
-		if (message == null)
-			return false;
-		if (nodeLiveId.equals(message.getNodeLiveId()))
-			return true;
-		if (me.httpAddressKey.equals(message.getAddress()))
-			return true;
-		return false;
-	}
+    final String getRandomNode(final String group, final String service) {
+        final SortedSet<String> nodes = getNodesByGroupByService(group, service);
+        if (nodes == null || nodes.isEmpty())
+            return null;
+        int rand = RandomUtils.nextInt(0, nodes.size());
+        Iterator<String> it = nodes.iterator();
+        for (; ; ) {
+            final String node = it.next();
+            if (rand == 0)
+                return node;
+            rand--;
+        }
+    }
 
-	final boolean isMaster(final ClusterNodeAddress nodeAddress) {
-		if (nodeAddress == null || masters == null)
-			return false;
-		return masters.contains(nodeAddress.httpAddressKey);
-	}
+    final boolean isMe(final AddressContent message) {
+        if (message == null)
+            return false;
+        if (nodeLiveId.equals(message.getNodeLiveId()))
+            return true;
+        if (me.httpAddressKey.equals(message.getAddress()))
+            return true;
+        return false;
+    }
+
+    final boolean isMaster(final ClusterNodeAddress nodeAddress) {
+        if (nodeAddress == null || masters == null)
+            return false;
+        return masters.contains(nodeAddress.httpAddressKey);
+    }
 }

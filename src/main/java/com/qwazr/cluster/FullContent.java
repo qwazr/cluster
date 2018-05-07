@@ -25,51 +25,51 @@ import java.util.UUID;
 
 class FullContent extends AddressContent {
 
-	public final Set<String> groups;
-	public final Set<String> services;
+    public final Set<String> groups;
+    public final Set<String> services;
 
-	FullContent() {
-		groups = new HashSet<>();
-		services = new HashSet<>();
-	}
+    public FullContent() {
+        groups = new HashSet<>();
+        services = new HashSet<>();
+    }
 
-	FullContent(final String address, final UUID nodeLiveId, final Set<String> groups, final Set<String> services) {
-		super(address, nodeLiveId);
-		this.groups = groups;
-		this.services = services;
-	}
+    FullContent(final String address, final UUID nodeLiveId, final Set<String> groups, final Set<String> services) {
+        super(address, nodeLiveId);
+        this.groups = groups;
+        this.services = services;
+    }
 
-	private static void writeCollection(final Collection<String> collection, final ObjectOutput out)
-			throws IOException {
-		if (collection != null) {
-			out.writeInt(collection.size());
-			for (String s : collection)
-				out.writeUTF(s);
-		} else
-			out.writeInt(0);
-	}
+    private static void writeCollection(final Collection<String> collection, final ObjectOutput out)
+            throws IOException {
+        if (collection != null) {
+            out.writeInt(collection.size());
+            for (String s : collection)
+                out.writeUTF(s);
+        } else
+            out.writeInt(0);
+    }
 
-	@Override
-	final public void writeExternal(final ObjectOutput out) throws IOException {
-		super.writeExternal(out);
-		writeCollection(groups, out);
-		writeCollection(services, out);
-	}
+    @Override
+    final public void writeExternal(final ObjectOutput out) throws IOException {
+        super.writeExternal(out);
+        writeCollection(groups, out);
+        writeCollection(services, out);
+    }
 
-	@Override
-	final public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
-		super.readExternal(in);
-		int size = in.readInt();
-		while (size-- > 0)
-			groups.add(in.readUTF());
-		size = in.readInt();
-		while (size-- > 0)
-			services.add(in.readUTF());
-	}
+    @Override
+    final public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
+        super.readExternal(in);
+        int size = in.readInt();
+        while (size-- > 0)
+            groups.add(in.readUTF());
+        size = in.readInt();
+        while (size-- > 0)
+            services.add(in.readUTF());
+    }
 
-	@Override
-	final public String toString() {
-		return super.toString() + " " + groups.size() + "/" + services.size();
-	}
+    @Override
+    final public String toString() {
+        return super.toString() + " " + groups.size() + "/" + services.size();
+    }
 
 }
