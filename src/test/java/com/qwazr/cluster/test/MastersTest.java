@@ -15,21 +15,22 @@
  */
 package com.qwazr.cluster.test;
 
+import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.List;
 
 public class MastersTest extends AbstractMultiTests {
 
-	private static final List<String> MASTERS = Arrays.asList("localhost:9092", "localhost:9093");
-
-	@Override
-	protected void startServers() throws Exception {
-		int port = 9092;
-		master1 = new ClusterTestServer(MASTERS, port++, null, null, GROUP_MASTER);
-		master2 = new ClusterTestServer(MASTERS, port++, null, null, GROUP_MASTER);
-		front1 = new ClusterTestServer(MASTERS, port++, null, null, GROUP_FRONT);
-		front2 = new ClusterTestServer(MASTERS, port++, null, null, GROUP_FRONT);
-		front3 = new ClusterTestServer(MASTERS, port++, null, null, GROUP_FRONT);
-	}
+    @Override
+    protected void startServers() throws Exception {
+        final String hostname = InetAddress.getLocalHost().getHostName();
+        final List<String> masters = Arrays.asList(hostname + ":9092", hostname + ":9093");
+        int port = 9092;
+        master1 = new ClusterTestServer(masters, hostname, port++, null, null, GROUP_MASTER);
+        master2 = new ClusterTestServer(masters, hostname, port++, null, null, GROUP_MASTER);
+        front1 = new ClusterTestServer(masters, hostname, port++, null, null, GROUP_FRONT);
+        front2 = new ClusterTestServer(masters, hostname, port++, null, null, GROUP_FRONT);
+        front3 = new ClusterTestServer(masters, hostname, port++, null, null, GROUP_FRONT);
+    }
 
 }

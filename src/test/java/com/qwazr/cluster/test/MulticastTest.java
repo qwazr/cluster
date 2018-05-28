@@ -15,18 +15,21 @@
  */
 package com.qwazr.cluster.test;
 
+import java.net.InetAddress;
+
 public class MulticastTest extends AbstractMultiTests {
 
-	@Override
-	protected void startServers() throws Exception {
-		final String multicastAddress = "224.0.0.1";
-		final Integer multicastPort = 9099;
-		int port = 9092;
-		master1 = new ClusterTestServer(null, port++, multicastAddress, multicastPort, GROUP_MASTER);
-		master2 = new ClusterTestServer(null, port++, multicastAddress, multicastPort, GROUP_MASTER);
-		front1 = new ClusterTestServer(null, port++, multicastAddress, multicastPort, GROUP_FRONT);
-		front2 = new ClusterTestServer(null, port++, multicastAddress, multicastPort, GROUP_FRONT);
-		front3 = new ClusterTestServer(null, port++, multicastAddress, multicastPort, GROUP_FRONT);
-	}
+    @Override
+    protected void startServers() throws Exception {
+        final String hostname = InetAddress.getLocalHost().getHostName();
+        final String multicastAddress = "224.0.0.1";
+        final Integer multicastPort = 9099;
+        int port = 9092;
+        master1 = new ClusterTestServer(null, hostname, port++, multicastAddress, multicastPort, GROUP_MASTER);
+        master2 = new ClusterTestServer(null, hostname, port++, multicastAddress, multicastPort, GROUP_MASTER);
+        front1 = new ClusterTestServer(null, hostname, port++, multicastAddress, multicastPort, GROUP_FRONT);
+        front2 = new ClusterTestServer(null, hostname, port++, multicastAddress, multicastPort, GROUP_FRONT);
+        front3 = new ClusterTestServer(null, hostname, port++, multicastAddress, multicastPort, GROUP_FRONT);
+    }
 
 }

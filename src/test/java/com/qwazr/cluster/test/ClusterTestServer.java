@@ -30,55 +30,55 @@ import java.util.Map;
 
 public class ClusterTestServer {
 
-	final ClusterServer server;
-	final File dataDir;
-	final ClusterServiceInterface client;
-	final String address;
-	final ClusterServiceBuilder serviceBuilder;
+    final ClusterServer server;
+    final File dataDir;
+    final ClusterServiceInterface client;
+    final String address;
+    final ClusterServiceBuilder serviceBuilder;
 
-	final static List<ClusterTestServer> servers = new ArrayList<>();
-	final static List<String> serverAdresses = new ArrayList<>();
+    final static List<ClusterTestServer> servers = new ArrayList<>();
+    final static List<String> serverAdresses = new ArrayList<>();
 
-	ClusterTestServer(final List<String> masters, final int tcpPort, final String multicastAddress,
-			final Integer multicastPort, final String... groups) throws Exception {
+    ClusterTestServer(final List<String> masters, final String hostname, final int tcpPort, final String multicastAddress,
+                      final Integer multicastPort, final String... groups) throws Exception {
 
-		dataDir = Files.createTempDir();
-		address = "http://localhost:" + tcpPort;
+        dataDir = Files.createTempDir();
+        address = "http://" + hostname + ':' + tcpPort;
 
-		Map<String, String> env = new HashMap<>();
-		env.put("QWAZR_DATA", dataDir.getAbsolutePath());
-		if (groups != null)
-			env.put("QWAZR_GROUPS", StringUtils.join(groups, ","));
-		else
-			env.remove("QWAZR_GROUPS");
-		if (masters != null)
-			env.put("QWAZR_MASTERS", StringUtils.join(masters, ","));
-		else
-			env.remove("QWAZR_MASTERS");
-		env.put("PUBLIC_ADDR", "localhost");
-		env.put("LISTEN_ADDR", "localhost");
-		env.put("WEBSERVICE_PORT", Integer.toString(tcpPort));
-		if (multicastAddress != null)
-			env.put("MULTICAST_ADDR", multicastAddress);
-		if (multicastPort != null)
-			env.put("MULTICAST_PORT", Integer.toString(multicastPort));
+        Map<String, String> env = new HashMap<>();
+        env.put("QWAZR_DATA", dataDir.getAbsolutePath());
+        if (groups != null)
+            env.put("QWAZR_GROUPS", StringUtils.join(groups, ","));
+        else
+            env.remove("QWAZR_GROUPS");
+        if (masters != null)
+            env.put("QWAZR_MASTERS", StringUtils.join(masters, ","));
+        else
+            env.remove("QWAZR_MASTERS");
+        env.put("PUBLIC_ADDR", hostname);
+        env.put("LISTEN_ADDR", hostname);
+        env.put("WEBSERVICE_PORT", Integer.toString(tcpPort));
+        if (multicastAddress != null)
+            env.put("MULTICAST_ADDR", multicastAddress);
+        if (multicastPort != null)
+            env.put("MULTICAST_PORT", Integer.toString(multicastPort));
 
-		server = new ClusterServer(env);
+        server = new ClusterServer(env);
 
-		serviceBuilder = server.getServiceBuilder();
-		client = serviceBuilder.remote(RemoteService.of(this.address).build());
-		servers.add(this);
-		serverAdresses.add(this.address);
+        serviceBuilder = server.getServiceBuilder();
+        client = serviceBuilder.remote(RemoteService.of(this.address).build());
+        servers.add(this);
+        serverAdresses.add(this.address);
 
-		server.start();
-	}
+        server.start();
+    }
 
-	public void stop() {
-		server.stop();
-	}
+    public void stop() {
+        server.stop();
+    }
 
-	public static void stopServers() {
-		servers.forEach(ClusterTestServer::stop);
-		servers.clear();
-	}
+    public static void stopServers() {
+        servers.forEach(ClusterTestServer::stop);
+        servers.clear();
+    }
 }
