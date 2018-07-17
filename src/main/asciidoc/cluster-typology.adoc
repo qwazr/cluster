@@ -1,0 +1,40 @@
+[plantuml,cluster-standard-typology, svg]
+....
+package "Seed nodes" {
+[Cluster 1] <-> [Cluster 2]
+}
+
+package "Service Group A" {
+  [Service 1] --> [Cluster 1]
+  [Service 1] --> [Cluster 2]
+  [Service 2] --> [Cluster 1]
+  [Service 2] --> [Cluster 2]
+}
+
+package "Service Group B" {
+  [Service 3] --> [Cluster 1]
+  [Service 3] --> [Cluster 2]
+  [Service 4] --> [Cluster 1]
+  [Service 4] --> [Cluster 2]
+}
+
+[Client x] ..> [Cluster 2] : service request
+[Client y] ..> [Cluster 1] : service request
+
+note top of [Service 2]
+  The services nodes register, ping and unregister
+  on all known cluster nodes.
+end note
+
+note top of [Client x]
+  The client requests a cluster
+  node to get a service list by
+  name, group, etc.
+end note
+
+note right of [Cluster 2]
+  The cluster nodes store information
+  about registered services
+end note
+
+....
