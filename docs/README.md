@@ -1,3 +1,8 @@
+---
+title: QWAZR Cluster
+sidebar: toc
+---
+
 QWAZR Cluster
 =============
 
@@ -11,9 +16,13 @@ about services and group of services.
 The purpose of QWAZR cluster is to provide a simple and safe way to expose a set of services to a set of clients. 
 
 The general principle is simple:
-- Any **Services** can register itself to the **Cluster** by using datagram messages.
-- **Clients** request the **Cluster** to obtain the **Endpoints** of existing services.
-- **Clients** can then contact the **Services** by using the provided **Endpoints**.
+- Any **services** can register itself to the **cluster** by using datagram messages.
+- The **clients** request the **Cluster** to obtain the **endpoints** of existing services.
+- The **clients** can then contact the **services** by using the provided **endpoints**.
+
+_The cluster master servers do not know anything about how to contact a service.
+Neither do them acts as a proxy or a load balancer. It is up to the client to know how to work
+with the provided endpoints._
 
 The QWAZR Cluster service can be used in two different ways:
 - **Standalone JSON Web service :**
@@ -25,9 +34,13 @@ The library manages the network connections and provide a JAVA service which let
 How does it work?
 -----------------
 
-Some definitions.
+![Typical typology](images/cluster-standard-typology.svg)
 
-### A Service instance
+### Actor list
+
+Here are the typical actors of the system.
+
+#### Service instance
  
 A service instance is any arbitrary service running on a server that wants to be visible on the cluster.
 
@@ -38,19 +51,27 @@ It is defined by:
 
 A service will register itself to the cluster nodes.
 
-### A Cluster master node
+#### Cluster master server
 
 An instance of QWAZR Cluster which is in charge of sharing information about available services.
 
 Several cluster master node share information.
 Each instance are then synchronized and will provide the same information.
 
-### A cluster Client
+#### Cluster Client
 
-A cluster client is any program that want to get information about existing services and their location.
-The client 
+A cluster client is any program that want to get information about existing services and their locations.
+The client can then use the information provided by the cluster request and contact directly the service.
 
-![Typical typology](images/cluster-standard-typology.svg)
+### Network communication design
+
+There is two different network designs. One is base on [multicast](https://en.wikipedia.org/wiki/Multicast),
+the other one is based on [UPD](https://en.wikipedia.org/wiki/User_Datagram_Protocol).
+
+- **Multicast** :
+The cluster nodes automatically detect themselves and share the informations about the services.
+- **UDP** : 
+The cluster nodes contact themselves but using an existing list of the master servers read in the configuration. 
 
 Open source
 -----------
