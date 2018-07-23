@@ -1,0 +1,6 @@
+[plantuml,multicast-cluster, svg]
+....
+start
+:Send JOIN message to multicast address;
+stop
+....
