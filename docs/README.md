@@ -29,7 +29,7 @@ The library manages the network connections and provide a JAVA service which let
 How does it work?
 -----------------
 
-![Typical typology](images/cluster-standard-typology.svg)
+![Typical typology](images/cluster-standard-typology.svg){:class="img-fluid"}
 
 ### Actor list
 
