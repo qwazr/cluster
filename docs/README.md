@@ -1,9 +1,3 @@
----
-title: Introduction to QWAZR Cluster
-category: getting-started
-order: 1
----
-
 QWAZR Cluster
 =============
 
