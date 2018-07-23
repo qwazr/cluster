@@ -1,5 +1,5 @@
 <ul class="list-unstyled">
     {% for page in site.pages %}
-    <li>{{page.title}}</li>
+    <li><a href="{{page.url}}">{{page.title}}</a></li>
     {% endfor %}
 </ul>
