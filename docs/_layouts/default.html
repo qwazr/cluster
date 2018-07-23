@@ -37,16 +37,12 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-3">
-            {% assign mydocs = site.docs | group_by: 'category' %}
-            {% for cat in mydocs %}
-            <h2>{{ cat.name | capitalize }}</h2>
+            {% assign doclist = site.docs | sort: 'order' %}
             <ul>
-                {% assign items = cat.items | sort: 'order' %}
-                {% for item in items %}
-                <li><a href="{{ item.url }}">{{ item.title }}</a></li>
+                {% for item in doclist %}
+                <li><a href="{{ item.url }}" alt="{{ item.title }}">{{ item.title }}</a></li>
                 {% endfor %}
             </ul>
-            {% endfor %}
         </div>
         <div class="col-md-9">
             {{ content }}
