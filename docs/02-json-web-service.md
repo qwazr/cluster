@@ -18,10 +18,10 @@ This web service provides a set of methods that let you request the available se
 ### Overview of the Cluster
 
 - Method: GET
-- Path: /
+- Path: /cluster/
 
 ```bash
-curl ...
+GET /cluster/
 ```
 
 ```json

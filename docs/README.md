@@ -35,7 +35,7 @@ How does it work?
 
 Here are the typical actors of the system.
 
-#### Service instance
+### Service instance
  
 A service instance is any arbitrary service running on a server that wants to be visible on the cluster.
 
@@ -46,14 +46,14 @@ It is defined by:
 
 A service will register itself to the cluster nodes.
 
-#### Cluster master server
+### Cluster master server
 
 An instance of QWAZR Cluster which is in charge of sharing information about available services.
 
 Several cluster master node share information.
 Each instance are then synchronized and will provide the same information.
 
-#### Cluster Client
+### Cluster Client
 
 A cluster client is any program that want to get information about existing services and their locations.
 The client can then use the information provided by the cluster request and contact directly the service.
