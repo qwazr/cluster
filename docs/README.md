@@ -1,7 +1,3 @@
----
-title: QWAZR Cluster
-order: 1
----
 QWAZR Cluster
 =============
 
