@@ -1,5 +1,5 @@
 <ul class="list-unstyled">
-    {% assign pages_list = site.pages | sort:"order" %}
+    {% assign pages_list = site.pages %}
     {% for page in pages_list %}
     <li><a href="{{site.url}}{{page.url}}">{{page.title}}</a></li>
     {% endfor %}
