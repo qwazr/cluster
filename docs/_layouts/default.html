@@ -38,7 +38,7 @@
     <div class="row">
         <div class="col-md-3">
             <ul class="list-unstyled">
-                {% assign doclist = site.pages | sort: 'title' %}
+                {% assign doclist = site.pages | sort: 'url' %}
                 {% for item in doclist %}
                 <li><a href="{{ item.url }}">{{ item.title }}</a></li>
                 {% endfor %}
