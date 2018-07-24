@@ -37,10 +37,10 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-3">
-            <ul class="list-unstyled">
+            <ul class="list-group">
                 {% assign doclist = site.pages | sort: 'url' %}
                 {% for item in doclist %}
-                <li><a href="{{ site.url }}{{ item.url }}">{{ item.title }}</a></li>
+                <li class="list-group-item"><a href="{{ site.github.url }}{{ item.url }}">{{ item.title }}</a></li>
                 {% endfor %}
             </ul>
         </div>
