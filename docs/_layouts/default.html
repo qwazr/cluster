@@ -37,7 +37,11 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-3">
-            {% include toc.html %}
+            <ul class="list-unstyled">
+                {% for doc in site.docs %}
+                <li><a href="{{ doc.url }}">{{ doc.title }}</a></li>
+                {% endfor %}
+            </ul>
         </div>
         <div class="col-md-9">
             {{ content }}
