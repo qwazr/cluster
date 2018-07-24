@@ -40,7 +40,7 @@
             <ul class="list-unstyled">
                 {% assign doclist = site.pages | sort: 'url' %}
                 {% for item in doclist %}
-                <li><a href="{{ item.url }}">{{ item.title }}</a></li>
+                <li><a href="{{ site.url }}{{ item.url }}">{{ item.title }}</a></li>
                 {% endfor %}
             </ul>
         </div>
