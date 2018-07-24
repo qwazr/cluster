@@ -38,8 +38,8 @@
     <div class="row">
         <div class="col-md-3">
             <ul class="list-unstyled">
-                {% for doc in site.docs %}
-                <li><a href="{{ doc.url }}">{{ doc.title }}</a></li>
+                {% for page in site.pages %}
+                <li><a href="{{ page.url }}">{{ page.title }}</a></li>
                 {% endfor %}
             </ul>
         </div>
