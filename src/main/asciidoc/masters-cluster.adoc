@@ -17,10 +17,24 @@ folder "node 4" {
     [java code 4] -left-> [cluster manager 4]: request
 }
 
-multicast <-down-> [cluster manager 4]
-multicast <-down-> [cluster manager 3]
-multicast <-up-> [cluster manager 2]
-multicast <-up-> [cluster manager 1]
+folder "master 1" {
+    [java code m1] -left-> [cluster manager m1]: request
+}
+
+folder "master 2" {
+    [java code m2] -right-> [cluster manager m2]: request
+}
+
+[cluster manager m1] <-down-> [cluster manager 4]
+[cluster manager m2] <-down-> [cluster manager 4]
+[cluster manager m1] <-down-> [cluster manager 3]
+[cluster manager m2] <-down-> [cluster manager 3]
+[cluster manager m1] <-up-> [cluster manager 2]
+[cluster manager m2] <-up-> [cluster manager 2]
+[cluster manager m1] <-up-> [cluster manager 1]
+[cluster manager m2] <-up-> [cluster manager 1]
+
+[cluster manager m1] <-> [cluster manager m2]
 
 note bottom of [cluster manager 2]
   Each node sends its information

@@ -29,7 +29,7 @@ The library manages the network connections and provide a JAVA service which let
 How does it work?
 -----------------
 
-![Typical typology](images/cluster-standard-typology.svg){:class="img-fluid"}
+![Typical typology](images/cluster-typology.svg){:class="img-fluid"}
 
 ### Actor list
 
@@ -46,11 +46,11 @@ It is defined by:
 
 A service will register itself to the cluster nodes.
 
-### Cluster master server
+### Cluster node
 
-An instance of QWAZR Cluster which is in charge of sharing information about available services.
+An instance of QWAZR Cluster (Cluster Manager) which is in charge of sharing information about available services.
 
-Several cluster master node share information.
+Several cluster nodes share information.
 Each instance are then synchronized and will provide the same information.
 
 ### Cluster Client
@@ -61,12 +61,24 @@ The client can then use the information provided by the cluster request and cont
 ### Network communication design
 
 There is two different network designs. One is base on [multicast](https://en.wikipedia.org/wiki/Multicast),
-the other one is based on [UPD](https://en.wikipedia.org/wiki/User_Datagram_Protocol).
+the other one is based on **master nodes**. The communication are always transported using the
+[datagram protocol](https://en.wikipedia.org/wiki/User_Datagram_Protocol).
 
-- **Multicast** :
-The cluster nodes automatically detect themselves and share the informations about the services.
-- **UDP** : 
-The cluster nodes contact themselves but using an existing list of the master servers read in the configuration. 
+#### Using multicast
+
+The cluster nodes automatically detect themselves and share information about the services
+by broadcasting to a multicast address.
+
+![Multicast cluster](images/multicast-cluster.svg){:class="img-fluid"}
+
+
+#### Using master nodes
+ 
+The cluster nodes register themselves to a set of master nodes by using an existing list declared in the configuration. 
+
+#### TODO
+
+TODO: Describe the environnement variables providing the notification period and time to live
 
 Open source
 -----------

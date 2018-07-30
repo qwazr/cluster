@@ -1,24 +1,24 @@
-[plantuml,cluster-standard-typology, svg]
+[plantuml,cluster-typology, svg]
 ....
 
-folder "Cluster master servers" {
+folder "Cluster nodes" {
    node "Cluster 1"
    node "Cluster 2"
   [Cluster 1] <-> [Cluster 2]
 }
 
-folder "Services server A" {
-  [Service 1] --> [Cluster 1]
-  [Service 1] --> [Cluster 2]
-  [Service 2] --> [Cluster 1]
-  [Service 2] --> [Cluster 2]
+folder "Service nodes A" {
+  [Service 2] -down-> [Cluster 1]
+  [Service 2] -down-> [Cluster 2]
+  [Service 1] -down-> [Cluster 1]
+  [Service 1] -down-> [Cluster 2]
 }
 
-folder "Services server B" {
-  [Service 3] --> [Cluster 1]
-  [Service 3] --> [Cluster 2]
-  [Service 4] --> [Cluster 1]
-  [Service 4] --> [Cluster 2]
+folder "Service nodes B" {
+  [Service 4] -down-> [Cluster 1]
+  [Service 4] -down-> [Cluster 2]
+  [Service 3] -down-> [Cluster 1]
+  [Service 3] -down-> [Cluster 2]
 }
 
 folder "Clients" {
@@ -41,5 +41,4 @@ note right of [Cluster 2]
   The cluster master server store and share
   information about registered services and groups.
 end note
-
 ....

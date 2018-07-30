@@ -37,7 +37,7 @@ class DatagramListener extends ProtocolListener {
 	final void acceptJoin(final FullContent message) throws URISyntaxException, IOException {
 		// Registering the node
 		final ClusterNode node = registerNode(message);
-		// Send immediatly a reply
+		// Send immediately a reply
 		ClusterProtocol.newReply(manager.me.httpAddressKey, manager.nodeLiveId, manager.myGroups, manager.myServices)
 				.send(node.address.address);
 		// Notify the others
