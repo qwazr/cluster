@@ -39,7 +39,9 @@ public class ClusterServer implements BaseServer {
 	private final ClusterServiceBuilder serviceBuilder;
 
 	private ClusterServer(final ServerConfiguration serverConfiguration) throws IOException {
+
 		final ExecutorService executorService = Executors.newCachedThreadPool();
+
 		final GenericServerBuilder builder = GenericServer.of(serverConfiguration, executorService);
 
 		final ApplicationBuilder webServices = ApplicationBuilder.of("/*")

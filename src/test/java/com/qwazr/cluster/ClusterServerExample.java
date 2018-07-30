@@ -1,11 +1,3 @@
-Embedded in your JAVA service
-=============================
-
-This is an example is also a test unit available in
-[ClusterServerExample](https://github.com/qwazr/cluster/blob/master/src/test/java/com/qwazr/cluster/ClusterServerExample.java)
-
-
-```java
 package com.qwazr.cluster;
 
 import com.qwazr.server.ApplicationBuilder;
@@ -117,4 +109,3 @@ public class ClusterServerExample {
         executorService.shutdown();
     }
 }
-```
