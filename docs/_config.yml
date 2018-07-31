@@ -1,3 +1,14 @@
 google_analytics: UA-66371454-1
 markdown: kramdown
 highlighter: rouge
+defaults:
+- scope:
+    path: "fr"
+  values:
+    layout: "default"
+    lang: "fr"
+- scope:
+    path: ""
+  values:
+    layout: "default"
+    lang: "en"

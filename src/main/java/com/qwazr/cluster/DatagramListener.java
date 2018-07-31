@@ -20,107 +20,106 @@ import com.qwazr.utils.SerializationUtils;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
-import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 class DatagramListener extends ProtocolListener {
 
-	private static final Logger LOGGER = LoggerUtils.getLogger(DatagramListener.class);
+    private static final Logger LOGGER = LoggerUtils.getLogger(DatagramListener.class);
 
-	DatagramListener(final ClusterManager manager) {
-		super(manager);
-		LOGGER.info(() -> "Start Datagram listener " + manager.me.httpAddressKey);
-	}
+    DatagramListener(final ClusterManager manager) {
+        super(manager);
+        LOGGER.info(() -> "Start Datagram listener " + manager.me.httpAddressKey);
+    }
 
-	final void acceptJoin(final FullContent message) throws URISyntaxException, IOException {
-		// Registering the node
-		final ClusterNode node = registerNode(message);
-		// Send immediately a reply
-		ClusterProtocol.newReply(manager.me.httpAddressKey, manager.nodeLiveId, manager.myGroups, manager.myServices)
-				.send(node.address.address);
-		// Notify the others
-		ClusterProtocol.newNotify(message).send(manager.clusterNodeMap.getExternalNodeAddresses());
-	}
+    final void acceptJoin(final FullContent message) throws IOException {
+        // Registering the node
+        final ClusterNode node = registerNode(message);
+        // Send immediately a reply
+        ClusterProtocol.newReply(manager.me.httpAddressKey, manager.nodeLiveId, manager.myGroups, manager.myServices)
+                .send(node.address.address);
+        // Notify the others
+        ClusterProtocol.newNotify(message).send(manager.clusterNodeMap.getExternalNodeAddresses());
+    }
 
-	final void acceptNotify(final AddressContent message) throws URISyntaxException, IOException {
-		final ClusterNode clusterNode = registerNode(message);
-		ClusterProtocol.newForward(manager.me.httpAddressKey, manager.nodeLiveId, manager.myGroups, manager.myServices)
-				.send(clusterNode.address.address);
-	}
+    final void acceptNotify(final AddressContent message) throws IOException {
+        final ClusterNode clusterNode = registerNode(message);
+        ClusterProtocol.newForward(manager.me.httpAddressKey, manager.nodeLiveId, manager.myGroups, manager.myServices)
+                .send(clusterNode.address.address);
+    }
 
-	final void acceptAlive(final AddressContent message) throws URISyntaxException, IOException {
-		ClusterProtocol.newNotify(message).send(manager.clusterNodeMap.getFullNodeAddresses());
-	}
+    final void acceptAlive(final AddressContent message) throws IOException {
+        ClusterProtocol.newNotify(message).send(manager.clusterNodeMap.getFullNodeAddresses());
+    }
 
-	final void acceptForward(final FullContent message) throws URISyntaxException, IOException {
-		final ClusterNode node = registerNode(message);
-		// Send back myself
-		ClusterProtocol.newReply(manager.me.httpAddressKey, manager.nodeLiveId, manager.myGroups, manager.myServices)
-				.send(node.address.address);
-	}
+    final void acceptForward(final FullContent message) throws IOException {
+        final ClusterNode node = registerNode(message);
+        // Send back myself
+        ClusterProtocol.newReply(manager.me.httpAddressKey, manager.nodeLiveId, manager.myGroups, manager.myServices)
+                .send(node.address.address);
+    }
 
-	final void acceptReply(final FullContent message) throws URISyntaxException, IOException {
-		registerNode(message);
-	}
+    final void acceptReply(final FullContent message) {
+        registerNode(message);
+    }
 
-	@Override
-	final public void acceptPacket(final DatagramPacket datagramPacket)
-			throws IOException, ReflectiveOperationException, URISyntaxException {
-		final MessageContent message = SerializationUtils.fromDefaultCompressedBytes(datagramPacket.getData());
-		LOGGER.finest(() -> manager.me.httpAddressKey + " DATAGRAMPACKET FROM: " + datagramPacket.getAddress() + " " +
-				message.getCommand() + " " + message.getContent());
-		switch (message.getCommand()) {
-		case join:
-			acceptJoin(message.getContent());
-			break;
-		case notify:
-			acceptNotify(message.getContent());
-			break;
-		case forward:
-			acceptForward(message.getContent());
-			break;
-		case reply:
-			acceptReply(message.getContent());
-			break;
-		case alive:
-			acceptAlive(message.getContent());
-			break;
-		case leave:
-			manager.clusterNodeMap.unregister(message.getContent());
-			break;
-		}
-	}
+    @Override
+    final public void acceptPacket(final DatagramPacket datagramPacket)
+            throws IOException, ReflectiveOperationException {
+        final MessageContent message = SerializationUtils.fromDefaultCompressedBytes(datagramPacket.getData());
+        LOGGER.finest(() -> manager.me.httpAddressKey + " DATAGRAMPACKET FROM: " + datagramPacket.getAddress() + " " +
+                message.getCommand() + " " + message.getContent());
+        switch (message.getCommand()) {
+            case join:
+                acceptJoin(message.getContent());
+                break;
+            case notify:
+                acceptNotify(message.getContent());
+                break;
+            case forward:
+                acceptForward(message.getContent());
+                break;
+            case reply:
+                acceptReply(message.getContent());
+                break;
+            case alive:
+                acceptAlive(message.getContent());
+                break;
+            case leave:
+                manager.clusterNodeMap.unregister(message.getContent());
+                break;
+        }
+    }
 
-	protected synchronized void joinCluster(final Collection<String> services) {
-		super.joinCluster(services);
-		try {
-			ClusterProtocol.newJoin(manager.me.httpAddressKey, manager.nodeLiveId, manager.myGroups, manager.myServices)
-					.send(manager.clusterNodeMap.getFullNodeAddresses());
-		} catch (IOException e) {
-			LOGGER.log(Level.SEVERE, e, e::getMessage);
-		}
-	}
+    protected synchronized void joinCluster(final Collection<String> services) {
+        super.joinCluster(services);
+        try {
+            ClusterProtocol.newJoin(manager.me.httpAddressKey, manager.nodeLiveId, manager.myGroups, manager.myServices)
+                    .send(manager.clusterNodeMap.getFullNodeAddresses());
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE, e, e::getMessage);
+        }
+    }
 
-	protected synchronized void leaveCluster() {
-		try {
-			ClusterProtocol.newLeave(manager.me.httpAddressKey, manager.nodeLiveId)
-					.send(manager.clusterNodeMap.getExternalNodeAddresses());
-		} catch (IOException e) {
-			LOGGER.log(Level.SEVERE, e, e::getMessage);
-		}
-	}
+    protected synchronized void leaveCluster() {
+        try {
+            ClusterProtocol.newLeave(manager.me.httpAddressKey, manager.nodeLiveId)
+                    .send(manager.clusterNodeMap.getExternalNodeAddresses());
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE, e, e::getMessage);
+        }
+    }
 
-	@Override
-	protected void runner() {
-		try {
-			ClusterProtocol.newAlive(manager.me.httpAddressKey, manager.nodeLiveId)
-					.send(manager.clusterNodeMap.getExternalNodeAddresses());
-		} catch (IOException e) {
-			LOGGER.log(Level.SEVERE, e, e::getMessage);
-		} finally {
-			super.runner();
-		}
-	}
+    @Override
+    protected void runner() {
+        try {
+            ClusterProtocol.newAlive(manager.me.httpAddressKey, manager.nodeLiveId)
+                    .send(manager.clusterNodeMap.getExternalNodeAddresses());
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE, e, e::getMessage);
+        } finally {
+            super.runner();
+        }
+    }
 }

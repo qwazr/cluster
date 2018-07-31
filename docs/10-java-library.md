@@ -1,7 +1,7 @@
 Embedded in your JAVA service
 =============================
 
-This is an example is also a test unit available in
+This example is also a test unit that can be viewed here :
 [ClusterServerExample](https://github.com/qwazr/cluster/blob/master/src/test/java/com/qwazr/cluster/ClusterServerExample.java)
 
 

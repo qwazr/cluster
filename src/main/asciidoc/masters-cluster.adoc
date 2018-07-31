@@ -1,4 +1,4 @@
-[plantuml,multicast-cluster, svg]
+[plantuml,masters-cluster, svg]
 ....
 
 folder "node 1" {
