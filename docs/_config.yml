@@ -3,12 +3,25 @@ markdown: kramdown
 highlighter: rouge
 defaults:
 - scope:
+    path: "README.md"
+  values:
+    layout: "default"
+    weight: 0
+- scope:
+    path: "fr/README.md"
+  values:
+    layout: "default"
+    weight: 0
+- scope:
     path: "fr"
   values:
     layout: "default"
     lang: "fr"
+    weight: 10
 - scope:
     path: ""
   values:
     layout: "default"
     lang: "en"
+    weight: 10
+
