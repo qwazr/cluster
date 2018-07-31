@@ -38,7 +38,7 @@
   <div class="row">
     <div class="col-md-3">
       <ul class="list-group">
-        {% assign doclist = site.pages | sort: 'url' %}
+        {% assign doclist = site.pages | sort: 'title' %}
         {% for item in doclist %}
         {% if item.lang == page.lang %}
         <li class="list-group-item"><a href="{{ site.github.url }}{{ item.url }}">{{ item.title }}</a></li>
