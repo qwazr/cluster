@@ -40,7 +40,9 @@
       <ul class="list-group">
         {% assign doclist = site.pages | sort: 'url' %}
         {% for item in doclist %}
+        {% if item.lang == page.lang %}
         <li class="list-group-item"><a href="{{ site.github.url }}{{ item.url }}">{{ item.title }}</a></li>
+        {% endif %}
         {% endfor %}
       </ul>
     </div>
