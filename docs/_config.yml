@@ -1,5 +1,7 @@
 google_analytics: UA-66371454-1
 markdown: kramdown
+kramdown:
+  parse_block_html: true
 highlighter: rouge
 defaults:
 - scope:
