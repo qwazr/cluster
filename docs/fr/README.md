@@ -27,7 +27,6 @@ Dans ce cas, il expose un jeu d'API sous la forme d'un webservice JSON qui perme
 La librarie prend en charge les connections reseaux (UDP) au travers d'un composant nommé ClusterManager
 qui fournit également un service d'interrogation en JAVA.
 
-
 Comment cela fonctionne t-il?
 -----------------------------
 
@@ -44,15 +43,14 @@ en utilisant la librarie QWAZR Cluster.
 
 Un service est défini par:
 - **Un nom de service générique :** This name describe the kind of service provided by the instance.
-- **A group list :**  the groups this service belongs.
-- **A public endpoint**: The hostname name and the port this service can be contacted with by the clients.
-
-A service will register itself to the cluster nodes.
+- **La liste des groupes :**  a quel groupe appartient le service (optionel).
+- **Le point d'entrée**: Le couple nom d'hôte et port à partir duqle ce service peut être contacté.
 
 #### Cluster node
 
 Une instance de QWAZR Cluster (ClusterManager) en charge de partager les informations relatives aux services.
-L'ensemble des ClusterManager échangent les informations en utilisant des messages UDP (Datagram).
+L'ensemble des instances ClusterManager échangent les informations concernant les service en utilisant
+des messages UDP (Datagram).
 
 #### Client
 
@@ -60,17 +58,19 @@ Un client du cluster est un programme qui interroge le cluster pour obtenir la l
 et leur points d'entrée.
 Le client peut alors utiliser ces informations pour contacter directement les services.
 
-### Network communication design
+### Modèle de communication réseau
 
-Il y a deux modèle de communication diposnible. Le premier est basé sur le protocole
-[multicast](https://en.wikipedia.org/wiki/Multicast),
-l'autre est basé sur l'utilisation de **noeuds master**.
-Le communication entre les noeux s'appuie toujours sur le protocole UDP
+Il y a deux modèles de communication disponibles:
+ 
+- Le premier est basé sur le protocole [multicast](https://en.wikipedia.org/wiki/Multicast).
+Voir [Multicast-Cluster](multicast-cluster)
+- l'autre est basé sur l'utilisation de **noeuds master** qui assurent la mise en relation.
+Voir [Masters-cluster](masters-cluster)
+
+La communication entre les noeuds s'appuie sur le protocole UDP
 [datagram protocol](https://en.wikipedia.org/wiki/User_Datagram_Protocol).
 
-#### TODO
-
-TODO: Describe the environnement variables providing the notification period and time to live
+Chaque instance de ClusterManager écoute sur un port déterminé dans la configuration (ServerConfiguration).
 
 Open source
 -----------
