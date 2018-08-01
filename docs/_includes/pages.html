@@ -2,11 +2,20 @@
   {% assign doclist = site.pages | sort: 'weight' %}
   {% for item in doclist %}
   {% if item.lang == page.lang %}
+  {% if item.url == page.url %}
   <a href="{{ site.github.url }}{{ item.url }}"
-     class="list-group-item list-group-item-action{% if item.url == page.url %} active{% endif %}">
-    <small>{{ item.title }}</small>
-    {% include toc.html html=content %}
+     class="list-group-item list-group-item-action active">
+    {{ item.title }}
+    <div>
+      {% include toc.html html=content h_min=2 h_max=3 class="list-unstyled" %}
+    </div>
   </a>
+  {% else %}
+  <a href="{{ site.github.url }}{{ item.url }}"
+     class="list-group-item list-group-item-action">
+    <small>{{ item.title }}</small>
+  </a>
+  {% endif %}
   {% endif %}
   {% endfor %}
 </div>
