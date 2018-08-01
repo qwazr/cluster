@@ -5,9 +5,6 @@ Cette page décrit les methodes disponible dans le Web Service JSON.
 
 Par défaut, le point d'entrée de ce service est: [http://127.0.0.1:9091/cluster](http://127.0.0.1:9091/cluster)
 
-- TOC
-{:toc}
-
 GET /cluster : vue générale du cluster
 --------------------------------------
 
