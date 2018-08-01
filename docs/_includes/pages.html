@@ -3,12 +3,11 @@
   {% for item in doclist %}
   {% if item.lang == page.lang %}
   <li>
-    <a href="{{ site.github.url }}{{ item.url }}"
-       class="list-group-item list-group-item-action active">
+    <a href="{{ site.github.url }}{{ item.url }}">
       {{ item.title }}</a>
     {% if item.url == page.url %}
     <small>
-      {% include toc.html html=content h_min=2 h_max=3 class="list-unstyled" %}
+      {% include toc.html html=content h_min=1 h_max=3 class="list-unstyled" %}
     </small>
     {% endif %}
   </li>
