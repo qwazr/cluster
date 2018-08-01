@@ -1,10 +1,11 @@
-<ul class="list-group">
+<div class="list-group">
   {% assign doclist = site.pages | sort: 'weight' %}
   {% for item in doclist %}
   {% if item.lang == page.lang %}
-  <li class="list-group-item{% if item.url == page.url %} active{% endif %}">
-    <small><a href="{{ site.github.url }}{{ item.url }}">{{ item.title }}</a></small>
-  </li>
+  <a href="{{ site.github.url }}{{ item.url }}"
+     class="list-group-item list-group-item-action{% if item.url == page.url %} active{% endif %}">
+    <small>{{ item.title }}</small>
+  </a>
   {% endif %}
   {% endfor %}
-</ul>
+</div>
