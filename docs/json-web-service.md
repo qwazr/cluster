@@ -3,12 +3,6 @@ Json Web Service
 
 This page explain how to use the JSON Web Service.
 
-Getting started with Docker
----------------------------
-
-An easy way to start using QWAZR-Cluster is by using the Docker image.
-
-...TODO
 
 JSON APIs
 ----------
