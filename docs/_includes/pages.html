@@ -5,10 +5,12 @@
   <li>
     <a href="{{ site.github.url }}{{ item.url }}">
       {{ item.title }}</a>
+    <hr/>
     {% if item.url == page.url %}
     <small>
-      {% include toc.html html=content h_min=1 h_max=3 class="list-unstyled" %}
+      {% include toc.html html=content h_min=1 h_max=3 %}
     </small>
+    <hr/>
     {% endif %}
   </li>
   {% endif %}
