@@ -23,10 +23,12 @@ les points d'entrée renvoyés._
 
 Un service QWAZR Cluster peut être utilisé de deux façons différentes:
 - **En tant que web service JSON autonome :**
-Dans ce cas, il expose un jeu d'API sous la forme d'un webservice JSON qui permet d'interroger le statut du cluster.
+Dans ce cas, il expose un jeu d'API sous la forme d'un webservice JSON qui permet d'interroger le cluster.
+Voir [Web Service JSON](json-web-service)
 - **Embarqué dans une application JAVA :**
 La librarie prend en charge les connections reseaux (UDP) au travers d'un composant nommé ClusterManager
 qui fournit également un service d'interrogation en JAVA.
+Voir [Librairie JAVA](java-library)
 
 Comment cela fonctionne t-il?
 -----------------------------
@@ -64,19 +66,11 @@ Le client peut alors utiliser ces informations pour contacter directement les se
 Il y a deux modèles de communication disponibles:
  
 - Le premier est basé sur le protocole [multicast](https://en.wikipedia.org/wiki/Multicast).
-Voir [Multicast-Cluster](multicast-cluster)
+Voir [Cluster Multicast](multicast-cluster)
 - l'autre est basé sur l'utilisation de **noeuds master** qui assurent la mise en relation.
-Voir [Masters-cluster](masters-cluster)
+Voir [Cluster Masters](masters-cluster)
 
 La communication entre les noeuds s'appuie sur le protocole UDP
 [datagram protocol](https://en.wikipedia.org/wiki/User_Datagram_Protocol).
 
 Chaque instance de ClusterManager écoute sur un port déterminé dans la configuration (ServerConfiguration).
-
-Open source
------------
-Le code source du projet est accessible ici
-[github/qwazr/cluster](https://github.com/qwazr/cluster).
-
-Comme tout composant QWAZR, il est publié sous license
-[Apache 2 license](https://www.apache.org/licenses/LICENSE-2.0).

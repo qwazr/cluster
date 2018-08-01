@@ -77,15 +77,3 @@ by broadcasting to a multicast address.
 #### Using master nodes
  
 The cluster nodes register themselves to a set of master nodes by using an existing list declared in the configuration. 
-
-#### TODO
-
-TODO: Describe the environnement variables providing the notification period and time to live
-
-Open source
------------
-The source code of the project is hosted at
-[github/qwazr/cluster](https://github.com/qwazr/cluster).
-
-As a QWAZR component it is released under the
-[Apache 2 license](https://www.apache.org/licenses/LICENSE-2.0).
