@@ -1,21 +1,17 @@
-<div class="list-group">
+<ul class="list-unstyled">
   {% assign doclist = site.pages | sort: 'weight' %}
   {% for item in doclist %}
   {% if item.lang == page.lang %}
-  {% if item.url == page.url %}
-  <div class="list-group-item active">
-    {{ item.title }}
-    <div class="card">
-      <div class="card-body">
-        <small>
-          {% include toc.html html=content h_min=2 h_max=3 class="list-unstyled" item_class="list-unstyled" %}
-        </small>
-      </div>
-    </div>
-  </div>
-  {% else %}
-  <a class="list-group-item" href="{{ site.github.url }}{{ item.url }}">{{ item.title }}</a>
-  {% endif %}
+  <li>
+    {% if item.url == page.url %}
+    <strong>{{ item.title }}</strong>
+    <small>
+      {% include toc.html html=content h_min=2 h_max=3 class="list-unstyled.ml1" item_class="list-unstyled" %}
+    </small>
+    {% else %}
+    <a href="{{ site.github.url }}{{ item.url }}">{{ item.title }}</a>
+    {% endif %}
+  </li>
   {% endif %}
   {% endfor %}
-</div>
+</ul>
