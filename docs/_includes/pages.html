@@ -1,4 +1,4 @@
-<ul class="list-unstyled pl-2">
+<ul class="list-unstyled ml-0 pl-0">
   {% assign doclist = site.pages | sort: 'weight' %}
   {% for item in doclist %}
   {% if item.lang == page.lang %}
@@ -6,7 +6,7 @@
     {% if item.url == page.url %}
     <a href="{{ site.github.url }}{{ item.url }}"><strong>{{ item.title }}</strong></a>
     <small>
-      {% include toc.html html=content h_min=2 h_max=3 class="pl-4" item_class="pl-4" %}
+      {% include toc.html html=content h_min=2 h_max=3 class="ml-2.pl-2" item_class="ml-2.pl-2" %}
     </small>
     {% else %}
     <a href="{{ site.github.url }}{{ item.url }}">{{ item.title }}</a>
