@@ -4,13 +4,14 @@
   {% if item.lang == page.lang %}
   <li>
     {% if item.url == page.url %}
-    <strong>{{ item.title }}</strong>
+    <a href="{{ site.github.url }}{{ item.url }}"><strong>{{ item.title }}</strong></a>
     <small>
       {% include toc.html html=content h_min=2 h_max=3 class="list-unstyled.ml1" item_class="list-unstyled" %}
     </small>
     {% else %}
     <a href="{{ site.github.url }}{{ item.url }}">{{ item.title }}</a>
     {% endif %}
+    <hr/>
   </li>
   {% endif %}
   {% endfor %}
