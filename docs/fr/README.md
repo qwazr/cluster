@@ -30,8 +30,8 @@ La librarie prend en charge les connections reseaux (UDP) au travers d'un compos
 qui fournit également un service d'interrogation en JAVA.
 Voir [Librairie JAVA](java-library)
 
-Comment cela fonctionne t-il?
------------------------------
+Schema de principe
+------------------
 
 Voici un schema de principe général.
 
