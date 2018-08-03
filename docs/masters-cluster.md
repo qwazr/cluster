@@ -1,7 +1,7 @@
 Masters cluster
 ===============
  
-The cluster nodes register themselves to a set of master nodes by using an existing list declared in the configuration.
+The cluster nodes register themselves to a set of master nodes. Thse registrations are done using a pre-configured list.
 
 ![Masters cluster](images/masters-cluster.svg){:class="img-fluid"}
 
