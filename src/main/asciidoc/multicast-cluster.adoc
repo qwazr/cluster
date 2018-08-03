@@ -28,15 +28,14 @@ note bottom of [cluster manager 2]
 end note
 
 note bottom of [cluster manager 3]
-  Every nodes receive the information
-  sent by the others and maintains
-  its own in memory database.
+Every node receives information sent by other nodes. 
+Each node maintains its own database.
 end note
 
 note left of [multicast]
-Information (endpoints, groups, services)
-are send to a multicast address which
-broadcast the message to every nodes.
+Information about endpoints, groups and services 
+is sent to a multicast address that broadcasts it 
+to all nodes.
 end note
 
 note bottom of [java code 4]
