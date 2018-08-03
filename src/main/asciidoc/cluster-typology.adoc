@@ -38,7 +38,7 @@ note right of [Client y]
 end note
 
 note right of [Cluster 2]
-  The cluster master server store and share
+  The cluster master server stores and shares
   information about registered services and groups.
 end note
 ....
