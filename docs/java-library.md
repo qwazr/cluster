@@ -1,8 +1,11 @@
 Embedded in your JAVA service
 =============================
 
-This example is also a test unit that can be viewed here :
-[ClusterServerExample](https://github.com/qwazr/cluster/blob/master/src/test/java/com/qwazr/cluster/ClusterServerExample.java)
+This example can also be used for unit testing. It can be found in the source code: [ClusterServerExample](https://github.com/qwazr/cluster/blob/master/src/test/java/com/qwazr/cluster/ClusterServerExample.java)
+
+For this test, we'll build a microservice using a JAX/RS application. It will include a resource that exposes information in JSON format. This service can be accessed at http://127.0.0.1:9091.
+
+TODO: Describe ClusterServiceInterface
 
 
 ```java
@@ -49,14 +52,14 @@ public class ClusterServerExample {
                 .master("127.0.0.1:9091") // This make my node be a master node
                 .build();
 
-        // This let us build our server with servlet and/or JAX-RS resources.
+        // This lets us build our server using servlet and/or JAX-RS resources.
         final GenericServerBuilder builder = GenericServer.of(serverConfiguration, executorService);
 
         // This will be the list of services announced by this cluster node
         final Set<String> services = new HashSet<>();
         services.add(ClusterServiceInterface.SERVICE_NAME);
 
-        // Creation of the cluster manager
+        // Creating the cluster manager
         final ClusterManager clusterManager =
                 new ClusterManager(executorService, serverConfiguration)
                         .registerProtocolListener(builder, services);
@@ -71,11 +74,11 @@ public class ClusterServerExample {
         webServices.singletons(clusterService);
         builder.getWebServiceContext().jaxrs(webServices);
 
-        // We can now build the server and start it
+        // We can now build the server then start it
         genericServer = builder.build();
         genericServer.start(true);
 
-        // Few assertions
+        // Let's add a few assertions
         Assert.assertNotNull(genericServer);
         Assert.assertNotNull(clusterService);
     }
