@@ -6,10 +6,13 @@ QWAZR Cluster
 [![Coverage Status](https://coveralls.io/repos/github/qwazr/cluster/badge.svg?branch=master)](https://coveralls.io/github/qwazr/cluster?branch=master)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-**Qwazr Cluster** est un service pour système distribué dont le rôle est la collecte, le maintien, et la mise à
-disposition des informations concernant les services présents dans le cluster.
+**Qwazr Cluster** est une librairie JAVA pour système distribué dont le rôle est la collecte, le maintien,
+et la mise à disposition des informations concernant les services présents dans le cluster.
 
-The purpose of QWAZR cluster is to provide a simple and safe way to expose a set of services to a set of clients. 
+Il s'agit principalement d'un service réseau avec les caractéristiques suivantes:
+- Ecoute sur un port UDP pour la récéption des messages en provenance des autres noeuds du cluster.
+- Maintien d'une base de donnée locale à la JVM fournissant des informations sur les services.
+- Server HTTP avec exposition d'un service WEB/JSON d'interrogation.
 
 Voici les principes généraux:
 - Les **services** s'enregistrent sur le **cluster** au travers de messages UDP (Datagram).
