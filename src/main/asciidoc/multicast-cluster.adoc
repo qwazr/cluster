@@ -29,7 +29,7 @@ end note
 
 note bottom of [cluster manager 3]
 Every node receives information sent by other nodes. 
-Each node maintains its own database.
+Each node maintains its own in-memory database.
 end note
 
 note left of [multicast]
