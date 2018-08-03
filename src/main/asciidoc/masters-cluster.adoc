@@ -37,25 +37,25 @@ folder "master 2" {
 [cluster manager m1] <-> [cluster manager m2]
 
 note bottom of [cluster manager 2]
-  Each node sends its information
+  Each node sends information
   to the cluster using multicast.
 end note
 
 note bottom of [cluster manager 3]
-  Every nodes receive the information
-  sent by the others and maintains
-  its own in memory database.
+  Every node receives the information
+  sent by the others. Each maintains
+  its own database.
 end note
 
 note left of [multicast]
-Information (endpoints, groups, services)
-are send to a multicast address which
-broadcast the message to every nodes.
+Information about endpoints, groups & services
+gets sent to a multicast address. It in turn
+broadcasts the message to every node.
 end note
 
 note bottom of [java code 4]
-The local java code can get information
+The local java code gets information
 about nodes, groups and services
-by requesting the local cluster manager.
+by querrying the local cluster manager.
 end note
 ....
