@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 Emmanuel Keller / QWAZR
+ * Copyright 2015-2020 Emmanuel Keller / QWAZR
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,30 +65,34 @@ class DatagramListener extends ProtocolListener {
     }
 
     @Override
-    final public void acceptPacket(final DatagramPacket datagramPacket)
-            throws IOException, ReflectiveOperationException {
-        final MessageContent message = SerializationUtils.fromDefaultCompressedBytes(datagramPacket.getData());
-        LOGGER.finest(() -> manager.me.httpAddressKey + " DATAGRAMPACKET FROM: " + datagramPacket.getAddress() + " " +
-                message.getCommand() + " " + message.getContent());
-        switch (message.getCommand()) {
-            case join:
-                acceptJoin(message.getContent());
-                break;
-            case notify:
-                acceptNotify(message.getContent());
-                break;
-            case forward:
-                acceptForward(message.getContent());
-                break;
-            case reply:
-                acceptReply(message.getContent());
-                break;
-            case alive:
-                acceptAlive(message.getContent());
-                break;
-            case leave:
-                manager.clusterNodeMap.unregister(message.getContent());
-                break;
+    final public void acceptPacket(final DatagramPacket datagramPacket) {
+        try {
+            final MessageContent message = SerializationUtils.fromDefaultCompressedBytes(datagramPacket.getData());
+            LOGGER.finest(() -> manager.me.httpAddressKey + " DATAGRAMPACKET FROM: " + datagramPacket.getAddress() + " " +
+                    message.getCommand() + " " + message.getContent());
+            switch (message.getCommand()) {
+                case join:
+                    acceptJoin(message.getContent());
+                    break;
+                case notify:
+                    acceptNotify(message.getContent());
+                    break;
+                case forward:
+                    acceptForward(message.getContent());
+                    break;
+                case reply:
+                    acceptReply(message.getContent());
+                    break;
+                case alive:
+                    acceptAlive(message.getContent());
+                    break;
+                case leave:
+                    manager.clusterNodeMap.unregister(message.getContent());
+                    break;
+            }
+        }
+        catch (IOException | ClassNotFoundException e) {
+            LOGGER.log(Level.SEVERE, e, () -> "Unable to de-serialize the message");
         }
     }
 
@@ -97,7 +101,8 @@ class DatagramListener extends ProtocolListener {
         try {
             ClusterProtocol.newJoin(manager.me.httpAddressKey, manager.nodeLiveId, manager.myGroups, manager.myServices)
                     .send(manager.clusterNodeMap.getFullNodeAddresses());
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             LOGGER.log(Level.SEVERE, e, e::getMessage);
         }
     }
@@ -106,7 +111,8 @@ class DatagramListener extends ProtocolListener {
         try {
             ClusterProtocol.newLeave(manager.me.httpAddressKey, manager.nodeLiveId)
                     .send(manager.clusterNodeMap.getExternalNodeAddresses());
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             LOGGER.log(Level.SEVERE, e, e::getMessage);
         }
     }
@@ -116,9 +122,11 @@ class DatagramListener extends ProtocolListener {
         try {
             ClusterProtocol.newAlive(manager.me.httpAddressKey, manager.nodeLiveId)
                     .send(manager.clusterNodeMap.getExternalNodeAddresses());
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             LOGGER.log(Level.SEVERE, e, e::getMessage);
-        } finally {
+        }
+        finally {
             super.runner();
         }
     }

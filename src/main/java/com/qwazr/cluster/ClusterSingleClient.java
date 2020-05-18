@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 Emmanuel Keller / QWAZR
+ * Copyright 2015-2020 Emmanuel Keller / QWAZR
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,20 +66,21 @@ public class ClusterSingleClient extends JsonClient implements ClusterServiceInt
         return clusterTarget.request().get(ClusterStatusJson.class);
     }
 
-    private final static GenericType<TreeSet<String>> treeSetStringType = new GenericType<TreeSet<String>>() {
+    private final static GenericType<TreeSet<String>> treeSetStringType = new GenericType<>() {
     };
 
     @Override
     public TreeSet<String> getNodes() {
         try {
             return nodesTarget.request(MediaType.APPLICATION_JSON).get(treeSetStringType);
-        } catch (WebApplicationException e) {
+        }
+        catch (WebApplicationException e) {
             throw ServerException.from(e);
         }
     }
 
     private final static GenericType<TreeMap<String, ClusterServiceStatusJson.StatusEnum>> mapStringStatusEnumType =
-            new GenericType<TreeMap<String, ClusterServiceStatusJson.StatusEnum>>() {
+            new GenericType<>() {
             };
 
     @Override
@@ -87,7 +88,8 @@ public class ClusterSingleClient extends JsonClient implements ClusterServiceInt
         try {
             return (group == null ? servicesTarget : servicesTarget.queryParam("group", group)).request(
                     MediaType.APPLICATION_JSON).get(mapStringStatusEnumType);
-        } catch (WebApplicationException e) {
+        }
+        catch (WebApplicationException e) {
             throw ServerException.from(e);
         }
     }
@@ -98,7 +100,8 @@ public class ClusterSingleClient extends JsonClient implements ClusterServiceInt
             final WebTarget target = servicesTarget.path(serviceName);
             return (group == null ? target : target.queryParam("group", group)).request(MediaType.APPLICATION_JSON)
                     .get(ClusterServiceStatusJson.class);
-        } catch (WebApplicationException e) {
+        }
+        catch (WebApplicationException e) {
             throw ServerException.from(e);
         }
     }
@@ -109,7 +112,8 @@ public class ClusterSingleClient extends JsonClient implements ClusterServiceInt
             final WebTarget target = servicesTarget.path(serviceName).path("active");
             return (group == null ? target : target.queryParam("group", group)).request(MediaType.APPLICATION_JSON)
                     .get(treeSetStringType);
-        } catch (WebApplicationException e) {
+        }
+        catch (WebApplicationException e) {
             throw ServerException.from(e);
         }
     }
@@ -120,7 +124,8 @@ public class ClusterSingleClient extends JsonClient implements ClusterServiceInt
             final WebTarget target = servicesTarget.path(serviceName).path("active").path("random");
             return (group == null ? target : target.queryParam("group", group)).request(MediaType.TEXT_PLAIN)
                     .get(String.class);
-        } catch (WebApplicationException e) {
+        }
+        catch (WebApplicationException e) {
             throw ServerException.from(e);
         }
     }
@@ -131,7 +136,8 @@ public class ClusterSingleClient extends JsonClient implements ClusterServiceInt
             final WebTarget target = servicesTarget.path(serviceName).path("active").path("leader");
             return (group == null ? target : target.queryParam("group", group)).request(MediaType.TEXT_PLAIN)
                     .get(String.class);
-        } catch (WebApplicationException e) {
+        }
+        catch (WebApplicationException e) {
             throw ServerException.from(e);
         }
     }

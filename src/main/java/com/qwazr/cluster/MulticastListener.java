@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 Emmanuel Keller / QWAZR
+ * Copyright 2015-2020 Emmanuel Keller / QWAZR
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,25 +39,30 @@ class MulticastListener extends ProtocolListener {
     }
 
     @Override
-    final public void acceptPacket(final DatagramPacket datagramPacket)
-            throws IOException, ReflectiveOperationException {
-        final MessageContent message = SerializationUtils.fromDefaultCompressedBytes(datagramPacket.getData());
-        LOGGER.finest(() -> manager.me.httpAddressKey + " MULTICASTPACKET FROM: " + datagramPacket.getAddress() + " " +
-                message.getCommand() + " " + message.getContent());
-        switch (message.getCommand()) {
-            case join:
-                registerNode(message.getContent());
-                ClusterProtocol.newForward(manager.me.httpAddressKey, manager.nodeLiveId, manager.myGroups,
-                        manager.myServices).send(multicastSocketAddress);
-                break;
-            case forward:
-                registerNode(message.getContent());
-                break;
-            case leave:
-                manager.clusterNodeMap.unregister(message.getContent());
-                break;
-            default:
-                break;
+    final public void acceptPacket(final DatagramPacket datagramPacket) {
+        try {
+            final MessageContent message = SerializationUtils.fromDefaultCompressedBytes(datagramPacket.getData());
+
+            LOGGER.finest(() -> manager.me.httpAddressKey + " MULTICASTPACKET FROM: " + datagramPacket.getAddress() + " " +
+                    message.getCommand() + " " + message.getContent());
+            switch (message.getCommand()) {
+                case join:
+                    registerNode(message.getContent());
+                    ClusterProtocol.newForward(manager.me.httpAddressKey, manager.nodeLiveId, manager.myGroups,
+                            manager.myServices).send(multicastSocketAddress);
+                    break;
+                case forward:
+                    registerNode(message.getContent());
+                    break;
+                case leave:
+                    manager.clusterNodeMap.unregister(message.getContent());
+                    break;
+                default:
+                    break;
+            }
+        }
+        catch (IOException | ClassNotFoundException e) {
+            LOGGER.log(Level.SEVERE, e, () -> "Unable to de-serialize the message");
         }
     }
 
@@ -67,7 +71,8 @@ class MulticastListener extends ProtocolListener {
         try {
             ClusterProtocol.newJoin(manager.me.httpAddressKey, manager.nodeLiveId, manager.myGroups, manager.myServices)
                     .send(multicastSocketAddress);
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             LOGGER.log(Level.SEVERE, e, () -> "Unable to reach " + multicastSocketAddress);
         }
     }
@@ -75,7 +80,8 @@ class MulticastListener extends ProtocolListener {
     protected synchronized void leaveCluster() {
         try {
             ClusterProtocol.newLeave(manager.me.httpAddressKey, manager.nodeLiveId).send(multicastSocketAddress);
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             LOGGER.log(Level.SEVERE, e, () -> "Unable to reach " + multicastSocketAddress);
         }
     }
@@ -85,9 +91,11 @@ class MulticastListener extends ProtocolListener {
         try {
             ClusterProtocol.newForward(manager.me.httpAddressKey, manager.nodeLiveId, manager.myGroups,
                     manager.myServices).send(multicastSocketAddress);
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             LOGGER.log(Level.SEVERE, e, () -> "Error while running the multicast listener. The thread is stopped.");
-        } finally {
+        }
+        finally {
             super.runner();
         }
     }

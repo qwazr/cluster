@@ -96,9 +96,7 @@ public class ClusterManager {
 
     public ClusterManager registerProtocolListener(final GenericServerBuilder builder, final Set<String> services) {
         builder.packetListener(protocolListener);
-        builder.startedListener(server -> {
-            protocolListener.joinCluster(services);
-        });
+        builder.startedListener(server -> protocolListener.joinCluster(services));
         builder.shutdownListener(server -> protocolListener.leaveCluster());
         builder.shutdownListener(server -> protocolListener.shutdown());
         executorService.submit(protocolListener);
@@ -158,7 +156,7 @@ public class ClusterManager {
     final TreeMap<String, ClusterServiceStatusJson.StatusEnum> getServicesStatus(final String group) {
         final TreeMap<String, ClusterServiceStatusJson.StatusEnum> servicesStatus = new TreeMap<>();
         final Set<String> services = clusterNodeMap.getServices().keySet();
-        if (services == null || services.isEmpty())
+        if (services.isEmpty())
             return servicesStatus;
         services.forEach(service -> {
             final SortedSet<String> nodes = getNodesByGroupByService(group, service);

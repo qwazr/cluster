@@ -1,5 +1,5 @@
-/**
- * Copyright 2015-2016 Emmanuel Keller / QWAZR
+/*
+ * Copyright 2015-2020 Emmanuel Keller / QWAZR
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,61 +15,69 @@
  */
 package com.qwazr.cluster;
 
-import java.io.*;
+import javax.ws.rs.InternalServerErrorException;
+import java.io.Externalizable;
+import java.lang.reflect.Constructor;
 import java.util.Set;
 import java.util.UUID;
 
 enum ClusterProtocol {
 
-	join('J', FullContent.class),
-	notify('N', AddressContent.class),
-	forward('F', FullContent.class),
-	reply('R', FullContent.class),
-	alive('A', AddressContent.class),
-	leave('L', AddressContent.class);
+    join('J', FullContent.class),
+    notify('N', AddressContent.class),
+    forward('F', FullContent.class),
+    reply('R', FullContent.class),
+    alive('A', AddressContent.class),
+    leave('L', AddressContent.class);
 
-	final static String CHAR_HEADER = "QWAZR";
+    final static String CHAR_HEADER = "QWAZR";
 
-	final char cmd;
-	final Class<? extends Externalizable> messageClass;
+    final char cmd;
+    final Constructor<? extends Externalizable> messageClassConstructor;
 
-	ClusterProtocol(final char cmd, final Class<? extends Externalizable> messageClass) {
-		this.cmd = cmd;
-		this.messageClass = messageClass;
-	}
 
-	final static ClusterProtocol findCommand(final char cmd) {
-		for (ClusterProtocol command : values())
-			if (command.cmd == cmd)
-				return command;
-		throw new IllegalArgumentException("Command not found: " + cmd);
-	}
+    ClusterProtocol(final char cmd, final Class<? extends Externalizable> messageClass) {
+        this.cmd = cmd;
+        try {
+            this.messageClassConstructor = messageClass.getDeclaredConstructor();
+        }
+        catch (NoSuchMethodException e) {
+            throw new InternalServerErrorException("No constructor for the class " + messageClass, e);
+        }
+    }
 
-	final static MessageContent newJoin(final String address, final UUID nodeLiveId, final Set<String> groups,
-			final Set<String> services) {
-		return new MessageContent(join, new FullContent(address, nodeLiveId, groups, services));
-	}
+    static ClusterProtocol findCommand(final char cmd) {
+        for (ClusterProtocol command : values())
+            if (command.cmd == cmd)
+                return command;
+        throw new IllegalArgumentException("Command not found: " + cmd);
+    }
 
-	final static MessageContent newNotify(final AddressContent address) {
-		return new MessageContent(notify, address);
-	}
+    static MessageContent newJoin(final String address, final UUID nodeLiveId, final Set<String> groups,
+                                  final Set<String> services) {
+        return new MessageContent(join, new FullContent(address, nodeLiveId, groups, services));
+    }
 
-	final static MessageContent newForward(final String address, final UUID nodeLiveId, final Set<String> groups,
-			final Set<String> services) {
-		return new MessageContent(forward, new FullContent(address, nodeLiveId, groups, services));
-	}
+    static MessageContent newNotify(final AddressContent address) {
+        return new MessageContent(notify, address);
+    }
 
-	final static MessageContent newReply(final String address, final UUID nodeLiveId, final Set<String> groups,
-			final Set<String> services) {
-		return new MessageContent(reply, new FullContent(address, nodeLiveId, groups, services));
-	}
+    static MessageContent newForward(final String address, final UUID nodeLiveId, final Set<String> groups,
+                                     final Set<String> services) {
+        return new MessageContent(forward, new FullContent(address, nodeLiveId, groups, services));
+    }
 
-	final static MessageContent newAlive(final String address, final UUID nodeLiveId) {
-		return new MessageContent(alive, new AddressContent(address, nodeLiveId));
-	}
+    static MessageContent newReply(final String address, final UUID nodeLiveId, final Set<String> groups,
+                                   final Set<String> services) {
+        return new MessageContent(reply, new FullContent(address, nodeLiveId, groups, services));
+    }
 
-	final static MessageContent newLeave(final String address, final UUID nodeLiveId) {
-		return new MessageContent(leave, new AddressContent(address, nodeLiveId));
-	}
+    static MessageContent newAlive(final String address, final UUID nodeLiveId) {
+        return new MessageContent(alive, new AddressContent(address, nodeLiveId));
+    }
+
+    static MessageContent newLeave(final String address, final UUID nodeLiveId) {
+        return new MessageContent(leave, new AddressContent(address, nodeLiveId));
+    }
 
 }

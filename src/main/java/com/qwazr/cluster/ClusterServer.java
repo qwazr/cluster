@@ -34,67 +34,67 @@ import java.util.concurrent.Executors;
 
 public class ClusterServer implements BaseServer {
 
-	private final GenericServer server;
-	private final ClusterManager clusterManager;
-	private final ClusterServiceBuilder serviceBuilder;
+    private final GenericServer server;
+    private final ClusterManager clusterManager;
+    private final ClusterServiceBuilder serviceBuilder;
 
-	private ClusterServer(final ServerConfiguration serverConfiguration) throws IOException {
+    private ClusterServer(final ServerConfiguration serverConfiguration) throws IOException {
 
-		final ExecutorService executorService = Executors.newCachedThreadPool();
+        final ExecutorService executorService = Executors.newCachedThreadPool();
 
-		final GenericServerBuilder builder = GenericServer.of(serverConfiguration, executorService);
+        final GenericServerBuilder builder = GenericServer.of(serverConfiguration, executorService);
 
-		final ApplicationBuilder webServices = ApplicationBuilder.of("/*")
-				.classes(RestApplication.JSON_CLASSES)
-				.singletons(new WelcomeShutdownService());
+        final ApplicationBuilder webServices = ApplicationBuilder.of("/*")
+                .classes(RestApplication.JSON_CLASSES)
+                .singletons(new WelcomeShutdownService());
 
-		final Set<String> services = new HashSet<>();
-		services.add(ClusterServiceInterface.SERVICE_NAME);
+        final Set<String> services = new HashSet<>();
+        services.add(ClusterServiceInterface.SERVICE_NAME);
 
-		clusterManager =
-				new ClusterManager(executorService, serverConfiguration).registerProtocolListener(builder, services);
-		webServices.singletons(clusterManager.getService());
+        clusterManager =
+                new ClusterManager(executorService, serverConfiguration).registerProtocolListener(builder, services);
+        webServices.singletons(clusterManager.getService());
 
-		builder.getWebServiceContext().jaxrs(webServices);
-		server = builder.build();
-		serviceBuilder = new ClusterServiceBuilder(clusterManager);
-	}
+        builder.getWebServiceContext().jaxrs(webServices);
+        server = builder.build();
+        serviceBuilder = new ClusterServiceBuilder(clusterManager);
+    }
 
-	public ClusterServer(final Map<String, String> properties) throws IOException {
-		this(ServerConfiguration.of(properties).build());
-	}
+    public ClusterServer(final Map<String, String> properties) throws IOException {
+        this(ServerConfiguration.of(properties).build());
+    }
 
-	public ClusterManager getClusterManager() {
-		return clusterManager;
-	}
+    public ClusterManager getClusterManager() {
+        return clusterManager;
+    }
 
-	public ClusterServiceBuilder getServiceBuilder() {
-		return serviceBuilder;
-	}
+    public ClusterServiceBuilder getServiceBuilder() {
+        return serviceBuilder;
+    }
 
-	@Override
-	public GenericServer getServer() {
-		return server;
-	}
+    @Override
+    public GenericServer getServer() {
+        return server;
+    }
 
-	private static volatile ClusterServer INSTANCE;
+    private static volatile ClusterServer INSTANCE;
 
-	public static ClusterServer getInstance() {
-		return INSTANCE;
-	}
+    public static ClusterServer getInstance() {
+        return INSTANCE;
+    }
 
-	public static synchronized void main(final String... args)
-			throws IOException, ReflectiveOperationException, ServletException, JMException {
-		shutdown();
-		INSTANCE = new ClusterServer(new ServerConfiguration(args));
-		INSTANCE.start();
-	}
+    public static synchronized void main(final String... args)
+            throws IOException, ServletException, JMException {
+        shutdown();
+        INSTANCE = new ClusterServer(new ServerConfiguration(args));
+        INSTANCE.start();
+    }
 
-	public static synchronized void shutdown() {
-		if (INSTANCE == null)
-			return;
-		INSTANCE.stop();
-		INSTANCE = null;
-	}
+    public static synchronized void shutdown() {
+        if (INSTANCE == null)
+            return;
+        INSTANCE.stop();
+        INSTANCE = null;
+    }
 
 }
