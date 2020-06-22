@@ -103,7 +103,7 @@ public class ClusterServerExample {
     }
 
     @Test
-    /**
+    /*
      * This test uses the client library to request the WEB/JSON cluster service.
      */
     public void testRemoteAccess() throws URISyntaxException {
@@ -117,7 +117,7 @@ public class ClusterServerExample {
 
     @After
     public void cleanup() {
-        genericServer.stopAll();
+        genericServer.close();
         executorService.shutdown();
     }
 }
