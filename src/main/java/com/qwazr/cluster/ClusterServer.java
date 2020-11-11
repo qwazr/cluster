@@ -38,7 +38,7 @@ public class ClusterServer implements BaseServer {
     private final ClusterManager clusterManager;
     private final ClusterServiceBuilder serviceBuilder;
 
-    private ClusterServer(final ServerConfiguration serverConfiguration) throws IOException {
+    public ClusterServer(final ServerConfiguration serverConfiguration) throws IOException {
 
         final ExecutorService executorService = Executors.newCachedThreadPool();
 
@@ -58,10 +58,6 @@ public class ClusterServer implements BaseServer {
         builder.getWebServiceContext().jaxrs(webServices);
         server = builder.build();
         serviceBuilder = new ClusterServiceBuilder(clusterManager);
-    }
-
-    public ClusterServer(final Map<String, String> properties) throws IOException {
-        this(ServerConfiguration.of(properties).build());
     }
 
     public ClusterManager getClusterManager() {
@@ -86,7 +82,12 @@ public class ClusterServer implements BaseServer {
     public static synchronized void main(final String... args)
             throws IOException, ServletException, JMException {
         shutdown();
-        INSTANCE = new ClusterServer(new ServerConfiguration(args));
+        INSTANCE = new ClusterServer(
+                ServerConfiguration.of()
+                        .applyEnvironmentVariables()
+                        .applySystemProperties()
+                        .applyCommandLineArgs(args)
+                        .build());
         INSTANCE.start();
     }
 

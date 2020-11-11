@@ -20,6 +20,7 @@ import com.qwazr.cluster.ClusterServer;
 import com.qwazr.cluster.ClusterServiceBuilder;
 import com.qwazr.cluster.ClusterServiceInterface;
 import com.qwazr.server.RemoteService;
+import com.qwazr.server.configuration.ServerConfiguration;
 import com.qwazr.utils.StringUtils;
 
 import java.io.File;
@@ -45,25 +46,17 @@ public class ClusterTestServer {
         dataDir = Files.createTempDir();
         address = "http://" + hostname + ':' + tcpPort;
 
-        Map<String, String> env = new HashMap<>();
-        env.put("QWAZR_DATA", dataDir.getAbsolutePath());
-        if (groups != null)
-            env.put("QWAZR_GROUPS", StringUtils.join(groups, ","));
-        else
-            env.remove("QWAZR_GROUPS");
-        if (masters != null)
-            env.put("QWAZR_MASTERS", StringUtils.join(masters, ","));
-        else
-            env.remove("QWAZR_MASTERS");
-        env.put("PUBLIC_ADDR", hostname);
-        env.put("LISTEN_ADDR", hostname);
-        env.put("WEBSERVICE_PORT", Integer.toString(tcpPort));
-        if (multicastAddress != null)
-            env.put("MULTICAST_ADDR", multicastAddress);
-        if (multicastPort != null)
-            env.put("MULTICAST_PORT", Integer.toString(multicastPort));
-
-        server = new ClusterServer(env);
+        server = new ClusterServer(
+                ServerConfiguration.of()
+                .master(masters)
+                        .data(dataDir.toPath())
+                        .group(groups)
+                        .publicAddress(hostname)
+                        .listenAddress(hostname)
+                        .webServicePort(tcpPort)
+                        .multicastAddress(multicastAddress)
+                        .multicastPort(multicastPort)
+                        .build());
 
         serviceBuilder = server.getServiceBuilder();
         client = serviceBuilder.remote(RemoteService.of(this.address).build());
